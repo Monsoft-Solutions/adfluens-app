@@ -1,4 +1,8 @@
-import type { YouTubeVideo, YouTubeComment } from "@repo/types";
+import type {
+  YouTubeVideo,
+  YouTubeComment,
+  VideoSortOption,
+} from "@repo/types";
 
 const YOUTUBE_BASE_URL = "https://www.googleapis.com/youtube/v3";
 
@@ -231,4 +235,151 @@ export const fetchVideoComments = async (
   );
 
   return comments;
+};
+
+/**
+ * Sort videos based on the specified sort option
+ */
+const sortVideos = (
+  videos: YouTubeVideo[],
+  sortBy: VideoSortOption
+): YouTubeVideo[] => {
+  return [...videos].sort((a, b) => {
+    switch (sortBy) {
+      case "views":
+        return parseInt(b.viewCount, 10) - parseInt(a.viewCount, 10);
+      case "likes":
+        return parseInt(b.likeCount, 10) - parseInt(a.likeCount, 10);
+      case "comments":
+        return parseInt(b.commentCount, 10) - parseInt(a.commentCount, 10);
+      case "date":
+        return (
+          new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+        );
+      case "relevance":
+      default:
+        return 0; // Preserve original order from API
+    }
+  });
+};
+
+/**
+ * Search videos globally on YouTube
+ */
+export const searchVideos = async (
+  query: string,
+  sortBy: VideoSortOption = "views",
+  maxResults: number = 20
+): Promise<YouTubeVideo[]> => {
+  const apiKey = getYoutubeApiKey();
+
+  if (!apiKey) {
+    throw new Error("YouTube API key not configured on server");
+  }
+
+  // Determine YouTube API order parameter based on sort option
+  // YouTube API only supports: date, rating, relevance, title, videoCount, viewCount
+  const getApiOrder = (sort: VideoSortOption): string => {
+    switch (sort) {
+      case "date":
+        return "date";
+      case "views":
+        return "viewCount";
+      case "relevance":
+      default:
+        return "relevance";
+    }
+  };
+
+  const searchParams = new URLSearchParams({
+    part: "snippet",
+    q: query,
+    type: "video",
+    order: getApiOrder(sortBy),
+    maxResults: maxResults.toString(),
+    key: apiKey,
+  });
+
+  const searchRes = await fetch(
+    `${YOUTUBE_BASE_URL}/search?${searchParams.toString()}`
+  );
+  const searchData = await searchRes.json();
+
+  if (!searchRes.ok) {
+    throw new Error(searchData.error?.message || "Failed to search videos");
+  }
+
+  if (!searchData.items || searchData.items.length === 0) {
+    return [];
+  }
+
+  // Extract video IDs
+  const videoIds = searchData.items
+    .filter((item: { id: { videoId?: string } }) => item.id.videoId)
+    .map((item: { id: { videoId: string } }) => item.id.videoId)
+    .join(",");
+
+  if (!videoIds) {
+    return [];
+  }
+
+  // Fetch video details with statistics
+  const videosParams = new URLSearchParams({
+    part: "snippet,statistics",
+    id: videoIds,
+    key: apiKey,
+  });
+
+  const videosRes = await fetch(
+    `${YOUTUBE_BASE_URL}/videos?${videosParams.toString()}`
+  );
+  const videosData = await videosRes.json();
+
+  if (!videosRes.ok) {
+    throw new Error(
+      videosData.error?.message || "Failed to fetch video details"
+    );
+  }
+
+  // Format response
+  const videos: YouTubeVideo[] = videosData.items.map(
+    (item: {
+      id: string;
+      snippet: {
+        title: string;
+        description: string;
+        thumbnails: {
+          high?: { url: string };
+          medium?: { url: string };
+        };
+        publishedAt: string;
+        channelTitle: string;
+      };
+      statistics: {
+        viewCount?: string;
+        likeCount?: string;
+        commentCount?: string;
+      };
+    }) => ({
+      id: item.id,
+      title: item.snippet.title,
+      description: item.snippet.description,
+      thumbnailUrl:
+        item.snippet.thumbnails.high?.url ||
+        item.snippet.thumbnails.medium?.url ||
+        "",
+      publishedAt: item.snippet.publishedAt,
+      channelTitle: item.snippet.channelTitle,
+      viewCount: item.statistics.viewCount || "0",
+      likeCount: item.statistics.likeCount || "0",
+      commentCount: item.statistics.commentCount || "0",
+    })
+  );
+
+  // Sort videos if using likes or comments (not supported by YouTube API order)
+  if (sortBy === "likes" || sortBy === "comments") {
+    return sortVideos(videos, sortBy);
+  }
+
+  return videos;
 };

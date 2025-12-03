@@ -5,3 +5,5 @@ export * from "./search-api-response.type";
 export * from "./video-details-item.type";
 export * from "./videos-api-response.type";
 export * from "./comments-api-response.type";
+export * from "./video-sort-option.enum";
+export * from "./video-search-params.type";

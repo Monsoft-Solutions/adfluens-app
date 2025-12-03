@@ -1,9 +1,11 @@
 import { z } from "zod";
+import { videoSearchParamsSchema } from "@repo/types";
 import { router, publicProcedure } from "../../trpc/init";
 import {
   resolveChannelId,
   fetchChannelVideos,
   fetchVideoComments,
+  searchVideos,
 } from "./youtube.service";
 
 export const youtubeRouter = router({
@@ -35,5 +37,19 @@ export const youtubeRouter = router({
     .query(async ({ input }) => {
       const comments = await fetchVideoComments(input.videoId);
       return { comments };
+    }),
+
+  /**
+   * Search videos globally on YouTube with sorting options
+   */
+  searchVideos: publicProcedure
+    .input(videoSearchParamsSchema)
+    .query(async ({ input }) => {
+      const videos = await searchVideos(
+        input.query,
+        input.sortBy,
+        input.maxResults
+      );
+      return { videos };
     }),
 });

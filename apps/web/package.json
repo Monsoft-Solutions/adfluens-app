@@ -18,7 +18,8 @@
     "@trpc/tanstack-react-query": "^11.7.2",
     "lucide-react": "^0.555.0",
     "react": "^19.2.1",
-    "react-dom": "^19.2.1"
+    "react-dom": "^19.2.1",
+    "react-router-dom": "^7.10.0"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
