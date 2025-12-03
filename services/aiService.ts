@@ -1,43 +1,58 @@
+import { useMutation } from "@tanstack/react-query";
+import { useTRPC, trpcClient } from "../lib/trpc";
 import { YouTubeVideo, YouTubeComment, ViralAnalysisResult } from "../types";
 
-const API_BASE = '/api';
+// ==================== tRPC Hooks ====================
+// These hooks can be used directly in React components
 
+/**
+ * Hook to analyze a video using AI
+ * Usage: const mutation = useAnalyzeVideo();
+ *        mutation.mutate({ video, comments });
+ */
+export const useAnalyzeVideo = () => {
+  const trpc = useTRPC();
+  return useMutation(trpc.ai.analyze.mutationOptions());
+};
+
+/**
+ * Hook to chat with AI about a video
+ * Usage: const mutation = useChatWithVideo();
+ *        mutation.mutate({ history, message, video, analysis });
+ */
+export const useChatWithVideo = () => {
+  const trpc = useTRPC();
+  return useMutation(trpc.ai.chat.mutationOptions());
+};
+
+// ==================== Imperative Functions ====================
+// These functions can be called imperatively (outside React hooks)
+// Useful for event handlers where you need async/await
+
+/**
+ * Analyze video content imperatively (for use in event handlers)
+ */
 export const analyzeVideoContent = async (
   video: YouTubeVideo,
   comments: YouTubeComment[]
 ): Promise<ViralAnalysisResult> => {
-  const res = await fetch(`${API_BASE}/ai/analyze`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ video, comments }),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.error || 'Failed to analyze video.');
-  }
-
-  return data;
+  return await trpcClient.ai.analyze.mutate({ video, comments });
 };
 
+/**
+ * Chat with AI about a video imperatively (for use in event handlers)
+ */
 export const chatWithVideoContext = async (
   history: { role: string; parts: { text: string }[] }[],
   message: string,
   video: YouTubeVideo,
   analysis: ViralAnalysisResult
 ): Promise<string> => {
-  const res = await fetch(`${API_BASE}/ai/chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ history, message, video, analysis }),
+  const result = await trpcClient.ai.chat.mutate({
+    history,
+    message,
+    video,
+    analysis,
   });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.error || 'Failed to chat with AI.');
-  }
-
-  return data.response;
+  return result.response;
 };

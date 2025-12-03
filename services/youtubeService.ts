@@ -1,7 +1,51 @@
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useTRPC, trpcClient } from "../lib/trpc";
 import { YouTubeVideo, YouTubeComment } from "../types";
 
-const API_BASE = "/api";
+// ==================== tRPC Hooks ====================
+// These hooks can be used directly in React components
 
+/**
+ * Hook to resolve channel identifier
+ * Usage: const mutation = useResolveChannel();
+ *        mutation.mutate({ identifier: "channelHandle" });
+ */
+export const useResolveChannel = () => {
+  const trpc = useTRPC();
+  return useMutation(trpc.youtube.resolveChannel.mutationOptions());
+};
+
+/**
+ * Hook to fetch videos for a channel (query)
+ * Usage: const { data } = useChannelVideos(channelId);
+ */
+export const useChannelVideos = (channelId: string | null) => {
+  const trpc = useTRPC();
+  return useQuery({
+    ...trpc.youtube.getVideos.queryOptions({ channelId: channelId! }),
+    enabled: !!channelId,
+  });
+};
+
+/**
+ * Hook to fetch comments for a video (query)
+ * Usage: const { data } = useVideoComments(videoId);
+ */
+export const useVideoComments = (videoId: string | null) => {
+  const trpc = useTRPC();
+  return useQuery({
+    ...trpc.youtube.getComments.queryOptions({ videoId: videoId! }),
+    enabled: !!videoId,
+  });
+};
+
+// ==================== Imperative Functions ====================
+// These functions can be called imperatively (outside React hooks)
+// Useful for event handlers where you need async/await
+
+/**
+ * Fetch channel videos imperatively (for use in event handlers)
+ */
 export const fetchChannelVideos = async (
   channelIdentifier: string
 ): Promise<YouTubeVideo[]> => {
@@ -10,52 +54,22 @@ export const fetchChannelVideos = async (
   }
 
   // Step 1: Resolve the channel identifier to a channel ID
-  const channelRes = await fetch(`${API_BASE}/youtube/channels`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ identifier: channelIdentifier }),
+  const { channelId } = await trpcClient.youtube.resolveChannel.mutate({
+    identifier: channelIdentifier,
   });
-
-  const channelData = await channelRes.json();
-
-  if (!channelRes.ok) {
-    throw new Error(
-      channelData.error || "Failed to resolve channel identifier."
-    );
-  }
-
-  const { channelId } = channelData;
 
   // Step 2: Fetch videos for the channel
-  const videosRes = await fetch(`${API_BASE}/youtube/videos`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ channelId }),
-  });
+  const { videos } = await trpcClient.youtube.getVideos.query({ channelId });
 
-  const videosData = await videosRes.json();
-
-  if (!videosRes.ok) {
-    throw new Error(videosData.error || "Failed to fetch videos.");
-  }
-
-  return videosData.videos || [];
+  return videos;
 };
 
+/**
+ * Fetch video comments imperatively (for use in event handlers)
+ */
 export const fetchVideoComments = async (
   videoId: string
 ): Promise<YouTubeComment[]> => {
-  const res = await fetch(`${API_BASE}/youtube/comments`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ videoId }),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.error || "Failed to fetch comments.");
-  }
-
-  return data.comments || [];
+  const { comments } = await trpcClient.youtube.getComments.query({ videoId });
+  return comments;
 };
