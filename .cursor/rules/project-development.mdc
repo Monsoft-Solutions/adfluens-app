@@ -6,7 +6,7 @@ globs:
 
 # Project Development Guide
 
-This monorepo uses React 19, tRPC v11, TanStack Query v5, and a feature-based architecture. Follow these patterns when adding new functionality.
+This monorepo uses React 19, tRPC v11, TanStack Query v5, React Router v7, and a feature-based architecture. Follow these patterns when adding new functionality.
 
 ## Monorepo Structure
 
@@ -19,8 +19,12 @@ apps/
 │       └── index.ts        # Express server entry
 ├── web/                    # React 19 + Vite frontend
 │   └── src/
-│       ├── features/       # Feature-specific components & utils
-│       ├── shared/         # Shared components across features
+│       ├── features/       # Feature-specific views, components & utils
+│       │   └── [feature]/
+│       │       ├── views/      # Route-level view components
+│       │       ├── components/ # Feature-specific components
+│       │       └── utils/      # Feature utilities
+│       ├── shared/         # Shared components (sidebar, layout)
 │       └── lib/            # tRPC client setup
 packages/
 ├── types/                  # Shared types with Zod schemas
@@ -325,38 +329,189 @@ Use `cn()` for conditional class merging:
 
 ## File Naming Conventions
 
-| Type       | Pattern                | Example                    |
-| ---------- | ---------------------- | -------------------------- |
-| Components | `[name].component.tsx` | `video-card.component.tsx` |
-| Services   | `[name].service.ts`    | `youtube.service.ts`       |
-| Routers    | `[name].router.ts`     | `youtube.router.ts`        |
-| Types      | `[name].type.ts`       | `youtube-video.type.ts`    |
-| Utilities  | `[name].utils.ts`      | `youtube.utils.ts`         |
-| Hooks      | `use-[name].hook.ts`   | `use-video-player.hook.ts` |
+| Type       | Pattern                | Example                       |
+| ---------- | ---------------------- | ----------------------------- |
+| Components | `[name].component.tsx` | `video-card.component.tsx`    |
+| Views      | `[name].view.tsx`      | `channel-analyzer.view.tsx`   |
+| Services   | `[name].service.ts`    | `youtube.service.ts`          |
+| Routers    | `[name].router.ts`     | `youtube.router.ts`           |
+| Types      | `[name].type.ts`       | `youtube-video.type.ts`       |
+| Enums      | `[name].enum.ts`       | `video-sort-option.enum.ts`   |
+| Utilities  | `[name].utils.ts`      | `youtube.utils.ts`            |
+| Hooks      | `use-[name].hook.ts`   | `use-video-player.hook.ts`    |
 
-## Adding a New View/Page
+## Routing & Navigation
 
-For multi-page apps, create view components in the feature:
+The app uses React Router v7 with a sidebar layout. Routes are defined in `app.tsx`.
+
+### App Layout Structure
+
+The `AppLayout` component wraps all routes with the sidebar:
 
 ```typescript
-// apps/web/src/features/[feature]/views/[feature].view.tsx
+// apps/web/src/shared/components/app-layout.component.tsx
 import React from "react";
-import { PlaylistList } from "../components/playlist-list.component";
-import { Header } from "@/shared/components/header.component";
+import { Outlet } from "react-router-dom";
+import { Sidebar } from "./sidebar.component";
 
 /**
- * Playlist feature main view
+ * Main application layout with sidebar navigation
  */
-export const PlaylistView: React.FC = () => {
+export const AppLayout: React.FC = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="container mx-auto px-4 py-8 max-w-6xl">
-        <h1 className="text-2xl font-bold mb-6">Playlists</h1>
-        <PlaylistList channelId="..." />
+    <div className="min-h-screen bg-background flex">
+      <Sidebar />
+      <main className="flex-1 min-h-screen overflow-auto px-8 py-8">
+        <div className="max-w-6xl mx-auto">
+          <Outlet />
+        </div>
       </main>
     </div>
   );
+};
+```
+
+### Sidebar Navigation
+
+Use `NavLink` for navigation items with active state styling:
+
+```typescript
+// apps/web/src/shared/components/sidebar.component.tsx
+import React from "react";
+import { NavLink } from "react-router-dom";
+import { cn } from "@repo/ui";
+
+const NavItem: React.FC<{ to: string; icon: React.ReactNode; label: string }> = ({
+  to,
+  icon,
+  label,
+}) => (
+  <NavLink
+    to={to}
+    className={({ isActive }) =>
+      cn(
+        "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+        "text-muted-foreground hover:text-foreground hover:bg-accent",
+        isActive && "bg-primary/10 text-primary font-medium"
+      )
+    }
+  >
+    {icon}
+    <span className="text-sm">{label}</span>
+  </NavLink>
+);
+```
+
+### Route Configuration
+
+Define routes in `app.tsx` using nested routes:
+
+```typescript
+// apps/web/src/app.tsx
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AppLayout } from "./shared/components/app-layout.component";
+import { ChannelAnalyzerView } from "./features/youtube/views/channel-analyzer.view";
+import { VideoSearchView } from "./features/search/views/video-search.view";
+import { VideoDetailView } from "./features/youtube/views/video-detail.view";
+
+const App: React.FC = () => {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<ChannelAnalyzerView />} />
+          <Route path="/search" element={<VideoSearchView />} />
+          <Route path="/video/:id" element={<VideoDetailView />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
+};
+```
+
+### Adding a New Route
+
+1. Create the view in `apps/web/src/features/[feature]/views/`
+2. Add route in `app.tsx` under the `<Route element={<AppLayout />}>` parent
+3. Add navigation item to sidebar
+
+## Creating a View Component
+
+Views are route-level components that compose feature components:
+
+```typescript
+// apps/web/src/features/[feature]/views/[feature].view.tsx
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { useTRPC } from "@/lib/trpc";
+import { AlertCircle, Loader2 } from "lucide-react";
+import { cn } from "@repo/ui";
+import type { SomeType } from "@repo/types";
+import { SomeComponent } from "../components/some.component";
+
+/**
+ * Feature view component
+ */
+export const FeatureView: React.FC = () => {
+  const navigate = useNavigate();
+  const trpc = useTRPC();
+
+  const { data, isLoading, error } = useQuery(
+    trpc.feature.getData.queryOptions({ /* params */ })
+  );
+
+  const handleItemClick = (item: SomeType) => {
+    navigate(`/detail/${item.id}`, { state: { item } });
+  };
+
+  return (
+    <div className="animate-in fade-in duration-300">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground mb-2">Feature Title</h1>
+        <p className="text-muted-foreground">Feature description</p>
+      </div>
+
+      {error && (
+        <div className={cn(
+          "bg-destructive/10 border border-destructive/20 text-destructive",
+          "px-4 py-3 rounded-lg mb-6 flex items-center gap-3"
+        )}>
+          <AlertCircle className="w-5 h-5" />
+          <p>{error.message}</p>
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      ) : (
+        <SomeComponent data={data} onItemClick={handleItemClick} />
+      )}
+    </div>
+  );
+};
+```
+
+### Passing State Between Routes
+
+Use React Router's `state` to pass data between routes:
+
+```typescript
+// Navigate with state
+const handleClick = (video: YouTubeVideo) => {
+  navigate(`/video/${video.id}`, { state: { video } });
+};
+
+// Receive state in target view
+import { useLocation } from "react-router-dom";
+
+const VideoDetailView: React.FC = () => {
+  const location = useLocation();
+  const video = location.state?.video as YouTubeVideo | undefined;
+  // ...
 };
 ```
 
@@ -408,8 +563,14 @@ Access via `process.env.VARIABLE_NAME` in services.
 @apps/api/src/trpc/router.ts
 @apps/api/src/features/youtube/youtube.router.ts
 @apps/api/src/features/youtube/youtube.service.ts
+@apps/web/src/app.tsx
 @apps/web/src/lib/trpc.ts
+@apps/web/src/shared/components/sidebar.component.tsx
+@apps/web/src/shared/components/app-layout.component.tsx
+@apps/web/src/features/youtube/views/channel-analyzer.view.tsx
+@apps/web/src/features/search/views/video-search.view.tsx
 @apps/web/src/features/youtube/components/video-card.component.tsx
 @apps/web/src/features/youtube/utils/youtube.utils.ts
 @packages/types/src/youtube/youtube-video.type.ts
+@packages/types/src/youtube/video-sort-option.enum.ts
 @packages/ui/src/index.ts
