@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { router, publicProcedure } from "../../trpc/init";
-import { youtubeVideoSchema, youtubeCommentSchema, viralAnalysisResultSchema } from "@repo/types";
+import {
+  youtubeVideoSchema,
+  youtubeCommentSchema,
+  viralAnalysisResultSchema,
+} from "@repo/types";
 import { analyzeVideo, chatAboutVideo } from "./ai.service";
 
 const chatHistorySchema = z.array(
@@ -44,4 +48,3 @@ export const aiRouter = router({
       return { response };
     }),
 });
-

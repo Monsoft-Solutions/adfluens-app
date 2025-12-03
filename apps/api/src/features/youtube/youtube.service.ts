@@ -10,9 +10,7 @@ const getYoutubeApiKey = () => process.env.YOUTUBE_API_KEY || "";
 /**
  * Resolve a channel handle/name to a channel ID
  */
-export const resolveChannelId = async (
-  identifier: string
-): Promise<string> => {
+export const resolveChannelId = async (identifier: string): Promise<string> => {
   const apiKey = getYoutubeApiKey();
 
   if (!apiKey) {
@@ -234,4 +232,3 @@ export const fetchVideoComments = async (
 
   return comments;
 };
-

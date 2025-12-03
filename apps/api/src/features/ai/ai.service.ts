@@ -1,5 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
-import type { YouTubeVideo, YouTubeComment, ViralAnalysisResult } from "@repo/types";
+import type {
+  YouTubeVideo,
+  YouTubeComment,
+  ViralAnalysisResult,
+} from "@repo/types";
 
 const GEMINI_MODEL = "gemini-2.5-flash";
 
@@ -100,7 +104,9 @@ export const analyzeVideo = async (
     result.sources = groundingChunks
       .map((chunk: { web?: { uri?: string; title?: string } }) => chunk.web)
       .filter(
-        (web: { uri?: string; title?: string } | undefined): web is { uri: string; title: string } =>
+        (
+          web: { uri?: string; title?: string } | undefined
+        ): web is { uri: string; title: string } =>
           web !== undefined && !!web.uri && !!web.title
       )
       .map((web: { title: string; uri: string }) => ({
@@ -163,4 +169,3 @@ export const chatAboutVideo = async (
 
   return responseText;
 };
-
