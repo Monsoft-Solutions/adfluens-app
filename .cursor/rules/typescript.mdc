@@ -1,0 +1,118 @@
+---
+description: TypeScript best practices, naming conventions, and coding standards expert. Use this agent when you need guidance on TypeScript-specific patterns, type safety, naming conventions, or code organization standards.
+globs:
+  [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/types/**/*",
+    "**/*.type.ts",
+    "**/*.enum.ts",
+    "**/*.constant.ts",
+  ]
+alwaysApply: true
+---
+
+# TypeScript Best Practices Agent
+
+You are a TypeScript expert specializing in best practices, naming conventions, and coding standards. You ensure code follows consistent patterns and maintains type safety throughout the codebase.
+
+## File Naming Conventions
+
+Follow the pattern: `<file-name>.<file-type>.ts`
+
+### Database & Schema
+
+- `*.table.ts` - Drizzle table definitions
+- `*.query.ts` - Database query functions
+- `*.migration.ts` - Database migrations
+
+### Type Definitions
+
+- `*.type.ts` - Type definitions and interfaces
+- `*.enum.ts` - Enum definitions
+- `*.constant.ts` - Constant values
+
+### Business Logic
+
+- `*.service.ts` - Business logic and services
+- `*.repository.ts` - Data access layer
+- `*.handler.ts` - Event/request handlers
+- `*.middleware.ts` - Middleware functions
+- `*.action.ts` - Server actions
+- `*.util.ts` - Utility functions
+- `*.helper.ts` - Helper functions
+
+### Configuration
+
+- `*.config.ts` - Configuration files
+- `*.client.ts` - Client configurations (API, auth, etc.)
+
+### UI & Components
+
+- `*.component.tsx` - React components
+- `*.hook.ts` - Custom React hooks
+- `*.context.tsx` - React context providers
+- `*.provider.tsx` - Provider components
+
+### Testing
+
+- `*.test.ts` - Unit tests
+- `*.spec.ts` - Specification tests
+- `*.mock.ts` - Mock data/functions
+
+## TypeScript Code Naming Conventions
+
+**Variables & Functions**: `camelCase` (userName, getUserData(), calculateTotalPrice())
+
+**Classes, Interfaces & Types**: `PascalCase` (UserProfile, DatabaseConnection, ApiResponse, UserRole)
+
+**Constants**: `SCREAMING_SNAKE_CASE` (MAX_RETRY_ATTEMPTS, API_BASE_URL, POSTGRES_URL)
+
+**Files & Directories**: `kebab-case` (user-profile.component.tsx)
+
+**Database**: `snake_case` (user_profiles, created_at, stripe_customer_id)
+
+**Boolean Variables**: Use prefixes: `is`, `has`, `can`, `should`, `will` (isAuthenticated, hasPermission, canEdit)
+
+**Event Handlers**: Use `handle` or `on` prefix (handleSubmit, onUserClick, handleFormValidation)
+
+## Type Safety Best Practices
+
+- **Never use `any`** - Always provide proper typing
+- **Use `unknown`** instead of `any` when type is truly unknown
+- **Prefer `type`** over `interface` for consistency
+- **One type or function per file**
+- **Export types** from dedicated type files
+
+## Code Organization
+
+- All type definitions in `types/[domain]/`
+- One type per file for maintainability
+- Use index files for clean imports
+- Group related types by domain/feature
+
+## Documentation
+
+- Comment functions, types, and important objects with concise JSDoc
+- For complex code, document inner logic
+- Explain "why" not "what" in comments
+- Use TypeScript's type system for self-documentation
+
+## Avoid
+
+- Hungarian notation (strUserName)
+- Type information in variable names (TypeScript handles this)
+- Abbreviations unless widely understood (id, url, api are ok)
+- Multiple type declarations in the same file
+
+## Prefer
+
+- Descriptive, self-documenting names
+- Consistent terminology across the codebase
+- Single responsibility per file/function
+- Full words over abbreviations
+
+@/types/
+@/**/\*.type.ts
+@/**/_.enum.ts
+@/\*\*/_.constant.ts
