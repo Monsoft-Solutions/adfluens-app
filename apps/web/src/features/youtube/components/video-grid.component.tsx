@@ -1,12 +1,16 @@
 import React from "react";
 import type { YouTubeVideo } from "@repo/types";
 import { VideoCard } from "./video-card.component";
+import { Badge } from "@repo/ui";
 
 type VideoGridProps = {
   videos: YouTubeVideo[];
   onVideoClick: (video: YouTubeVideo) => void;
 };
 
+/**
+ * Grid layout for displaying video cards
+ */
 export const VideoGrid: React.FC<VideoGridProps> = ({
   videos,
   onVideoClick,
@@ -17,11 +21,11 @@ export const VideoGrid: React.FC<VideoGridProps> = ({
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+      <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
         Top Hits
-        <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+        <Badge variant="secondary" className="font-normal">
           {videos.length} videos
-        </span>
+        </Badge>
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {videos.map((video) => (
@@ -31,4 +35,3 @@ export const VideoGrid: React.FC<VideoGridProps> = ({
     </div>
   );
 };
-

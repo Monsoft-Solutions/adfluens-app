@@ -8,14 +8,30 @@ import {
   MessageCircle,
   ThumbsUp,
   User,
+  Loader2,
 } from "lucide-react";
 import { VideoAnalyzer } from "../../ai/components/video-analyzer.component";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  ScrollArea,
+  Separator,
+  Skeleton,
+  formatCompactNumber,
+  cn,
+} from "@repo/ui";
 
 type VideoDetailProps = {
   video: YouTubeVideo;
   onBack: () => void;
 };
 
+/**
+ * Video detail page showing embedded player, stats, and comments
+ */
 export const VideoDetail: React.FC<VideoDetailProps> = ({ video, onBack }) => {
   const [comments, setComments] = useState<YouTubeComment[]>([]);
   const [loadingComments, setLoadingComments] = useState(true);
@@ -40,14 +56,6 @@ export const VideoDetail: React.FC<VideoDetailProps> = ({ video, onBack }) => {
     loadComments();
   }, [video.id]);
 
-  const formatNumber = (numStr: string) => {
-    const num = parseInt(numStr, 10);
-    return new Intl.NumberFormat("en-US", {
-      notation: "compact",
-      maximumFractionDigits: 1,
-    }).format(num);
-  };
-
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("en-US", {
       year: "numeric",
@@ -58,13 +66,14 @@ export const VideoDetail: React.FC<VideoDetailProps> = ({ video, onBack }) => {
 
   return (
     <div className="animate-in slide-in-from-right-4 duration-300 pb-20">
-      <button
+      <Button
+        variant="ghost"
         onClick={onBack}
-        className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors mb-6 font-medium group"
+        className="flex items-center gap-2 text-muted-foreground hover:text-primary mb-6 group"
       >
         <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         Back to Channel
-      </button>
+      </Button>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Video & Info */}
@@ -84,135 +93,100 @@ export const VideoDetail: React.FC<VideoDetailProps> = ({ video, onBack }) => {
           </div>
 
           {/* Video Header & Stats */}
-          <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">
-              {video.title}
-            </h1>
+          <Card className="border-border/50">
+            <CardContent className="p-6">
+              <h1 className="text-xl md:text-2xl font-bold text-foreground mb-3">
+                {video.title}
+              </h1>
 
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 pb-4 border-b border-gray-100">
-              <span className="font-semibold text-red-600">
-                {video.channelTitle}
-              </span>
-              <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-              <div className="flex items-center gap-1.5">
-                <Calendar className="w-4 h-4" />
-                {formatDate(video.publishedAt)}
+              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground pb-4 border-b border-border">
+                <span className="font-semibold text-primary">
+                  {video.channelTitle}
+                </span>
+                <Separator orientation="vertical" className="h-4" />
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4" />
+                  {formatDate(video.publishedAt)}
+                </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-3 gap-4 py-4 border-b border-gray-100">
-              <div className="flex flex-col items-center justify-center p-3 bg-gray-50 rounded-lg">
-                <Eye className="w-5 h-5 text-gray-500 mb-1" />
-                <span className="font-bold text-gray-900">
-                  {formatNumber(video.viewCount)}
-                </span>
-                <span className="text-xs text-gray-500">Views</span>
+              <div className="grid grid-cols-3 gap-4 py-4 border-b border-border">
+                <StatCard
+                  icon={<Eye className="w-5 h-5" />}
+                  value={formatCompactNumber(parseInt(video.viewCount, 10))}
+                  label="Views"
+                />
+                <StatCard
+                  icon={<ThumbsUp className="w-5 h-5" />}
+                  value={formatCompactNumber(parseInt(video.likeCount, 10))}
+                  label="Likes"
+                />
+                <StatCard
+                  icon={<MessageCircle className="w-5 h-5" />}
+                  value={formatCompactNumber(parseInt(video.commentCount, 10))}
+                  label="Comments"
+                />
               </div>
-              <div className="flex flex-col items-center justify-center p-3 bg-gray-50 rounded-lg">
-                <ThumbsUp className="w-5 h-5 text-gray-500 mb-1" />
-                <span className="font-bold text-gray-900">
-                  {formatNumber(video.likeCount)}
-                </span>
-                <span className="text-xs text-gray-500">Likes</span>
-              </div>
-              <div className="flex flex-col items-center justify-center p-3 bg-gray-50 rounded-lg">
-                <MessageCircle className="w-5 h-5 text-gray-500 mb-1" />
-                <span className="font-bold text-gray-900">
-                  {formatNumber(video.commentCount)}
-                </span>
-                <span className="text-xs text-gray-500">Comments</span>
-              </div>
-            </div>
 
-            <div className="pt-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-2">
-                Description
-              </h3>
-              <div
-                className={`text-sm text-gray-600 whitespace-pre-line ${showFullDesc ? "" : "line-clamp-3"}`}
-              >
-                {video.description || "No description available."}
-              </div>
-              {video.description && video.description.length > 150 && (
-                <button
-                  onClick={() => setShowFullDesc(!showFullDesc)}
-                  className="text-sm text-red-600 font-medium mt-2 hover:underline"
+              <div className="pt-4">
+                <h3 className="text-sm font-semibold text-foreground mb-2">
+                  Description
+                </h3>
+                <div
+                  className={cn(
+                    "text-sm text-muted-foreground whitespace-pre-line",
+                    !showFullDesc && "line-clamp-3"
+                  )}
                 >
-                  {showFullDesc ? "Show less" : "Show more"}
-                </button>
-              )}
-            </div>
-          </div>
+                  {video.description || "No description available."}
+                </div>
+                {video.description && video.description.length > 150 && (
+                  <Button
+                    variant="link"
+                    onClick={() => setShowFullDesc(!showFullDesc)}
+                    className="text-primary font-medium mt-2 p-0 h-auto"
+                  >
+                    {showFullDesc ? "Show less" : "Show more"}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Right Column: Comments */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm h-full flex flex-col max-h-[800px]">
-            <div className="p-4 border-b border-gray-100">
-              <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                <MessageCircle className="w-5 h-5 text-red-600" />
+          <Card className="h-full flex flex-col max-h-[800px] border-border/50">
+            <CardHeader className="p-4 border-b border-border">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <MessageCircle className="w-5 h-5 text-primary" />
                 Top Comments
-              </h3>
-            </div>
+              </CardTitle>
+            </CardHeader>
 
-            <div className="overflow-y-auto p-4 space-y-4 flex-grow custom-scrollbar">
-              {loadingComments ? (
-                <div className="flex flex-col items-center justify-center h-40 text-gray-400">
-                  <div className="w-8 h-8 border-2 border-red-200 border-t-red-600 rounded-full animate-spin mb-2"></div>
-                  <p className="text-sm">Loading comments...</p>
-                </div>
-              ) : commentsError ? (
-                <div className="text-center p-4 text-gray-500 bg-gray-50 rounded-lg text-sm">
-                  {commentsError}
-                </div>
-              ) : comments.length === 0 ? (
-                <div className="text-center p-4 text-gray-500">
-                  No comments found.
-                </div>
-              ) : (
-                comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-3">
-                    <div className="flex-shrink-0">
-                      {comment.authorProfileImageUrl ? (
-                        <img
-                          src={comment.authorProfileImageUrl}
-                          alt={comment.authorDisplayName}
-                          className="w-8 h-8 rounded-full"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src =
-                              `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.authorDisplayName)}&background=random`;
-                          }}
-                        />
-                      ) : (
-                        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                          <User className="w-4 h-4 text-gray-500" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-xs font-bold text-gray-900 truncate">
-                          {comment.authorDisplayName}
-                        </span>
-                        <span className="text-[10px] text-gray-400">
-                          {new Date(comment.publishedAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-700 leading-relaxed break-words">
-                        {comment.textDisplay}
-                      </p>
-                      <div className="flex items-center gap-1 mt-1.5 text-gray-400">
-                        <ThumbsUp className="w-3 h-3" />
-                        <span className="text-xs">
-                          {formatNumber(comment.likeCount)}
-                        </span>
-                      </div>
-                    </div>
+            <ScrollArea className="flex-grow">
+              <div className="p-4 space-y-4">
+                {loadingComments ? (
+                  <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
+                    <p className="text-sm">Loading comments...</p>
                   </div>
-                ))
-              )}
-            </div>
-          </div>
+                ) : commentsError ? (
+                  <div className="text-center p-4 text-muted-foreground bg-muted rounded-lg text-sm">
+                    {commentsError}
+                  </div>
+                ) : comments.length === 0 ? (
+                  <div className="text-center p-4 text-muted-foreground">
+                    No comments found.
+                  </div>
+                ) : (
+                  comments.map((comment) => (
+                    <CommentItem key={comment.id} comment={comment} />
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </Card>
         </div>
       </div>
 
@@ -224,3 +198,60 @@ export const VideoDetail: React.FC<VideoDetailProps> = ({ video, onBack }) => {
   );
 };
 
+/**
+ * Stat card component for video metrics
+ */
+const StatCard: React.FC<{
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+}> = ({ icon, value, label }) => (
+  <div className="flex flex-col items-center justify-center p-3 bg-muted rounded-lg">
+    <span className="text-muted-foreground mb-1">{icon}</span>
+    <span className="font-bold text-foreground">{value}</span>
+    <span className="text-xs text-muted-foreground">{label}</span>
+  </div>
+);
+
+/**
+ * Comment item component
+ */
+const CommentItem: React.FC<{ comment: YouTubeComment }> = ({ comment }) => (
+  <div className="flex gap-3">
+    <div className="flex-shrink-0">
+      {comment.authorProfileImageUrl ? (
+        <img
+          src={comment.authorProfileImageUrl}
+          alt={comment.authorDisplayName}
+          className="w-8 h-8 rounded-full"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.authorDisplayName)}&background=random`;
+          }}
+        />
+      ) : (
+        <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+          <User className="w-4 h-4 text-muted-foreground" />
+        </div>
+      )}
+    </div>
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-2 mb-0.5">
+        <span className="text-xs font-bold text-foreground truncate">
+          {comment.authorDisplayName}
+        </span>
+        <span className="text-[10px] text-muted-foreground">
+          {new Date(comment.publishedAt).toLocaleDateString()}
+        </span>
+      </div>
+      <p className="text-sm text-muted-foreground leading-relaxed break-words">
+        {comment.textDisplay}
+      </p>
+      <div className="flex items-center gap-1 mt-1.5 text-muted-foreground/60">
+        <ThumbsUp className="w-3 h-3" />
+        <span className="text-xs">
+          {formatCompactNumber(parseInt(comment.likeCount, 10))}
+        </span>
+      </div>
+    </div>
+  </div>
+);

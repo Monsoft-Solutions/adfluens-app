@@ -8,9 +8,10 @@ import { VideoDetail } from "./features/youtube/components/video-detail.componen
 import { fetchChannelVideos } from "./features/youtube/utils/youtube.utils";
 import type { YouTubeVideo } from "@repo/types";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { TooltipProvider, cn } from "@repo/ui";
 
 /**
- * React Query client configuration
+ * React Query client configuration with optimized defaults
  */
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,6 +22,9 @@ const queryClient = new QueryClient({
   },
 });
 
+/**
+ * Main application component
+ */
 const App: React.FC = () => {
   const [videos, setVideos] = useState<YouTubeVideo[]>([]);
   const [loading, setLoading] = useState(false);
@@ -66,47 +70,53 @@ const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TRPCProvider queryClient={queryClient} trpcClient={trpcClient}>
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-          <Header />
+        <TooltipProvider>
+          <div className="min-h-screen bg-background flex flex-col">
+            <Header />
 
-          <main className="flex-grow container mx-auto px-4 py-8 max-w-6xl">
-            {selectedVideo ? (
-              <VideoDetail video={selectedVideo} onBack={handleBackToGrid} />
-            ) : (
-              <>
-                <div className="mb-8">
-                  <AnalyzerInput onAnalyze={handleAnalyze} isLoading={loading} />
-                </div>
-
-                {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center gap-3">
-                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                    <p>{error}</p>
+            <main className="flex-grow container mx-auto px-4 py-8 max-w-6xl">
+              {selectedVideo ? (
+                <VideoDetail video={selectedVideo} onBack={handleBackToGrid} />
+              ) : (
+                <>
+                  <div className="mb-8">
+                    <AnalyzerInput onAnalyze={handleAnalyze} isLoading={loading} />
                   </div>
-                )}
 
-                {loading ? (
-                  <div className="flex flex-col items-center justify-center py-20">
-                    <Loader2 className="w-10 h-10 text-red-600 animate-spin mb-4" />
-                    <p className="text-gray-500 font-medium">
-                      Resolving channel and fetching data...
-                    </p>
-                  </div>
-                ) : (
-                  <VideoGrid videos={videos} onVideoClick={handleVideoClick} />
-                )}
-              </>
-            )}
-          </main>
+                  {error && (
+                    <div
+                      className={cn(
+                        "bg-destructive/10 border border-destructive/20 text-destructive",
+                        "px-4 py-3 rounded-lg mb-6 flex items-center gap-3"
+                      )}
+                    >
+                      <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                      <p>{error}</p>
+                    </div>
+                  )}
 
-          <footer className="bg-white border-t border-gray-200 py-6 text-center text-gray-500 text-sm">
-            <p>© {new Date().getFullYear()} YouTube Channel Analyzer</p>
-          </footer>
-        </div>
+                  {loading ? (
+                    <div className="flex flex-col items-center justify-center py-20">
+                      <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+                      <p className="text-muted-foreground font-medium">
+                        Resolving channel and fetching data...
+                      </p>
+                    </div>
+                  ) : (
+                    <VideoGrid videos={videos} onVideoClick={handleVideoClick} />
+                  )}
+                </>
+              )}
+            </main>
+
+            <footer className="bg-card border-t border-border py-6 text-center text-muted-foreground text-sm">
+              <p>© {new Date().getFullYear()} YouTube Channel Analyzer</p>
+            </footer>
+          </div>
+        </TooltipProvider>
       </TRPCProvider>
     </QueryClientProvider>
   );
 };
 
 export default App;
-

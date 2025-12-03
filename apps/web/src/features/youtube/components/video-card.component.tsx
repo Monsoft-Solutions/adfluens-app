@@ -1,21 +1,18 @@
 import React from "react";
 import type { YouTubeVideo } from "@repo/types";
 import { Eye, ThumbsUp, MessageCircle, Calendar } from "lucide-react";
+import { Card, CardContent, formatCompactNumber, cn } from "@repo/ui";
 
 type VideoCardProps = {
   video: YouTubeVideo;
   onClick: (video: YouTubeVideo) => void;
 };
 
+/**
+ * Video card component displaying video thumbnail and stats
+ * Uses shadcn/ui Card component with custom styling
+ */
 export const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
-  const formatNumber = (numStr: string) => {
-    const num = parseInt(numStr, 10);
-    return new Intl.NumberFormat("en-US", {
-      notation: "compact",
-      maximumFractionDigits: 1,
-    }).format(num);
-  };
-
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString("en-GB", {
@@ -26,12 +23,16 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
   };
 
   return (
-    <div
+    <Card
       onClick={() => onClick(video)}
-      className="group bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer flex flex-col h-full"
+      className={cn(
+        "group overflow-hidden cursor-pointer flex flex-col h-full",
+        "hover:shadow-xl hover:scale-[1.02] transition-all duration-300",
+        "border-border/50"
+      )}
     >
       {/* Thumbnail */}
-      <div className="relative aspect-video bg-gray-200 overflow-hidden">
+      <div className="relative aspect-video bg-muted overflow-hidden">
         <img
           src={video.thumbnailUrl}
           alt={video.title}
@@ -42,40 +43,58 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
       </div>
 
       {/* Content */}
-      <div className="p-5 flex flex-col flex-grow">
+      <CardContent className="p-5 flex flex-col flex-grow">
         <h3
-          className="font-semibold text-gray-900 leading-snug line-clamp-2 mb-2 group-hover:text-red-600 transition-colors"
+          className={cn(
+            "font-semibold text-card-foreground leading-snug line-clamp-2 mb-2",
+            "group-hover:text-primary transition-colors"
+          )}
           title={video.title}
         >
           {video.title}
         </h3>
 
-        <p className="text-xs text-gray-500 font-medium mb-4">
+        <p className="text-xs text-muted-foreground font-medium mb-4">
           {video.channelTitle}
         </p>
 
-        <div className="mt-auto grid grid-cols-2 gap-y-3 gap-x-2 text-xs text-gray-600">
-          <div className="flex items-center gap-1.5" title="Views">
-            <Eye className="w-3.5 h-3.5 text-gray-400" />
-            <span className="font-medium">{formatNumber(video.viewCount)}</span>
-          </div>
-          <div className="flex items-center gap-1.5" title="Likes">
-            <ThumbsUp className="w-3.5 h-3.5 text-gray-400" />
-            <span className="font-medium">{formatNumber(video.likeCount)}</span>
-          </div>
-          <div className="flex items-center gap-1.5" title="Comments">
-            <MessageCircle className="w-3.5 h-3.5 text-gray-400" />
-            <span className="font-medium">
-              {formatNumber(video.commentCount)}
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5" title="Uploaded">
-            <Calendar className="w-3.5 h-3.5 text-gray-400" />
-            <span className="font-medium">{formatDate(video.publishedAt)}</span>
-          </div>
+        <div className="mt-auto grid grid-cols-2 gap-y-3 gap-x-2 text-xs text-muted-foreground">
+          <StatItem
+            icon={<Eye className="w-3.5 h-3.5" />}
+            value={formatCompactNumber(parseInt(video.viewCount, 10))}
+            label="Views"
+          />
+          <StatItem
+            icon={<ThumbsUp className="w-3.5 h-3.5" />}
+            value={formatCompactNumber(parseInt(video.likeCount, 10))}
+            label="Likes"
+          />
+          <StatItem
+            icon={<MessageCircle className="w-3.5 h-3.5" />}
+            value={formatCompactNumber(parseInt(video.commentCount, 10))}
+            label="Comments"
+          />
+          <StatItem
+            icon={<Calendar className="w-3.5 h-3.5" />}
+            value={formatDate(video.publishedAt)}
+            label="Uploaded"
+          />
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
+/**
+ * Individual stat item component for video metrics
+ */
+const StatItem: React.FC<{
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+}> = ({ icon, value, label }) => (
+  <div className="flex items-center gap-1.5" title={label}>
+    <span className="text-muted-foreground/60">{icon}</span>
+    <span className="font-medium">{value}</span>
+  </div>
+);
