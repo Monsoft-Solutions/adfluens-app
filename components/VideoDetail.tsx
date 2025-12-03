@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { YouTubeVideo, YouTubeComment } from '../types';
 import { fetchVideoComments } from '../services/youtubeService';
 import { ArrowLeft, Calendar, Eye, MessageCircle, ThumbsUp, User } from 'lucide-react';
+import { VideoAnalyzer } from './VideoAnalyzer';
 
 interface VideoDetailProps {
   video: YouTubeVideo;
@@ -50,7 +51,7 @@ export const VideoDetail: React.FC<VideoDetailProps> = ({ video, apiKey, onBack 
   };
 
   return (
-    <div className="animate-in slide-in-from-right-4 duration-300">
+    <div className="animate-in slide-in-from-right-4 duration-300 pb-20">
       <button 
         onClick={onBack}
         className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors mb-6 font-medium group"
@@ -182,6 +183,11 @@ export const VideoDetail: React.FC<VideoDetailProps> = ({ video, apiKey, onBack 
             </div>
           </div>
         </div>
+      </div>
+      
+      {/* AI Analysis Section - Full Width Below */}
+      <div className="mt-8">
+        <VideoAnalyzer video={video} comments={comments} />
       </div>
     </div>
   );

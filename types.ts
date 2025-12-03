@@ -90,3 +90,15 @@ export interface CommentsApiResponse {
     message: string;
   };
 }
+
+export interface ViralAnalysisResult {
+  summary: string;
+  hooks: string[];
+  viralReasons: string[];
+  contentIdeas: string[];
+}
+
+export interface ChatMessage {
+  role: 'user' | 'model';
+  text: string;
+}
