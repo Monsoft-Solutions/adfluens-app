@@ -1,5 +1,5 @@
 import { trpcClient } from "@/lib/trpc";
-import type { YouTubeVideo, YouTubeComment } from "@repo/types";
+import type { YouTubeVideo } from "@repo/types";
 
 /**
  * Fetch channel videos imperatively
@@ -21,14 +21,4 @@ export const fetchChannelVideos = async (
   const { videos } = await trpcClient.youtube.getVideos.query({ channelId });
 
   return videos;
-};
-
-/**
- * Fetch video comments imperatively
- */
-export const fetchVideoComments = async (
-  videoId: string
-): Promise<YouTubeComment[]> => {
-  const { comments } = await trpcClient.youtube.getComments.query({ videoId });
-  return comments;
 };

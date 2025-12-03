@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import type { YouTubeVideo, YouTubeComment } from "@repo/types";
-import { fetchVideoComments } from "../utils/youtube.utils";
+import { trpcClient } from "@/lib/trpc";
 import {
   ArrowLeft,
   Calendar,
@@ -41,8 +41,10 @@ export const VideoDetail: React.FC<VideoDetailProps> = ({ video, onBack }) => {
     const loadComments = async () => {
       try {
         setLoadingComments(true);
-        const data = await fetchVideoComments(video.id);
-        setComments(data);
+        const { comments } = await trpcClient.youtube.getComments.query({
+          videoId: video.id,
+        });
+        setComments(comments);
       } catch {
         setCommentsError(
           "Could not load comments. They might be disabled for this video."

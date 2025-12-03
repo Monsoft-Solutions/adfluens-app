@@ -5,7 +5,7 @@ import type {
   ViralAnalysisResult,
   ChatMessage,
 } from "@repo/types";
-import { analyzeVideoContent, chatWithVideoContext } from "../utils/ai.utils";
+import { trpcClient } from "@/lib/trpc";
 import {
   Sparkles,
   RefreshCw,
@@ -79,7 +79,7 @@ export const VideoAnalyzer: React.FC<VideoAnalyzerProps> = ({
     setError(null);
 
     try {
-      const result = await analyzeVideoContent(video, comments);
+      const result = await trpcClient.ai.analyze.mutate({ video, comments });
       setAnalysis(result);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(result));
       if (force) {
@@ -110,17 +110,14 @@ export const VideoAnalyzer: React.FC<VideoAnalyzerProps> = ({
         parts: [{ text: m.text }],
       }));
 
-      const responseText = await chatWithVideoContext(
+      const { response } = await trpcClient.ai.chat.mutate({
         history,
-        userMsg,
+        message: userMsg,
         video,
-        analysis
-      );
+        analysis,
+      });
 
-      setChatMessages((prev) => [
-        ...prev,
-        { role: "model", text: responseText },
-      ]);
+      setChatMessages((prev) => [...prev, { role: "model", text: response }]);
     } catch {
       setChatMessages((prev) => [
         ...prev,
