@@ -1,0 +1,5 @@
+{
+  "name": "YouTube Channel Analyzer",
+  "description": "A tool to analyze YouTube channels by fetching top performing videos and displaying detailed statistics.",
+  "requestFramePermissions": []
+}
