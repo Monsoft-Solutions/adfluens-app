@@ -1,4 +1,4 @@
-import { SearchApiResponse, VideosApiResponse, YouTubeVideo } from '../types';
+import { SearchApiResponse, VideosApiResponse, YouTubeVideo, CommentsApiResponse, YouTubeComment } from '../types';
 
 const BASE_URL = 'https://www.googleapis.com/youtube/v3';
 
@@ -120,11 +120,41 @@ export const fetchChannelVideos = async (channelIdentifier: string, apiKey: stri
   return videosData.items.map((item) => ({
     id: item.id,
     title: item.snippet.title,
+    description: item.snippet.description,
     thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url,
     publishedAt: item.snippet.publishedAt,
     channelTitle: item.snippet.channelTitle,
     viewCount: item.statistics.viewCount || '0',
     likeCount: item.statistics.likeCount || '0',
     commentCount: item.statistics.commentCount || '0',
+  }));
+};
+
+export const fetchVideoComments = async (videoId: string, apiKey: string): Promise<YouTubeComment[]> => {
+  const params = new URLSearchParams({
+    part: 'snippet',
+    videoId: videoId,
+    maxResults: '20',
+    textFormat: 'plainText',
+    key: apiKey,
+  });
+
+  const res = await fetch(`${BASE_URL}/commentThreads?${params.toString()}`);
+  const data: CommentsApiResponse = await res.json();
+
+  if (!res.ok) {
+    // Comments might be disabled for a video, handling that gracefully by returning empty array if it's a 403 or similar expected errors could be logic here, 
+    // but usually throwing helps debugging. For user experience we might want to suppress some errors.
+    // For now, we throw.
+    throw new Error(data.error?.message || 'Failed to fetch comments.');
+  }
+
+  return (data.items || []).map(item => ({
+    id: item.id,
+    authorDisplayName: item.snippet.topLevelComment.snippet.authorDisplayName,
+    authorProfileImageUrl: item.snippet.topLevelComment.snippet.authorProfileImageUrl,
+    textDisplay: item.snippet.topLevelComment.snippet.textDisplay,
+    likeCount: item.snippet.topLevelComment.snippet.likeCount.toString(),
+    publishedAt: item.snippet.topLevelComment.snippet.publishedAt
   }));
 };

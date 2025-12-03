@@ -1,12 +1,22 @@
 export interface YouTubeVideo {
   id: string;
   title: string;
+  description: string;
   thumbnailUrl: string;
   viewCount: string;
   likeCount: string;
   commentCount: string;
   publishedAt: string;
   channelTitle: string;
+}
+
+export interface YouTubeComment {
+  id: string;
+  authorDisplayName: string;
+  authorProfileImageUrl: string;
+  textDisplay: string;
+  publishedAt: string;
+  likeCount: string;
 }
 
 export interface SearchResultItem {
@@ -16,6 +26,7 @@ export interface SearchResultItem {
   };
   snippet: {
     title: string;
+    description: string;
     publishedAt: string;
     thumbnails: {
       high: { url: string };
@@ -30,6 +41,7 @@ export interface VideoDetailsItem {
   id: string;
   snippet: {
     title: string;
+    description: string;
     publishedAt: string;
     thumbnails: {
       high: { url: string };
@@ -54,6 +66,26 @@ export interface SearchApiResponse {
 
 export interface VideosApiResponse {
   items: VideoDetailsItem[];
+  error?: {
+    message: string;
+  };
+}
+
+export interface CommentsApiResponse {
+  items: Array<{
+    id: string;
+    snippet: {
+      topLevelComment: {
+        snippet: {
+          authorDisplayName: string;
+          authorProfileImageUrl: string;
+          textDisplay: string;
+          likeCount: number;
+          publishedAt: string;
+        };
+      };
+    };
+  }>;
   error?: {
     message: string;
   };

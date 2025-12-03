@@ -4,9 +4,10 @@ import { Eye, ThumbsUp, MessageCircle, Calendar } from 'lucide-react';
 
 interface VideoCardProps {
   video: YouTubeVideo;
+  onClick: (video: YouTubeVideo) => void;
 }
 
-export const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
+export const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
   const formatNumber = (numStr: string) => {
     const num = parseInt(numStr, 10);
     return new Intl.NumberFormat('en-US', {
@@ -24,13 +25,9 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
     });
   };
 
-  const handleCardClick = () => {
-    window.open(`https://www.youtube.com/watch?v=${video.id}`, '_blank');
-  };
-
   return (
     <div 
-      onClick={handleCardClick}
+      onClick={() => onClick(video)}
       className="group bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer flex flex-col h-full"
     >
       {/* Thumbnail */}

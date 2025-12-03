@@ -4,9 +4,10 @@ import { VideoCard } from './VideoCard';
 
 interface VideoGridProps {
   videos: YouTubeVideo[];
+  onVideoClick: (video: YouTubeVideo) => void;
 }
 
-export const VideoGrid: React.FC<VideoGridProps> = ({ videos }) => {
+export const VideoGrid: React.FC<VideoGridProps> = ({ videos, onVideoClick }) => {
   if (videos.length === 0) {
     return null;
   }
@@ -21,7 +22,11 @@ export const VideoGrid: React.FC<VideoGridProps> = ({ videos }) => {
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {videos.map((video) => (
-          <VideoCard key={video.id} video={video} />
+          <VideoCard 
+            key={video.id} 
+            video={video} 
+            onClick={onVideoClick}
+          />
         ))}
       </div>
     </div>
