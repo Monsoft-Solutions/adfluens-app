@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { YouTubeVideo, YouTubeComment, ViralAnalysisResult, ChatMessage } from '../types';
 import { analyzeVideoContent, chatWithVideoContext } from '../services/aiService';
@@ -7,10 +6,9 @@ import { Sparkles, RefreshCw, MessageSquare, Send, Lightbulb, Zap, FileText, Bot
 interface VideoAnalyzerProps {
   video: YouTubeVideo;
   comments: YouTubeComment[];
-  apiKey: string;
 }
 
-export const VideoAnalyzer: React.FC<VideoAnalyzerProps> = ({ video, comments, apiKey }) => {
+export const VideoAnalyzer: React.FC<VideoAnalyzerProps> = ({ video, comments }) => {
   const [analysis, setAnalysis] = useState<ViralAnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +46,7 @@ export const VideoAnalyzer: React.FC<VideoAnalyzerProps> = ({ video, comments, a
     setError(null);
     
     try {
-      const result = await analyzeVideoContent(video, comments, apiKey);
+      const result = await analyzeVideoContent(video, comments);
       setAnalysis(result);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(result));
       if (force) {
@@ -77,7 +75,7 @@ export const VideoAnalyzer: React.FC<VideoAnalyzerProps> = ({ video, comments, a
         parts: [{ text: m.text }]
       }));
 
-      const responseText = await chatWithVideoContext(history, userMsg, video, analysis, apiKey);
+      const responseText = await chatWithVideoContext(history, userMsg, video, analysis);
       
       setChatMessages(prev => [...prev, { role: 'model', text: responseText }]);
     } catch (err) {

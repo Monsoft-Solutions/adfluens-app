@@ -6,11 +6,10 @@ import { VideoAnalyzer } from './VideoAnalyzer';
 
 interface VideoDetailProps {
   video: YouTubeVideo;
-  apiKey: string;
   onBack: () => void;
 }
 
-export const VideoDetail: React.FC<VideoDetailProps> = ({ video, apiKey, onBack }) => {
+export const VideoDetail: React.FC<VideoDetailProps> = ({ video, onBack }) => {
   const [comments, setComments] = useState<YouTubeComment[]>([]);
   const [loadingComments, setLoadingComments] = useState(true);
   const [commentsError, setCommentsError] = useState<string | null>(null);
@@ -20,7 +19,7 @@ export const VideoDetail: React.FC<VideoDetailProps> = ({ video, apiKey, onBack 
     const loadComments = async () => {
       try {
         setLoadingComments(true);
-        const data = await fetchVideoComments(video.id, apiKey);
+        const data = await fetchVideoComments(video.id);
         setComments(data);
       } catch (err: any) {
         setCommentsError('Could not load comments. They might be disabled for this video.');
@@ -29,10 +28,8 @@ export const VideoDetail: React.FC<VideoDetailProps> = ({ video, apiKey, onBack 
       }
     };
 
-    if (apiKey) {
-      loadComments();
-    }
-  }, [video.id, apiKey]);
+    loadComments();
+  }, [video.id]);
 
   const formatNumber = (numStr: string) => {
     const num = parseInt(numStr, 10);
@@ -187,7 +184,7 @@ export const VideoDetail: React.FC<VideoDetailProps> = ({ video, apiKey, onBack 
       
       {/* AI Analysis Section - Full Width Below */}
       <div className="mt-8">
-        <VideoAnalyzer video={video} comments={comments} apiKey={apiKey} />
+        <VideoAnalyzer video={video} comments={comments} />
       </div>
     </div>
   );

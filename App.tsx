@@ -14,35 +14,22 @@ const App: React.FC = () => {
   
   // Navigation State
   const [selectedVideo, setSelectedVideo] = useState<YouTubeVideo | null>(null);
-  const [activeApiKey, setActiveApiKey] = useState<string>('');
 
-  const handleAnalyze = async (channelId: string, userApiKey?: string) => {
+  const handleAnalyze = async (channelId: string) => {
     setLoading(true);
     setError(null);
     setVideos([]);
-    setSelectedVideo(null); // Reset detail view if new analysis runs
-
-    // Prioritize user input, then fallback to environment variable
-    const apiKey = userApiKey || process.env.API_KEY;
-
-    if (!apiKey) {
-      setError('API Key is missing. Please enter a valid YouTube Data API Key in the settings.');
-      setLoading(false);
-      return;
-    }
-
-    // Save key for later use (e.g., fetching comments in detail view)
-    setActiveApiKey(apiKey);
+    setSelectedVideo(null);
 
     try {
-      const results = await fetchChannelVideos(channelId, apiKey);
+      const results = await fetchChannelVideos(channelId);
       setVideos(results);
       if (results.length === 0) {
         setError('No videos found for this channel. Please check the Channel ID or Handle.');
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'An error occurred while fetching data. Please check your Channel ID/Handle and API Key.');
+      setError(err.message || 'An error occurred while fetching data. Please check your Channel ID/Handle.');
     } finally {
       setLoading(false);
     }
@@ -67,7 +54,6 @@ const App: React.FC = () => {
         {selectedVideo ? (
           <VideoDetail 
             video={selectedVideo} 
-            apiKey={activeApiKey} 
             onBack={handleBackToGrid} 
           />
         ) : (
