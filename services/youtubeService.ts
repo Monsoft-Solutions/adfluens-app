@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTRPC, trpcClient } from "../lib/trpc";
-import { YouTubeVideo, YouTubeComment } from "../types";
+import { YouTubeVideo } from "../types/youtube/youtube-video.type";
+import { YouTubeComment } from "../types/youtube/youtube-comment.type";
 
 // ==================== tRPC Hooks ====================
 // These hooks can be used directly in React components

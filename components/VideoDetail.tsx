@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { YouTubeVideo, YouTubeComment } from '../types';
+import { YouTubeVideo } from '../types/youtube/youtube-video.type';
+import { YouTubeComment } from '../types/youtube/youtube-comment.type';
 import { fetchVideoComments } from '../services/youtubeService';
 import { ArrowLeft, Calendar, Eye, MessageCircle, ThumbsUp, User } from 'lucide-react';
 import { VideoAnalyzer } from './VideoAnalyzer';

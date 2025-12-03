@@ -1,5 +1,5 @@
 import React from 'react';
-import { YouTubeVideo } from '../types';
+import { YouTubeVideo } from '../types/youtube/youtube-video.type';
 import { Eye, ThumbsUp, MessageCircle, Calendar } from 'lucide-react';
 
 interface VideoCardProps {

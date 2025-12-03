@@ -1,40 +1,13 @@
 import { z } from "zod";
 import { GoogleGenAI } from "@google/genai";
 import { router, publicProcedure } from "../trpc.js";
+import { youtubeVideoSchema } from "../../types/youtube/youtube-video.type.js";
+import { youtubeCommentSchema } from "../../types/youtube/youtube-comment.type.js";
+import { viralAnalysisResultSchema } from "../../types/ai/viral-analysis-result.type.js";
 
 const GEMINI_MODEL = "gemini-2.5-flash";
 
 const getGeminiApiKey = () => process.env.GEMINI_API_KEY || "";
-
-// Zod schemas for input validation
-const videoSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  description: z.string(),
-  thumbnailUrl: z.string(),
-  viewCount: z.string(),
-  likeCount: z.string(),
-  commentCount: z.string(),
-  publishedAt: z.string(),
-  channelTitle: z.string(),
-});
-
-const commentSchema = z.object({
-  id: z.string(),
-  authorDisplayName: z.string(),
-  authorProfileImageUrl: z.string(),
-  textDisplay: z.string(),
-  publishedAt: z.string(),
-  likeCount: z.string(),
-});
-
-const analysisSchema = z.object({
-  summary: z.string(),
-  hooks: z.array(z.string()),
-  viralReasons: z.array(z.string()),
-  contentIdeas: z.array(z.string()),
-  sources: z.array(z.object({ title: z.string(), uri: z.string() })).optional(),
-});
 
 const chatHistorySchema = z.array(
   z.object({
@@ -50,8 +23,8 @@ export const aiRouter = router({
   analyze: publicProcedure
     .input(
       z.object({
-        video: videoSchema,
-        comments: z.array(commentSchema).optional().default([]),
+        video: youtubeVideoSchema,
+        comments: z.array(youtubeCommentSchema).optional().default([]),
       })
     )
     .mutation(async ({ input }) => {
@@ -155,8 +128,8 @@ export const aiRouter = router({
       z.object({
         history: chatHistorySchema.optional().default([]),
         message: z.string().min(1),
-        video: videoSchema,
-        analysis: analysisSchema,
+        video: youtubeVideoSchema,
+        analysis: viralAnalysisResultSchema,
       })
     )
     .mutation(async ({ input }) => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { YouTubeVideo } from '../types';
+import { YouTubeVideo } from '../types/youtube/youtube-video.type';
 import { VideoCard } from './VideoCard';
 
 interface VideoGridProps {

@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { YouTubeVideo, YouTubeComment, ViralAnalysisResult, ChatMessage } from '../types';
+import { YouTubeVideo } from '../types/youtube/youtube-video.type';
+import { YouTubeComment } from '../types/youtube/youtube-comment.type';
+import { ViralAnalysisResult } from '../types/ai/viral-analysis-result.type';
+import { ChatMessage } from '../types/ai/chat-message.type';
 import { analyzeVideoContent, chatWithVideoContext } from '../services/aiService';
 import { Sparkles, RefreshCw, MessageSquare, Send, Lightbulb, Zap, FileText, Bot, Play, ExternalLink } from 'lucide-react';
 

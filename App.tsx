@@ -5,7 +5,7 @@ import { Header } from "./components/Header";
 import { AnalyzerInput } from "./components/AnalyzerInput";
 import { VideoGrid } from "./components/VideoGrid";
 import { VideoDetail } from "./components/VideoDetail";
-import { YouTubeVideo } from "./types";
+import { YouTubeVideo } from "./types/youtube/youtube-video.type";
 import { fetchChannelVideos } from "./services/youtubeService";
 import { AlertCircle, Loader2 } from "lucide-react";
 

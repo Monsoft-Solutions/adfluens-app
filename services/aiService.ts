@@ -1,6 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
 import { useTRPC, trpcClient } from "../lib/trpc";
-import { YouTubeVideo, YouTubeComment, ViralAnalysisResult } from "../types";
+import { YouTubeVideo } from "../types/youtube/youtube-video.type";
+import { YouTubeComment } from "../types/youtube/youtube-comment.type";
+import { ViralAnalysisResult } from "../types/ai/viral-analysis-result.type";
 
 // ==================== tRPC Hooks ====================
 // These hooks can be used directly in React components
