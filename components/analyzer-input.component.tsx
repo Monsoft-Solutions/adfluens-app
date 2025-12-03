@@ -69,3 +69,4 @@ export const AnalyzerInput: React.FC<AnalyzerInputProps> = ({ onAnalyze, isLoadi
     </div>
   );
 };
+

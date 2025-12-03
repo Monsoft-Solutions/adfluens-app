@@ -4,7 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import * as trpcExpress from "@trpc/server/adapters/express";
-import { appRouter } from "./routers/index.js";
+import { appRouter } from "./routers/index.router.js";
 
 // Load environment variables
 dotenv.config();

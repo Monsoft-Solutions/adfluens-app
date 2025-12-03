@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc.js';
+import { router, publicProcedure } from '../trpc.config.js';
 
 const YOUTUBE_BASE_URL = 'https://www.googleapis.com/youtube/v3';
 

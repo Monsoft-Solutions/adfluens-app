@@ -3,7 +3,7 @@ import { YouTubeVideo } from '../types/youtube/youtube-video.type';
 import { YouTubeComment } from '../types/youtube/youtube-comment.type';
 import { ViralAnalysisResult } from '../types/ai/viral-analysis-result.type';
 import { ChatMessage } from '../types/ai/chat-message.type';
-import { analyzeVideoContent, chatWithVideoContext } from '../services/aiService';
+import { analyzeVideoContent, chatWithVideoContext } from '../services/ai.service';
 import { Sparkles, RefreshCw, MessageSquare, Send, Lightbulb, Zap, FileText, Bot, Play, ExternalLink } from 'lucide-react';
 
 interface VideoAnalyzerProps {
@@ -318,3 +318,4 @@ export const VideoAnalyzer: React.FC<VideoAnalyzerProps> = ({ video, comments })
     </div>
   );
 };
+

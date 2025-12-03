@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { GoogleGenAI } from "@google/genai";
-import { router, publicProcedure } from "../trpc.js";
+import { router, publicProcedure } from "../trpc.config.js";
 import { youtubeVideoSchema } from "../../types/youtube/youtube-video.type.js";
 import { youtubeCommentSchema } from "../../types/youtube/youtube-comment.type.js";
 import { viralAnalysisResultSchema } from "../../types/ai/viral-analysis-result.type.js";
@@ -169,3 +169,4 @@ export const aiRouter = router({
       return { response: responseText };
     }),
 });
+

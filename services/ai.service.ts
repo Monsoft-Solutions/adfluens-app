@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useTRPC, trpcClient } from "../lib/trpc";
+import { useTRPC, trpcClient } from "../lib/trpc.client";
 import { YouTubeVideo } from "../types/youtube/youtube-video.type";
 import { YouTubeComment } from "../types/youtube/youtube-comment.type";
 import { ViralAnalysisResult } from "../types/ai/viral-analysis-result.type";
@@ -58,3 +58,4 @@ export const chatWithVideoContext = async (
   });
   return result.response;
 };
+

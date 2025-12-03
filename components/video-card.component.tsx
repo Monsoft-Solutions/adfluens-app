@@ -73,3 +73,4 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
     </div>
   );
 };
+

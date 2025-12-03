@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { TRPCProvider, trpcClient } from "./lib/trpc";
-import { Header } from "./components/Header";
-import { AnalyzerInput } from "./components/AnalyzerInput";
-import { VideoGrid } from "./components/VideoGrid";
-import { VideoDetail } from "./components/VideoDetail";
+import { TRPCProvider, trpcClient } from "./lib/trpc.client";
+import { Header } from "./components/header.component";
+import { AnalyzerInput } from "./components/analyzer-input.component";
+import { VideoGrid } from "./components/video-grid.component";
+import { VideoDetail } from "./components/video-detail.component";
 import { YouTubeVideo } from "./types/youtube/youtube-video.type";
-import { fetchChannelVideos } from "./services/youtubeService";
+import { fetchChannelVideos } from "./services/youtube.service";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 // Create React Query client

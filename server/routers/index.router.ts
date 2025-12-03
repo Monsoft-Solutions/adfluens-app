@@ -1,6 +1,6 @@
-import { router } from '../trpc.js';
-import { youtubeRouter } from './youtube.js';
-import { aiRouter } from './ai.js';
+import { router } from '../trpc.config.js';
+import { youtubeRouter } from './youtube.router.js';
+import { aiRouter } from './ai.router.js';
 
 export const appRouter = router({
   youtube: youtubeRouter,

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { YouTubeVideo } from '../types/youtube/youtube-video.type';
 import { YouTubeComment } from '../types/youtube/youtube-comment.type';
-import { fetchVideoComments } from '../services/youtubeService';
+import { fetchVideoComments } from '../services/youtube.service';
 import { ArrowLeft, Calendar, Eye, MessageCircle, ThumbsUp, User } from 'lucide-react';
-import { VideoAnalyzer } from './VideoAnalyzer';
+import { VideoAnalyzer } from './video-analyzer.component';
 
 interface VideoDetailProps {
   video: YouTubeVideo;
@@ -190,3 +190,4 @@ export const VideoDetail: React.FC<VideoDetailProps> = ({ video, onBack }) => {
     </div>
   );
 };
+

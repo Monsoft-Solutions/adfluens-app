@@ -1,6 +1,6 @@
 import React from 'react';
 import { YouTubeVideo } from '../types/youtube/youtube-video.type';
-import { VideoCard } from './VideoCard';
+import { VideoCard } from './video-card.component';
 
 interface VideoGridProps {
   videos: YouTubeVideo[];
@@ -32,3 +32,4 @@ export const VideoGrid: React.FC<VideoGridProps> = ({ videos, onVideoClick }) =>
     </div>
   );
 };
+

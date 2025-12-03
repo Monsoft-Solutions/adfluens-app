@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useTRPC, trpcClient } from "../lib/trpc";
+import { useTRPC, trpcClient } from "../lib/trpc.client";
 import { YouTubeVideo } from "../types/youtube/youtube-video.type";
 import { YouTubeComment } from "../types/youtube/youtube-comment.type";
 
@@ -74,3 +74,4 @@ export const fetchVideoComments = async (
   const { comments } = await trpcClient.youtube.getComments.query({ videoId });
   return comments;
 };
+
