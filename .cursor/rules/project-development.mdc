@@ -329,16 +329,16 @@ Use `cn()` for conditional class merging:
 
 ## File Naming Conventions
 
-| Type       | Pattern                | Example                       |
-| ---------- | ---------------------- | ----------------------------- |
-| Components | `[name].component.tsx` | `video-card.component.tsx`    |
-| Views      | `[name].view.tsx`      | `channel-analyzer.view.tsx`   |
-| Services   | `[name].service.ts`    | `youtube.service.ts`          |
-| Routers    | `[name].router.ts`     | `youtube.router.ts`           |
-| Types      | `[name].type.ts`       | `youtube-video.type.ts`       |
-| Enums      | `[name].enum.ts`       | `video-sort-option.enum.ts`   |
-| Utilities  | `[name].utils.ts`      | `youtube.utils.ts`            |
-| Hooks      | `use-[name].hook.ts`   | `use-video-player.hook.ts`    |
+| Type       | Pattern                | Example                     |
+| ---------- | ---------------------- | --------------------------- |
+| Components | `[name].component.tsx` | `video-card.component.tsx`  |
+| Views      | `[name].view.tsx`      | `channel-analyzer.view.tsx` |
+| Services   | `[name].service.ts`    | `youtube.service.ts`        |
+| Routers    | `[name].router.ts`     | `youtube.router.ts`         |
+| Types      | `[name].type.ts`       | `youtube-video.type.ts`     |
+| Enums      | `[name].enum.ts`       | `video-sort-option.enum.ts` |
+| Utilities  | `[name].utils.ts`      | `youtube.utils.ts`          |
+| Hooks      | `use-[name].hook.ts`   | `use-video-player.hook.ts`  |
 
 ## Routing & Navigation
 
