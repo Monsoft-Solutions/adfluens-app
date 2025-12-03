@@ -11,7 +11,8 @@ export interface YouTubeVideo {
 
 export interface SearchResultItem {
   id: {
-    videoId: string;
+    videoId?: string;
+    channelId?: string;
   };
   snippet: {
     title: string;

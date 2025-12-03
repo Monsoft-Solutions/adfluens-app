@@ -29,11 +29,11 @@ const App: React.FC = () => {
       const results = await fetchChannelVideos(channelId, apiKey);
       setVideos(results);
       if (results.length === 0) {
-        setError('No videos found for this channel. Please check the Channel ID.');
+        setError('No videos found for this channel. Please check the Channel ID or Handle.');
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'An error occurred while fetching data. Please check your Channel ID and API Key.');
+      setError(err.message || 'An error occurred while fetching data. Please check your Channel ID/Handle and API Key.');
     } finally {
       setLoading(false);
     }
@@ -61,7 +61,7 @@ const App: React.FC = () => {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-10 h-10 text-red-600 animate-spin mb-4" />
-            <p className="text-gray-500 font-medium">Fetching channel data...</p>
+            <p className="text-gray-500 font-medium">Resolving channel and fetching data...</p>
           </div>
         ) : (
           <VideoGrid videos={videos} />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MonitorPlay, Key, Settings } from 'lucide-react';
+import { Search, MonitorPlay, Key, Settings, AtSign } from 'lucide-react';
 
 interface AnalyzerInputProps {
   onAnalyze: (channelId: string, apiKey: string) => void;
@@ -35,11 +35,11 @@ export const AnalyzerInput: React.FC<AnalyzerInputProps> = ({ onAnalyze, isLoadi
         <div className="flex flex-col sm:flex-row gap-4 items-end">
           <div className="w-full flex-1">
             <label htmlFor="channelId" className="block text-sm font-medium text-gray-700 mb-1.5">
-              Channel ID
+              Channel Handle or ID
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <MonitorPlay className="h-5 w-5 text-gray-400" />
+                <AtSign className="h-5 w-5 text-gray-400" />
               </div>
               <input
                 type="text"
@@ -47,7 +47,7 @@ export const AnalyzerInput: React.FC<AnalyzerInputProps> = ({ onAnalyze, isLoadi
                 value={channelId}
                 onChange={(e) => setChannelId(e.target.value)}
                 className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm transition-shadow outline-none"
-                placeholder="e.g., UC_x5XG1OV2P6uZZ5FSM9Ttw"
+                placeholder="e.g., @cgcosmetic or UC_x5X..."
                 required
               />
             </div>
