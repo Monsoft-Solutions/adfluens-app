@@ -1,3 +1,4 @@
+
 export interface YouTubeVideo {
   id: string;
   title: string;
@@ -96,6 +97,7 @@ export interface ViralAnalysisResult {
   hooks: string[];
   viralReasons: string[];
   contentIdeas: string[];
+  sources?: Array<{ title: string; uri: string }>;
 }
 
 export interface ChatMessage {

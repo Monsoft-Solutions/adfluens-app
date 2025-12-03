@@ -187,7 +187,7 @@ export const VideoDetail: React.FC<VideoDetailProps> = ({ video, apiKey, onBack 
       
       {/* AI Analysis Section - Full Width Below */}
       <div className="mt-8">
-        <VideoAnalyzer video={video} comments={comments} />
+        <VideoAnalyzer video={video} comments={comments} apiKey={apiKey} />
       </div>
     </div>
   );
