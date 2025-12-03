@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Header } from './components/Header';
 import { AnalyzerInput } from './components/AnalyzerInput';
 import { VideoGrid } from './components/VideoGrid';
@@ -10,24 +10,20 @@ const App: React.FC = () => {
   const [videos, setVideos] = useState<YouTubeVideo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Load initial API key from local storage if available
-  const [initialApiKey, setInitialApiKey] = useState('');
 
-  useEffect(() => {
-    const storedKey = localStorage.getItem('yt_api_key');
-    if (storedKey) {
-      setInitialApiKey(storedKey);
-    }
-  }, []);
-
-  const handleAnalyze = async (channelId: string, apiKey: string) => {
+  const handleAnalyze = async (channelId: string, userApiKey?: string) => {
     setLoading(true);
     setError(null);
     setVideos([]);
 
-    // Persist API key
-    localStorage.setItem('yt_api_key', apiKey);
+    // Prioritize user input, then fallback to environment variable
+    const apiKey = userApiKey || process.env.API_KEY;
+
+    if (!apiKey) {
+      setError('API Key is missing. Please enter a valid YouTube Data API Key in the settings.');
+      setLoading(false);
+      return;
+    }
 
     try {
       const results = await fetchChannelVideos(channelId, apiKey);
@@ -37,7 +33,7 @@ const App: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'An error occurred while fetching data. Please check your API Key and Channel ID.');
+      setError(err.message || 'An error occurred while fetching data. Please check your Channel ID and API Key.');
     } finally {
       setLoading(false);
     }
@@ -51,7 +47,6 @@ const App: React.FC = () => {
         <div className="mb-8">
           <AnalyzerInput 
             onAnalyze={handleAnalyze} 
-            initialApiKey={initialApiKey}
             isLoading={loading}
           />
         </div>
