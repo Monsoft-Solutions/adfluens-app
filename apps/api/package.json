@@ -13,7 +13,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@google/genai": "^1.30.0",
@@ -25,6 +25,7 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^24.10.1",

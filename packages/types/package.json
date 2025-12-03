@@ -12,12 +12,14 @@
     }
   },
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "lint": "eslint ."
   },
   "dependencies": {
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
     "typescript": "~5.9.3"
   }
 }
