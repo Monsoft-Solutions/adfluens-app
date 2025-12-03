@@ -28,3 +28,8 @@ dist-server
 *.njsproj
 *.sln
 *.sw?
+.turbo/cache/*
+apps/web/tsconfig.tsbuildinfo
+apps/api/tsconfig.tsbuildinfo
+.turbo/cookies/1.cookie
+.turbo/daemon/a6484510026d9656-turbo.log.2025-12-03

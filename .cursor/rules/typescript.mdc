@@ -50,7 +50,6 @@ Follow the pattern: `<file-name>.<file-type>.ts`
 ### UI & Components
 
 - `*.component.tsx` - React components
-- `*.hook.ts` - Custom React hooks
 - `*.context.tsx` - React context providers
 - `*.provider.tsx` - Provider components
 
@@ -88,7 +87,6 @@ Follow the pattern: `<file-name>.<file-type>.ts`
 
 - All type definitions in `types/[domain]/`
 - One type per file for maintainability
-- Use index files for clean imports
 - Group related types by domain/feature
 
 ## Documentation

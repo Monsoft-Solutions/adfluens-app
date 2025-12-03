@@ -1,99 +1,144 @@
 # YouTube Channel Analyzer
 
-A React application that analyzes YouTube channels using the YouTube Data API and Google's Gemini AI for viral content insights.
+A full-stack application that analyzes YouTube channels and videos using AI to uncover viral strategies and content ideas.
 
-## Features
+## Project Structure
 
-- Search YouTube channels by handle or ID
-- View top videos with statistics (views, likes, comments)
-- AI-powered video analysis with viral insights
-- Chat with AI about video strategies
-- Secure server-side API key handling
+This is a **Turborepo monorepo** with the following structure:
 
-## Prerequisites
+```
+youtube-channel-analyzer/
+├── apps/
+│   ├── web/                    # React frontend (Vite)
+│   │   └── src/
+│   │       ├── features/       # Feature-based modules
+│   │       │   ├── youtube/    # YouTube-related components, hooks, utils
+│   │       │   │   ├── components/
+│   │       │   │   ├── hooks/   # TanStack Query hooks
+│   │       │   │   └── utils/   # Complex logic (.utils.ts)
+│   │       │   └── ai/         # AI analysis components, hooks, utils
+│   │       │       ├── components/
+│   │       │       ├── hooks/
+│   │       │       └── utils/
+│   │       ├── shared/         # Shared UI components
+│   │       └── lib/            # Utilities (tRPC client, etc.)
+│   │
+│   └── api/                    # Express + tRPC backend
+│       └── src/
+│           ├── features/       # Feature-based modules
+│           │   ├── youtube/    # YouTube API service + router
+│           │   │   ├── youtube.router.ts
+│           │   │   └── youtube.service.ts
+│           │   └── ai/         # Gemini AI service + router
+│           │       ├── ai.router.ts
+│           │       └── ai.service.ts
+│           └── trpc/           # tRPC configuration
+│
+├── packages/
+│   └── types/                  # Shared TypeScript types
+│       └── src/
+│           ├── youtube/        # YouTube-related types
+│           └── ai/             # AI-related types
+│
+├── turbo.json                  # Turborepo configuration
+├── pnpm-workspace.yaml         # pnpm workspace configuration
+└── package.json                # Root package.json
+```
 
-- Node.js 18+
-- YouTube Data API Key ([Get one here](https://console.cloud.google.com/apis/credentials))
-- Google Gemini API Key ([Get one here](https://aistudio.google.com/app/apikey))
+## Tech Stack
 
-## Setup
+- **Frontend**: React 19, Vite, TailwindCSS, TanStack Query, tRPC
+- **Backend**: Express, tRPC, Zod validation
+- **AI**: Google Gemini 2.5 Flash with Google Search grounding
+- **APIs**: YouTube Data API v3
+- **Monorepo**: Turborepo, pnpm workspaces
 
-1. **Install dependencies:**
+## Getting Started
+
+### Prerequisites
+
+- Node.js 20+
+- pnpm 9+
+
+### Installation
+
+1. Install pnpm if you haven't already:
+
    ```bash
-   npm install
+   npm install -g pnpm
    ```
 
-2. **Configure environment variables:**
-   
-   Copy the example environment file and add your API keys:
+2. Install dependencies:
+
    ```bash
-   cp .env.example .env
+   pnpm install
    ```
-   
-   Edit `.env` and add your keys:
+
+3. Create a `.env` file in the root directory with your API keys:
+
    ```env
    YOUTUBE_API_KEY=your_youtube_api_key_here
    GEMINI_API_KEY=your_gemini_api_key_here
-   PORT=3001
-   NODE_ENV=development
    ```
 
-3. **Run the development servers:**
-   ```bash
-   npm run dev
-   ```
-   
-   This starts both:
-   - Frontend (Vite): http://localhost:3000
-   - Backend (Express): http://localhost:3001
+   - `YOUTUBE_API_KEY`: Get from [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+   - `GEMINI_API_KEY`: Get from [Google AI Studio](https://makersuite.google.com/app/apikey)
 
-## Available Scripts
+### Development
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start both frontend and backend in development mode |
-| `npm run dev:client` | Start only the Vite frontend dev server |
-| `npm run dev:server` | Start only the Express backend server |
-| `npm run build` | Build the frontend for production |
-| `npm run start` | Run production server (serves built frontend) |
-| `npm run preview` | Preview the production build |
+Start both frontend and backend in development mode:
 
-## Architecture
-
-```
-├── server/
-│   ├── index.ts         # Express server entry point
-│   └── routes/
-│       └── api.ts       # API routes (YouTube, AI proxy)
-├── components/          # React components
-├── services/            # Frontend API services
-├── App.tsx              # Main React app
-└── vite.config.ts       # Vite configuration with API proxy
+```bash
+pnpm dev
 ```
 
-### API Endpoints
+This will start:
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/health` | GET | Health check (shows API key status) |
-| `/api/youtube/channels` | POST | Resolve channel ID from handle/name |
-| `/api/youtube/videos` | POST | Fetch channel videos with statistics |
-| `/api/youtube/comments` | POST | Fetch video comments |
-| `/api/ai/analyze` | POST | Analyze video with Gemini AI |
-| `/api/ai/chat` | POST | Chat about video strategy |
+- Frontend at http://localhost:3000
+- Backend API at http://localhost:3001
 
-## Production Deployment
+### Build
 
-1. Build the frontend:
-   ```bash
-   npm run build
-   ```
+Build all packages and apps:
 
-2. Set environment variables on your server
+```bash
+pnpm build
+```
 
-3. Start the production server:
-   ```bash
-   NODE_ENV=production npm run start
-   ```
+### Type Checking
 
-The Express server will serve the built frontend files and handle API requests.
+Run TypeScript type checking across all packages:
+
+```bash
+pnpm type-check
+```
+
+## Architecture Decisions
+
+### Feature-Based Organization
+
+Each app follows a feature-based architecture where related code is grouped together:
+
+- **components/**: React components specific to the feature
+- **hooks/**: TanStack Query hooks for data fetching (use directly in components)
+- **utils/**: Complex business logic (`.utils.ts` files for imperative operations)
+
+### Shared Packages
+
+- `@repo/types`: Shared TypeScript types and Zod schemas between frontend and backend
+
+### Server Services Pattern
+
+Backend features separate concerns:
+
+- `*.router.ts`: tRPC procedure definitions (thin layer)
+- `*.service.ts`: Business logic and external API calls
+
+### Client Data Fetching
+
+- **hooks/**: Prefer using TanStack Query hooks directly in components
+- **utils/**: Use `.utils.ts` for complex imperative operations (event handlers, multi-step flows)
+
+## License
+
+MIT
