@@ -17,7 +17,6 @@ import {
   Bot,
   Play,
   ExternalLink,
-  Loader2,
 } from "lucide-react";
 import {
   Button,
@@ -166,9 +165,9 @@ export const VideoAnalyzer: React.FC<VideoAnalyzerProps> = ({
             Uncover Viral Secrets
           </h2>
           <p className="text-muted-foreground max-w-lg mx-auto mb-8 text-base">
-            Use AI to analyze why this video worked. We'll use Google Search
-            grounding to understand the video content and generate actionable
-            ideas.
+            Use AI to analyze why this video worked. We&apos;ll use Google
+            Search grounding to understand the video content and generate
+            actionable ideas.
           </p>
           <Button
             onClick={() => handleAnalyze()}
@@ -338,7 +337,7 @@ export const VideoAnalyzer: React.FC<VideoAnalyzerProps> = ({
             <div className="flex-1">
               <CardTitle className="text-sm">Strategy Assistant</CardTitle>
               <p className="text-xs text-muted-foreground">
-                Ask questions about this video's performance
+                Ask questions about this video&apos;s performance
               </p>
             </div>
           </CardHeader>
@@ -355,7 +354,8 @@ export const VideoAnalyzer: React.FC<VideoAnalyzerProps> = ({
                       No questions yet
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Try asking: "How can I apply this hook to my niche?"
+                      Try asking: &quot;How can I apply this hook to my
+                      niche?&quot;
                     </p>
                   </div>
                 </div>

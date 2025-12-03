@@ -32,4 +32,3 @@ export const fetchVideoComments = async (
   const { comments } = await trpcClient.youtube.getComments.query({ videoId });
   return comments;
 };
-

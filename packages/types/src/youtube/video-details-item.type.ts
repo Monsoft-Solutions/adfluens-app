@@ -21,4 +21,3 @@ export const videoDetailsItemSchema = z.object({
 });
 
 export type VideoDetailsItem = z.infer<typeof videoDetailsItemSchema>;
-

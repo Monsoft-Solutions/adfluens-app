@@ -21,8 +21,7 @@ export const Header: React.FC = () => {
             <Youtube className="w-5 h-5" />
           </div>
           <h1 className="text-xl font-bold text-foreground tracking-tight">
-            YouTube Channel{" "}
-            <span className="text-primary">Analyzer</span>
+            YouTube Channel <span className="text-primary">Analyzer</span>
           </h1>
         </div>
       </div>

@@ -20,4 +20,3 @@ export const useChatWithVideo = () => {
   const trpc = useTRPC();
   return useMutation(trpc.ai.chat.mutationOptions());
 };
-

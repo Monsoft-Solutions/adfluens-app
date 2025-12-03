@@ -11,7 +11,11 @@
 export { cn, formatCompactNumber, formatRelativeTime } from "./lib/utils";
 
 // Components
-export { Button, buttonVariants, type ButtonProps } from "./components/button.component";
+export {
+  Button,
+  buttonVariants,
+  type ButtonProps,
+} from "./components/button.component";
 export {
   Card,
   CardHeader,
@@ -22,10 +26,19 @@ export {
 } from "./components/card.component";
 export { Input, type InputProps } from "./components/input.component";
 export { Label } from "./components/label.component";
-export { Badge, badgeVariants, type BadgeProps } from "./components/badge.component";
+export {
+  Badge,
+  badgeVariants,
+  type BadgeProps,
+} from "./components/badge.component";
 export { Skeleton } from "./components/skeleton.component";
 export { Separator } from "./components/separator.component";
-export { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/tabs.component";
+export {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "./components/tabs.component";
 export {
   Tooltip,
   TooltipTrigger,
@@ -57,4 +70,3 @@ export {
   SelectScrollUpButton,
   SelectScrollDownButton,
 } from "./components/select.component";
-

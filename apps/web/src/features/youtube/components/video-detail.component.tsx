@@ -19,7 +19,6 @@ import {
   CardTitle,
   ScrollArea,
   Separator,
-  Skeleton,
   formatCompactNumber,
   cn,
 } from "@repo/ui";
@@ -225,7 +224,8 @@ const CommentItem: React.FC<{ comment: YouTubeComment }> = ({ comment }) => (
           alt={comment.authorDisplayName}
           className="w-8 h-8 rounded-full"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.authorDisplayName)}&background=random`;
+            (e.target as HTMLImageElement).src =
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.authorDisplayName)}&background=random`;
           }}
         />
       ) : (

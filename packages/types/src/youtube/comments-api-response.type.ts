@@ -25,4 +25,3 @@ export const commentsApiResponseSchema = z.object({
 });
 
 export type CommentsApiResponse = z.infer<typeof commentsApiResponseSchema>;
-

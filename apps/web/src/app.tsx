@@ -80,7 +80,10 @@ const App: React.FC = () => {
               ) : (
                 <>
                   <div className="mb-8">
-                    <AnalyzerInput onAnalyze={handleAnalyze} isLoading={loading} />
+                    <AnalyzerInput
+                      onAnalyze={handleAnalyze}
+                      isLoading={loading}
+                    />
                   </div>
 
                   {error && (
@@ -103,7 +106,10 @@ const App: React.FC = () => {
                       </p>
                     </div>
                   ) : (
-                    <VideoGrid videos={videos} onVideoClick={handleVideoClick} />
+                    <VideoGrid
+                      videos={videos}
+                      onVideoClick={handleVideoClick}
+                    />
                   )}
                 </>
               )}

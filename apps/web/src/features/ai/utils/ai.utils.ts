@@ -1,5 +1,9 @@
 import { trpcClient } from "@/lib/trpc";
-import type { YouTubeVideo, YouTubeComment, ViralAnalysisResult } from "@repo/types";
+import type {
+  YouTubeVideo,
+  YouTubeComment,
+  ViralAnalysisResult,
+} from "@repo/types";
 
 /**
  * Analyze video content imperatively
@@ -36,4 +40,3 @@ export const chatWithVideoContext = async (
   });
   return result.response;
 };
-

@@ -3,10 +3,6 @@
   "compilerOptions": {
     "baseUrl": "."
   },
-  "references": [
-    { "path": "./packages/types" },
-    { "path": "./apps/web" },
-    { "path": "./apps/api" }
-  ],
+  "references": [{ "path": "./packages/types" }, { "path": "./apps/web" }, { "path": "./apps/api" }],
   "files": []
 }

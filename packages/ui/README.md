@@ -12,20 +12,20 @@ A shared UI component library built with [shadcn/ui](https://ui.shadcn.com/), [R
 
 ## Components
 
-| Component | Description |
-|-----------|-------------|
-| `Button` | Primary action component with multiple variants |
-| `Card` | Container component for content grouping |
-| `Input` | Text input field with consistent styling |
-| `Label` | Accessible form labels |
-| `Badge` | Status indicators and labels |
-| `Skeleton` | Loading state placeholders |
-| `Separator` | Visual content dividers |
-| `Tabs` | Tabbed navigation component |
-| `Tooltip` | Contextual information popups |
-| `ScrollArea` | Custom scrollable containers |
-| `Dialog` | Modal dialogs |
-| `Select` | Dropdown selection component |
+| Component    | Description                                     |
+| ------------ | ----------------------------------------------- |
+| `Button`     | Primary action component with multiple variants |
+| `Card`       | Container component for content grouping        |
+| `Input`      | Text input field with consistent styling        |
+| `Label`      | Accessible form labels                          |
+| `Badge`      | Status indicators and labels                    |
+| `Skeleton`   | Loading state placeholders                      |
+| `Separator`  | Visual content dividers                         |
+| `Tabs`       | Tabbed navigation component                     |
+| `Tooltip`    | Contextual information popups                   |
+| `ScrollArea` | Custom scrollable containers                    |
+| `Dialog`     | Modal dialogs                                   |
+| `Select`     | Dropdown selection component                    |
 
 ## Usage
 
@@ -78,10 +78,7 @@ import baseConfig from "@repo/ui/tailwind.config";
 
 const config: Config = {
   ...baseConfig,
-  content: [
-    "./src/**/*.{ts,tsx}",
-    "../../packages/ui/src/**/*.{ts,tsx}",
-  ],
+  content: ["./src/**/*.{ts,tsx}", "../../packages/ui/src/**/*.{ts,tsx}"],
 };
 
 export default config;
@@ -96,7 +93,7 @@ A utility function for merging Tailwind CSS classes:
 ```tsx
 import { cn } from "@repo/ui";
 
-<div className={cn("base-class", isActive && "active-class", className)} />
+<div className={cn("base-class", isActive && "active-class", className)} />;
 ```
 
 ### `formatCompactNumber(num)`
@@ -152,4 +149,3 @@ Then update the component to follow the project's naming conventions (`*.compone
 ## License
 
 MIT
-

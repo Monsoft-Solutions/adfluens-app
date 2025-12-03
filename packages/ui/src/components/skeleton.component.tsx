@@ -21,4 +21,3 @@ function Skeleton({
 }
 
 export { Skeleton };
-

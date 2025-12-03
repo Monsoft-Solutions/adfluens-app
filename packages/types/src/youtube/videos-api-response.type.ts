@@ -11,4 +11,3 @@ export const videosApiResponseSchema = z.object({
 });
 
 export type VideosApiResponse = z.infer<typeof videosApiResponseSchema>;
-

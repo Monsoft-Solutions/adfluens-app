@@ -51,4 +51,3 @@ app.listen(PORT, () => {
     console.log(`🖥️  Frontend dev server should run on http://localhost:3000`);
   }
 });
-

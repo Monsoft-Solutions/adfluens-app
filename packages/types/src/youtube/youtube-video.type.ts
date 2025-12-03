@@ -13,4 +13,3 @@ export const youtubeVideoSchema = z.object({
 });
 
 export type YouTubeVideo = z.infer<typeof youtubeVideoSchema>;
-

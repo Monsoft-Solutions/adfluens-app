@@ -11,4 +11,3 @@ export const searchApiResponseSchema = z.object({
 });
 
 export type SearchApiResponse = z.infer<typeof searchApiResponseSchema>;
-

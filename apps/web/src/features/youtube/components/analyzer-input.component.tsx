@@ -42,10 +42,7 @@ export const AnalyzerInput: React.FC<AnalyzerInputProps> = ({
                   id="channelId"
                   value={channelId}
                   onChange={(e) => setChannelId(e.target.value)}
-                  className={cn(
-                    "pl-10 h-11",
-                    "focus-visible:ring-primary"
-                  )}
+                  className={cn("pl-10 h-11", "focus-visible:ring-primary")}
                   placeholder="e.g., @cgcosmetic or UC_x5X..."
                   required
                 />

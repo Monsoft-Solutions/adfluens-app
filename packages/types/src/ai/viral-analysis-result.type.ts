@@ -16,4 +16,3 @@ export const viralAnalysisResultSchema = z.object({
 });
 
 export type ViralAnalysisResult = z.infer<typeof viralAnalysisResultSchema>;
-

@@ -19,4 +19,3 @@ export const searchResultItemSchema = z.object({
 });
 
 export type SearchResultItem = z.infer<typeof searchResultItemSchema>;
-
