@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { videoSearchParamsSchema } from "@repo/types";
+import { videoSearchParamsSchema } from "@repo/types/youtube/video-search-params.type";
 import { router, publicProcedure } from "../../trpc/init";
 import {
   resolveChannelId,

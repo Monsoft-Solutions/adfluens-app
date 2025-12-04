@@ -1,8 +1,6 @@
-import type {
-  YouTubeVideo,
-  YouTubeComment,
-  VideoSortOption,
-} from "@repo/types";
+import type { YouTubeVideo } from "@repo/types/youtube/youtube-video.type";
+import type { YouTubeComment } from "@repo/types/youtube/youtube-comment.type";
+import type { VideoSortOption } from "@repo/types/youtube/video-sort-option.enum";
 
 const YOUTUBE_BASE_URL = "https://www.googleapis.com/youtube/v3";
 

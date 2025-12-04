@@ -3,12 +3,50 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
   "exports": {
-    ".": {
-      "import": "./src/index.ts",
-      "types": "./src/index.ts"
+    "./youtube/youtube-video.type": {
+      "import": "./src/youtube/youtube-video.type.ts",
+      "types": "./src/youtube/youtube-video.type.ts"
+    },
+    "./youtube/youtube-comment.type": {
+      "import": "./src/youtube/youtube-comment.type.ts",
+      "types": "./src/youtube/youtube-comment.type.ts"
+    },
+    "./youtube/video-sort-option.enum": {
+      "import": "./src/youtube/video-sort-option.enum.ts",
+      "types": "./src/youtube/video-sort-option.enum.ts"
+    },
+    "./youtube/video-search-params.type": {
+      "import": "./src/youtube/video-search-params.type.ts",
+      "types": "./src/youtube/video-search-params.type.ts"
+    },
+    "./youtube/search-result-item.type": {
+      "import": "./src/youtube/search-result-item.type.ts",
+      "types": "./src/youtube/search-result-item.type.ts"
+    },
+    "./youtube/search-api-response.type": {
+      "import": "./src/youtube/search-api-response.type.ts",
+      "types": "./src/youtube/search-api-response.type.ts"
+    },
+    "./youtube/video-details-item.type": {
+      "import": "./src/youtube/video-details-item.type.ts",
+      "types": "./src/youtube/video-details-item.type.ts"
+    },
+    "./youtube/videos-api-response.type": {
+      "import": "./src/youtube/videos-api-response.type.ts",
+      "types": "./src/youtube/videos-api-response.type.ts"
+    },
+    "./youtube/comments-api-response.type": {
+      "import": "./src/youtube/comments-api-response.type.ts",
+      "types": "./src/youtube/comments-api-response.type.ts"
+    },
+    "./ai/viral-analysis-result.type": {
+      "import": "./src/ai/viral-analysis-result.type.ts",
+      "types": "./src/ai/viral-analysis-result.type.ts"
+    },
+    "./ai/chat-message.type": {
+      "import": "./src/ai/chat-message.type.ts",
+      "types": "./src/ai/chat-message.type.ts"
     }
   },
   "scripts": {

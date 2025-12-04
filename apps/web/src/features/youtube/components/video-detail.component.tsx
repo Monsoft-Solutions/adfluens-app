@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import type { YouTubeVideo, YouTubeComment } from "@repo/types";
+import type { YouTubeVideo } from "@repo/types/youtube/youtube-video.type";
+import type { YouTubeComment } from "@repo/types/youtube/youtube-comment.type";
 import { trpcClient } from "@/lib/trpc";
 import {
   ArrowLeft,

@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import type {
-  YouTubeVideo,
-  YouTubeComment,
-  ViralAnalysisResult,
-  ChatMessage,
-} from "@repo/types";
+import type { YouTubeVideo } from "@repo/types/youtube/youtube-video.type";
+import type { YouTubeComment } from "@repo/types/youtube/youtube-comment.type";
+import type { ViralAnalysisResult } from "@repo/types/ai/viral-analysis-result.type";
+import type { ChatMessage } from "@repo/types/ai/chat-message.type";
 import { trpcClient } from "@/lib/trpc";
 import {
   Sparkles,

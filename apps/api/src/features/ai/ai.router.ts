@@ -1,10 +1,8 @@
 import { z } from "zod";
 import { router, publicProcedure } from "../../trpc/init";
-import {
-  youtubeVideoSchema,
-  youtubeCommentSchema,
-  viralAnalysisResultSchema,
-} from "@repo/types";
+import { youtubeVideoSchema } from "@repo/types/youtube/youtube-video.type";
+import { youtubeCommentSchema } from "@repo/types/youtube/youtube-comment.type";
+import { viralAnalysisResultSchema } from "@repo/types/ai/viral-analysis-result.type";
 import { analyzeVideo, chatAboutVideo } from "./ai.service";
 
 const chatHistorySchema = z.array(

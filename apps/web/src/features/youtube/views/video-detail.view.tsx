@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import type { YouTubeVideo } from "@repo/types";
+import type { YouTubeVideo } from "@repo/types/youtube/youtube-video.type";
 import { VideoDetail } from "../components/video-detail.component";
 
 /**

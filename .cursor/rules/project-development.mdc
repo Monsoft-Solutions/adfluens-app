@@ -52,18 +52,10 @@ export const playlistSchema = z.object({
 export type Playlist = z.infer<typeof playlistSchema>;
 ```
 
-Export from domain index:
+Import types using direct paths (see [No Barrel Files](#no-barrel-files) section):
 
 ```typescript
-// packages/types/src/[feature]/index.ts
-export * from "./playlist.type";
-```
-
-Export from package root:
-
-```typescript
-// packages/types/src/index.ts
-export * from "./[feature]";
+import type { Playlist } from "@repo/types/[feature]/playlist.type";
 ```
 
 ### Step 2: Create Backend Service
@@ -72,7 +64,7 @@ Services contain business logic and external API calls:
 
 ```typescript
 // apps/api/src/features/[feature]/[feature].service.ts
-import type { Playlist } from "@repo/types";
+import type { Playlist } from "@repo/types/[feature]/playlist.type";
 
 /**
  * Fetch playlists for a channel
@@ -156,7 +148,7 @@ Use `useTRPC` hook for TanStack Query integration:
 import React from "react";
 import { useTRPC } from "@/lib/trpc";
 import { useQuery } from "@tanstack/react-query";
-import type { Playlist } from "@repo/types";
+import type { Playlist } from "@repo/types/[feature]/playlist.type";
 import { Card, Skeleton } from "@repo/ui";
 
 type PlaylistListProps = {
@@ -197,7 +189,7 @@ export const PlaylistList: React.FC<PlaylistListProps> = ({ channelId }) => {
 ```typescript
 // apps/web/src/features/[feature]/components/[feature]-card.component.tsx
 import React from "react";
-import type { Playlist } from "@repo/types";
+import type { Playlist } from "@repo/types/[feature]/playlist.type";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui";
 
 type PlaylistCardProps = {
@@ -236,7 +228,7 @@ For event handlers or non-hook contexts, use the vanilla client:
 ```typescript
 // apps/web/src/features/[feature]/utils/[feature].utils.ts
 import { trpcClient } from "@/lib/trpc";
-import type { Playlist } from "@repo/types";
+import type { Playlist } from "@repo/types/[feature]/playlist.type";
 
 /**
  * Fetch playlists imperatively
@@ -339,6 +331,40 @@ Use `cn()` for conditional class merging:
 | Enums      | `[name].enum.ts`       | `video-sort-option.enum.ts` |
 | Utilities  | `[name].utils.ts`      | `youtube.utils.ts`          |
 | Hooks      | `use-[name].hook.ts`   | `use-video-player.hook.ts`  |
+
+## No Barrel Files
+
+This project avoids barrel files (`index.ts` files that re-export from other modules) in favor of direct imports.
+
+### Why No Barrel Files
+
+- **Faster builds**: Bundlers can tree-shake more effectively with direct imports
+- **Clearer dependencies**: Each import shows exactly which file provides it
+- **Avoids circular dependencies**: Barrel files can create hidden circular import chains
+- **Better IDE performance**: Faster autocomplete and type checking
+
+### Importing from `@repo/types`
+
+Always import types directly from their source files:
+
+```typescript
+// Good: Direct imports
+import type { YouTubeVideo } from "@repo/types/youtube/youtube-video.type";
+import type { VideoSortOption } from "@repo/types/youtube/video-sort-option.enum";
+import type { ViralAnalysisResult } from "@repo/types/ai/viral-analysis-result.type";
+
+// Bad: Barrel imports (do not use)
+import type { YouTubeVideo, VideoSortOption } from "@repo/types";
+```
+
+### Exception: `@repo/ui`
+
+The `@repo/ui` package keeps its `index.ts` as it serves as the curated public API surface for a component library with explicit named exports. This is a standard pattern for component libraries.
+
+```typescript
+// UI components use centralized import (allowed)
+import { Button, Card, cn } from "@repo/ui";
+```
 
 ## Routing & Navigation
 
@@ -447,7 +473,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@repo/ui";
-import type { SomeType } from "@repo/types";
+import type { SomeType } from "@repo/types/[feature]/some.type";
 import { SomeComponent } from "../components/some.component";
 
 /**
@@ -573,4 +599,6 @@ Access via `process.env.VARIABLE_NAME` in services.
 @apps/web/src/features/youtube/utils/youtube.utils.ts
 @packages/types/src/youtube/youtube-video.type.ts
 @packages/types/src/youtube/video-sort-option.enum.ts
+@packages/types/src/ai/viral-analysis-result.type.ts
+@packages/types/package.json
 @packages/ui/src/index.ts

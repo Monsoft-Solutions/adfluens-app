@@ -2,14 +2,14 @@
 export { db } from "./client";
 
 // Re-export schema tables
-export * from "./schema";
+export { channels } from "./schema/channels.table";
 
 // Re-export drizzle-orm utilities for convenience
 export { eq, and, or, desc, asc, sql } from "drizzle-orm";
 
 // Inferred types from schema
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
-import type { channels } from "./schema";
+import type { channels } from "./schema/channels.table";
 
 /** Type for selecting a channel from the database */
 export type Channel = InferSelectModel<typeof channels>;

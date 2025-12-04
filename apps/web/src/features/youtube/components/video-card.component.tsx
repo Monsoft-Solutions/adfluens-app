@@ -1,5 +1,5 @@
 import React from "react";
-import type { YouTubeVideo } from "@repo/types";
+import type { YouTubeVideo } from "@repo/types/youtube/youtube-video.type";
 import { Eye, ThumbsUp, MessageCircle, Calendar } from "lucide-react";
 import { Card, CardContent, formatCompactNumber, cn } from "@repo/ui";
 

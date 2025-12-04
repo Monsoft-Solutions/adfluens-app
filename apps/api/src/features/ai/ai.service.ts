@@ -1,9 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
-import type {
-  YouTubeVideo,
-  YouTubeComment,
-  ViralAnalysisResult,
-} from "@repo/types";
+import type { YouTubeVideo } from "@repo/types/youtube/youtube-video.type";
+import type { YouTubeComment } from "@repo/types/youtube/youtube-comment.type";
+import type { ViralAnalysisResult } from "@repo/types/ai/viral-analysis-result.type";
 
 const GEMINI_MODEL = "gemini-2.5-flash";
 

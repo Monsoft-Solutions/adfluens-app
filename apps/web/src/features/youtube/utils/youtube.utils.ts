@@ -1,5 +1,5 @@
 import { trpcClient } from "@/lib/trpc";
-import type { YouTubeVideo } from "@repo/types";
+import type { YouTubeVideo } from "@repo/types/youtube/youtube-video.type";
 
 /**
  * Fetch channel videos imperatively

@@ -10,7 +10,7 @@ import {
   VIDEO_SORT_OPTIONS,
   VIDEO_SORT_LABELS,
   type VideoSortOption,
-} from "@repo/types";
+} from "@repo/types/youtube/video-sort-option.enum";
 
 type SortSelectProps = {
   value: VideoSortOption;

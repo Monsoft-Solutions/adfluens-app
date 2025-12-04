@@ -4,8 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Loader2, Search } from "lucide-react";
 import { useTRPC } from "@/lib/trpc";
 import { cn, Badge } from "@repo/ui";
-import type { YouTubeVideo, VideoSortOption } from "@repo/types";
-import { VIDEO_SORT_OPTIONS } from "@repo/types";
+import type { YouTubeVideo } from "@repo/types/youtube/youtube-video.type";
+import {
+  VIDEO_SORT_OPTIONS,
+  type VideoSortOption,
+} from "@repo/types/youtube/video-sort-option.enum";
 import { VideoGrid } from "../../youtube/components/video-grid.component";
 import { SearchInput } from "../components/search-input.component";
 import { SortSelect } from "../components/sort-select.component";

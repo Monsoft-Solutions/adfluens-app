@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@repo/ui";
-import type { YouTubeVideo } from "@repo/types";
+import type { YouTubeVideo } from "@repo/types/youtube/youtube-video.type";
 import { AnalyzerInput } from "../components/analyzer-input.component";
 import { VideoGrid } from "../components/video-grid.component";
 import { fetchChannelVideos } from "../utils/youtube.utils";
