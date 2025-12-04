@@ -14,6 +14,12 @@ export const auth = betterAuth({
     schema: authSchema,
   }),
 
+  /** Explicit baseURL where Better Auth API runs */
+  baseURL: env.BETTER_AUTH_URL,
+
+  /** Trusted origins for cross-origin requests (frontend) */
+  trustedOrigins: [env.APP_URL],
+
   /** Email and password authentication */
   emailAndPassword: {
     enabled: true,

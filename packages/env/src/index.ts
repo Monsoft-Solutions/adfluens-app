@@ -46,6 +46,12 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "production", "test"])
       .default("development"),
+
+    /** Better Auth base URL (where API server runs) */
+    BETTER_AUTH_URL: z.string().url().default("http://localhost:3001"),
+
+    /** Frontend application URL (for trusted origins) */
+    APP_URL: z.string().url().default("http://localhost:3000"),
   },
 
   /**
