@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { videoSearchParamsSchema } from "@repo/types/youtube/video-search-params.type";
-import { router, publicProcedure } from "../../trpc/init";
+import { router, protectedProcedure } from "../../trpc/init";
 import {
   resolveChannelId,
   fetchChannelVideos,
@@ -11,8 +11,9 @@ import {
 export const youtubeRouter = router({
   /**
    * Resolve a channel handle/name to a channel ID
+   * Requires authentication
    */
-  resolveChannel: publicProcedure
+  resolveChannel: protectedProcedure
     .input(z.object({ identifier: z.string().min(1) }))
     .mutation(async ({ input }) => {
       const channelId = await resolveChannelId(input.identifier);
@@ -21,8 +22,9 @@ export const youtubeRouter = router({
 
   /**
    * Fetch videos for a channel with statistics
+   * Requires authentication
    */
-  getVideos: publicProcedure
+  getVideos: protectedProcedure
     .input(z.object({ channelId: z.string().min(1) }))
     .query(async ({ input }) => {
       const videos = await fetchChannelVideos(input.channelId);
@@ -31,8 +33,9 @@ export const youtubeRouter = router({
 
   /**
    * Fetch comments for a video
+   * Requires authentication
    */
-  getComments: publicProcedure
+  getComments: protectedProcedure
     .input(z.object({ videoId: z.string().min(1) }))
     .query(async ({ input }) => {
       const comments = await fetchVideoComments(input.videoId);
@@ -41,8 +44,9 @@ export const youtubeRouter = router({
 
   /**
    * Search videos globally on YouTube with sorting options
+   * Requires authentication
    */
-  searchVideos: publicProcedure
+  searchVideos: protectedProcedure
     .input(videoSearchParamsSchema)
     .query(async ({ input }) => {
       const videos = await searchVideos(

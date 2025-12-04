@@ -17,9 +17,11 @@
   },
   "dependencies": {
     "@google/genai": "^1.30.0",
+    "@repo/auth": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/types": "workspace:*",
     "@trpc/server": "^11.7.2",
+    "better-auth": "^1.2.8",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",

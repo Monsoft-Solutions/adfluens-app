@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../../trpc/init";
+import { router, protectedProcedure } from "../../trpc/init";
 import { youtubeVideoSchema } from "@repo/types/youtube/youtube-video.type";
 import { youtubeCommentSchema } from "@repo/types/youtube/youtube-comment.type";
 import { viralAnalysisResultSchema } from "@repo/types/ai/viral-analysis-result.type";
@@ -15,8 +15,9 @@ const chatHistorySchema = z.array(
 export const aiRouter = router({
   /**
    * Analyze a video using Gemini AI
+   * Requires authentication
    */
-  analyze: publicProcedure
+  analyze: protectedProcedure
     .input(
       z.object({
         video: youtubeVideoSchema,
@@ -30,8 +31,9 @@ export const aiRouter = router({
 
   /**
    * Chat with AI about a video
+   * Requires authentication
    */
-  chat: publicProcedure
+  chat: protectedProcedure
     .input(
       z.object({
         history: chatHistorySchema.optional().default([]),
