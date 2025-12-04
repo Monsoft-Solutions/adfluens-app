@@ -11,11 +11,7 @@
 export { cn, formatCompactNumber, formatRelativeTime } from "./lib/utils";
 
 // Components
-export {
-  Button,
-  buttonVariants,
-  type ButtonProps,
-} from "./components/button.component";
+export { Button, buttonVariants, type ButtonProps } from "./components/button";
 export {
   Card,
   CardHeader,
@@ -23,29 +19,20 @@ export {
   CardTitle,
   CardDescription,
   CardContent,
-} from "./components/card.component";
-export { Input, type InputProps } from "./components/input.component";
-export { Label } from "./components/label.component";
-export {
-  Badge,
-  badgeVariants,
-  type BadgeProps,
-} from "./components/badge.component";
-export { Skeleton } from "./components/skeleton.component";
-export { Separator } from "./components/separator.component";
-export {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "./components/tabs.component";
+} from "./components/card";
+export { Input, type InputProps } from "./components/input";
+export { Label } from "./components/label";
+export { Badge, badgeVariants, type BadgeProps } from "./components/badge";
+export { Skeleton } from "./components/skeleton";
+export { Separator } from "./components/separator";
+export { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/tabs";
 export {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
   TooltipProvider,
-} from "./components/tooltip.component";
-export { ScrollArea, ScrollBar } from "./components/scroll-area.component";
+} from "./components/tooltip";
+export { ScrollArea, ScrollBar } from "./components/scroll-area";
 export {
   Dialog,
   DialogPortal,
@@ -57,7 +44,7 @@ export {
   DialogFooter,
   DialogTitle,
   DialogDescription,
-} from "./components/dialog.component";
+} from "./components/dialog";
 export {
   Select,
   SelectGroup,
@@ -69,4 +56,4 @@ export {
   SelectSeparator,
   SelectScrollUpButton,
   SelectScrollDownButton,
-} from "./components/select.component";
+} from "./components/select";
