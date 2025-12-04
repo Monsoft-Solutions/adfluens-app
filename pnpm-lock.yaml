@@ -41,6 +41,9 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@repo/env':
+        specifier: workspace:*
+        version: link:../../packages/env
       '@repo/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -53,9 +56,6 @@ importers:
       cors:
         specifier: ^2.8.5
         version: 2.8.5
-      dotenv:
-        specifier: ^17.2.3
-        version: 17.2.3
       express:
         specifier: ^5.2.1
         version: 5.2.1
@@ -151,6 +151,9 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../db
+      '@repo/env':
+        specifier: workspace:*
+        version: link:../env
       better-auth:
         specifier: ^1.2.8
         version: 1.4.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -170,6 +173,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@repo/env':
+        specifier: workspace:*
+        version: link:../env
       drizzle-orm:
         specifier: ^0.38.3
         version: 0.38.4(@types/pg@8.15.6)(@types/react@19.2.7)(kysely@0.28.8)(pg@8.16.3)(react@19.2.1)
@@ -189,6 +195,28 @@ importers:
       drizzle-kit:
         specifier: ^0.30.4
         version: 0.30.6
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
+
+  packages/env:
+    dependencies:
+      '@t3-oss/env-core':
+        specifier: ^0.11.1
+        version: 0.11.1(typescript@5.9.3)(zod@3.25.76)
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.6.1
+      zod:
+        specifier: ^3.24.4
+        version: 3.25.76
+    devDependencies:
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@types/node':
+        specifier: ^24.10.1
+        version: 24.10.1
       typescript:
         specifier: ~5.9.3
         version: 5.9.3
@@ -1743,6 +1771,15 @@ packages:
   '@standard-schema/spec@1.0.0':
     resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
 
+  '@t3-oss/env-core@0.11.1':
+    resolution: {integrity: sha512-MaxOwEoG1ntCFoKJsS7nqwgcxLW1SJw238AJwfJeaz3P/8GtkxXZsPPolsz1AdYvUTbe3XvqZ/VCdfjt+3zmKw==}
+    peerDependencies:
+      typescript: '>=5.0.0'
+      zod: ^3.0.0
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   '@tailwindcss/node@4.1.17':
     resolution: {integrity: sha512-csIkHIgLb3JisEFQ0vxr2Y57GUNYh447C8xzwj89U/8fdW8LhProdxvnVH6U8M2Y73QKiTIH+LWbK3V2BBZsAg==}
 
@@ -2364,6 +2401,10 @@ packages:
   dot-prop@5.3.0:
     resolution: {integrity: sha512-QM8q3zDe58hqUqjraQOmzZ1LIH9SWQJTlEKCH4kJ2oQvLZk7RbQXvtDM2XEq3fwkV9CCvvH4LA0AV+ogFsBM2Q==}
     engines: {node: '>=8'}
+
+  dotenv@16.6.1:
+    resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
+    engines: {node: '>=12'}
 
   dotenv@17.2.3:
     resolution: {integrity: sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w==}
@@ -4197,6 +4238,9 @@ packages:
     resolution: {integrity: sha512-4LCcse/U2MHZ63HAJVE+v71o7yOdIe4cZ70Wpf8D/IyjDKYQLV5GD46B+hSTjJsvV5PztjvHoU580EftxjDZFQ==}
     engines: {node: '>=12.20'}
 
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
   zod@4.1.13:
     resolution: {integrity: sha512-AvvthqfqrAhNH9dnfmrfKzX5upOdjUVJYFqNSlkmGf64gRaTzlPwz99IHYnVs28qYAybvAlBV+H7pn0saFY4Ig==}
 
@@ -5378,6 +5422,12 @@ snapshots:
 
   '@standard-schema/spec@1.0.0': {}
 
+  '@t3-oss/env-core@0.11.1(typescript@5.9.3)(zod@3.25.76)':
+    dependencies:
+      zod: 3.25.76
+    optionalDependencies:
+      typescript: 5.9.3
+
   '@tailwindcss/node@4.1.17':
     dependencies:
       '@jridgewell/remapping': 2.3.5
@@ -6045,6 +6095,8 @@ snapshots:
   dot-prop@5.3.0:
     dependencies:
       is-obj: 2.0.0
+
+  dotenv@16.6.1: {}
 
   dotenv@17.2.3: {}
 
@@ -8013,5 +8065,7 @@ snapshots:
   yocto-queue@0.1.0: {}
 
   yocto-queue@1.2.2: {}
+
+  zod@3.25.76: {}
 
   zod@4.1.13: {}

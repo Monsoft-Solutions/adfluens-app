@@ -1,23 +1,15 @@
 import type { YouTubeVideo } from "@repo/types/youtube/youtube-video.type";
 import type { YouTubeComment } from "@repo/types/youtube/youtube-comment.type";
 import type { VideoSortOption } from "@repo/types/youtube/video-sort-option.enum";
+import { env } from "@repo/env";
 
 const YOUTUBE_BASE_URL = "https://www.googleapis.com/youtube/v3";
-
-/**
- * Get YouTube API key from environment
- */
-const getYoutubeApiKey = () => process.env.YOUTUBE_API_KEY || "";
 
 /**
  * Resolve a channel handle/name to a channel ID
  */
 export const resolveChannelId = async (identifier: string): Promise<string> => {
-  const apiKey = getYoutubeApiKey();
-
-  if (!apiKey) {
-    throw new Error("YouTube API key not configured on server");
-  }
+  const apiKey = env.YOUTUBE_API_KEY;
 
   // Check if already a channel ID
   if (/^UC[\w-]{21,22}$/.test(identifier)) {
@@ -83,11 +75,7 @@ export const resolveChannelId = async (identifier: string): Promise<string> => {
 export const fetchChannelVideos = async (
   channelId: string
 ): Promise<YouTubeVideo[]> => {
-  const apiKey = getYoutubeApiKey();
-
-  if (!apiKey) {
-    throw new Error("YouTube API key not configured on server");
-  }
+  const apiKey = env.YOUTUBE_API_KEY;
 
   // Search for videos in the channel
   const searchParams = new URLSearchParams({
@@ -184,11 +172,7 @@ export const fetchChannelVideos = async (
 export const fetchVideoComments = async (
   videoId: string
 ): Promise<YouTubeComment[]> => {
-  const apiKey = getYoutubeApiKey();
-
-  if (!apiKey) {
-    throw new Error("YouTube API key not configured on server");
-  }
+  const apiKey = env.YOUTUBE_API_KEY;
 
   const params = new URLSearchParams({
     part: "snippet",
@@ -269,11 +253,7 @@ export const searchVideos = async (
   sortBy: VideoSortOption = "views",
   maxResults: number = 20
 ): Promise<YouTubeVideo[]> => {
-  const apiKey = getYoutubeApiKey();
-
-  if (!apiKey) {
-    throw new Error("YouTube API key not configured on server");
-  }
+  const apiKey = env.YOUTUBE_API_KEY;
 
   // Determine YouTube API order parameter based on sort option
   // YouTube API only supports: date, rating, relevance, title, videoCount, viewCount

@@ -2,13 +2,9 @@ import { GoogleGenAI } from "@google/genai";
 import type { YouTubeVideo } from "@repo/types/youtube/youtube-video.type";
 import type { YouTubeComment } from "@repo/types/youtube/youtube-comment.type";
 import type { ViralAnalysisResult } from "@repo/types/ai/viral-analysis-result.type";
+import { env } from "@repo/env";
 
 const GEMINI_MODEL = "gemini-2.5-flash";
-
-/**
- * Get Gemini API key from environment
- */
-const getGeminiApiKey = () => process.env.GEMINI_API_KEY || "";
 
 /**
  * Analyze a video using Gemini AI with Google Search grounding
@@ -17,13 +13,7 @@ export const analyzeVideo = async (
   video: YouTubeVideo,
   comments: YouTubeComment[]
 ): Promise<ViralAnalysisResult> => {
-  const apiKey = getGeminiApiKey();
-
-  if (!apiKey) {
-    throw new Error("Gemini API key not configured on server");
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
 
   const commentsText = comments
     .slice(0, 20)
@@ -133,13 +123,7 @@ export const chatAboutVideo = async (
   video: YouTubeVideo,
   analysis: ViralAnalysisResult
 ): Promise<string> => {
-  const apiKey = getGeminiApiKey();
-
-  if (!apiKey) {
-    throw new Error("Gemini API key not configured on server");
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
 
   const contextSystemInstruction = `
     You are a helpful AI assistant discussing a specific YouTube video.

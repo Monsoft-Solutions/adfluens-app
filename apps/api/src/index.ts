@@ -2,22 +2,19 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-import dotenv from "dotenv";
 import * as trpcExpress from "@trpc/server/adapters/express";
 import { toNodeHandler } from "better-auth/node";
 import { appRouter } from "./trpc/router";
 import { createContext } from "./trpc/init";
 import { auth } from "@repo/auth";
-
-// Load environment variables
-dotenv.config();
+import { env } from "@repo/env";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3001;
-const isDev = process.env.NODE_ENV !== "production";
+const PORT = env.PORT;
+const isDev = env.NODE_ENV !== "production";
 
 // CORS Middleware - must be before auth handler
 app.use(

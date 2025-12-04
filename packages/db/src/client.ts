@@ -1,14 +1,15 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
+import { env } from "@repo/env";
 
 import * as schema from "./schema";
 
 /**
  * PostgreSQL connection pool
- * Uses DATABASE_URL environment variable for connection string
+ * Uses validated DATABASE_URL from environment configuration
  */
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: env.DATABASE_URL,
 });
 
 /**
