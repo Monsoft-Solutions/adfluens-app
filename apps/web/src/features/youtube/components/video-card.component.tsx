@@ -10,7 +10,8 @@ type VideoCardProps = {
 
 /**
  * Video card component displaying video thumbnail and stats
- * Uses shadcn/ui Card component with custom styling
+ * Uses shadcn/ui Card component with "Soft Brutalism" styling from DESIGN.md
+ * No drop shadows - uses border and translate for hover effects
  */
 export const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
   const formatDate = (dateStr: string) => {
@@ -27,8 +28,8 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
       onClick={() => onClick(video)}
       className={cn(
         "group overflow-hidden cursor-pointer flex flex-col h-full",
-        "hover:shadow-xl hover:scale-[1.02] transition-all duration-300",
-        "border-border/50"
+        "border border-border transition-all duration-200",
+        "hover:-translate-y-1 hover:border-foreground/20"
       )}
     >
       {/* Thumbnail */}

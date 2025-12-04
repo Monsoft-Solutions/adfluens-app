@@ -54,10 +54,10 @@ export const VideoSearchView: React.FC = () => {
   const videos = data?.videos ?? [];
 
   return (
-    <div className="animate-in fade-in duration-300">
+    <div className="animate-reveal">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">
+        <h1 className="text-3xl font-display font-semibold text-foreground mb-2 tracking-tight">
           Video Search
         </h1>
         <p className="text-muted-foreground">
@@ -128,10 +128,10 @@ export const VideoSearchView: React.FC = () => {
       {/* Empty State - Before Search */}
       {!hasSearched && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="bg-muted rounded-full p-6 mb-6">
+          <div className="bg-muted rounded-lg p-6 mb-6 border border-border">
             <Search className="w-12 h-12 text-muted-foreground" />
           </div>
-          <h2 className="text-xl font-semibold text-foreground mb-2">
+          <h2 className="text-xl font-display font-semibold text-foreground mb-2">
             Search for Videos
           </h2>
           <p className="text-muted-foreground max-w-md">
@@ -144,10 +144,10 @@ export const VideoSearchView: React.FC = () => {
       {/* Empty State - No Results */}
       {hasSearched && !isLoading && videos.length === 0 && !error && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="bg-muted rounded-full p-6 mb-6">
+          <div className="bg-muted rounded-lg p-6 mb-6 border border-border">
             <Search className="w-12 h-12 text-muted-foreground" />
           </div>
-          <h2 className="text-xl font-semibold text-foreground mb-2">
+          <h2 className="text-xl font-display font-semibold text-foreground mb-2">
             No Videos Found
           </h2>
           <p className="text-muted-foreground max-w-md">

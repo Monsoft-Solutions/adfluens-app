@@ -48,9 +48,9 @@ export const ChannelAnalyzerView: React.FC = () => {
   };
 
   return (
-    <div className="animate-in fade-in duration-300">
+    <div className="animate-reveal">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">
+        <h1 className="text-3xl font-display font-semibold text-foreground mb-2 tracking-tight">
           Channel Analyzer
         </h1>
         <p className="text-muted-foreground">
@@ -69,7 +69,7 @@ export const ChannelAnalyzerView: React.FC = () => {
             "px-4 py-3 rounded-lg mb-6 flex items-center gap-3"
           )}
         >
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <AlertCircle className="w-5 h-5 shrink-0" />
           <p>{error}</p>
         </div>
       )}

@@ -57,3 +57,9 @@ export {
   SelectScrollUpButton,
   SelectScrollDownButton,
 } from "./components/select";
+export {
+  ThemeToggle,
+  ThemeToggleIcon,
+  ThemeSwitcher,
+  ThemeDropdown,
+} from "./components/theme-toggle";

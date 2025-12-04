@@ -1,1 +1,26 @@
 @import "@repo/ui/globals.css";
+
+/* Additional source detection for web app */
+@source "./";
+@source "./**/*.tsx";
+@source "./**/*.ts";
+
+/* ===== Responsive Utility Safelist ===== */
+/* Force include commonly used responsive classes that might be missed by @source */
+@media (min-width: 1024px) {
+  .lg\:flex {
+    display: flex !important;
+  }
+  .lg\:hidden {
+    display: none !important;
+  }
+  .lg\:w-1\/2 {
+    width: 50% !important;
+  }
+  .lg\:col-span-2 {
+    grid-column: span 2 / span 2 !important;
+  }
+  .lg\:col-span-1 {
+    grid-column: span 1 / span 1 !important;
+  }
+}

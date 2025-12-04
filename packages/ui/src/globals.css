@@ -1,10 +1,21 @@
 @import "tailwindcss";
 
-/* ===== Source Detection ===== */
-@source "../../../apps/web/src";
+/* ===== Source Detection for Monorepo ===== */
+/* Scan web app source files for Tailwind classes */
+@source "../../../apps/web/src/**/*.tsx";
+@source "../../../apps/web/src/**/*.ts";
+/* Scan UI package components */
+@source "./**/*.tsx";
 
 /* ===== Theme Configuration (Tailwind v4 CSS-first) ===== */
 @theme {
+  /* Breakpoints - ensure responsive classes work */
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 80rem;
+  --breakpoint-2xl: 96rem;
+
   /* Border Radius - "Soft Brutalism" tight radii from DESIGN.md */
   --radius-sm: 2px;
   --radius-md: 4px;
@@ -345,4 +356,149 @@ body {
 /* Typography utility for display font */
 @utility font-display {
   font-family: var(--font-display);
+}
+
+/* ===== "Soft Brutalism" Design System Utilities from DESIGN.md ===== */
+
+/* Noise texture overlay - adds subtle texture to reduce digital sterility */
+@utility noise-texture {
+  position: relative;
+}
+
+.noise-texture::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.02;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  z-index: 1;
+}
+
+.dark .noise-texture::before {
+  opacity: 0.03;
+}
+
+/* Hard shadow for "Soft Brutalism" button hover - no blurred drop shadows */
+@utility shadow-hard {
+  box-shadow: 2px 2px 0px 0px var(--color-foreground);
+}
+
+@utility shadow-hard-sm {
+  box-shadow: 1px 1px 0px 0px var(--color-foreground);
+}
+
+@utility shadow-hard-primary {
+  box-shadow: 2px 2px 0px 0px var(--color-primary);
+}
+
+/* Offset border hover effect - alternative to shadows */
+@utility border-offset-hover {
+  position: relative;
+}
+
+.border-offset-hover::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border: 1px solid var(--color-foreground);
+  border-radius: inherit;
+  opacity: 0;
+  transition:
+    opacity 0.2s ease-out,
+    transform 0.2s ease-out;
+  transform: translate(2px, 2px);
+  pointer-events: none;
+}
+
+.border-offset-hover:hover::after {
+  opacity: 1;
+}
+
+/* ===== Staggered Reveal Animation System from DESIGN.md ===== */
+/* Layout (sidebar/header): instant
+   Hero/Title: 50ms delay
+   Primary content: 100ms delay
+   Secondary content: 150ms delay */
+
+@utility stagger-0 {
+  animation-delay: 0ms;
+}
+
+@utility stagger-1 {
+  animation-delay: 50ms;
+}
+
+@utility stagger-2 {
+  animation-delay: 100ms;
+}
+
+@utility stagger-3 {
+  animation-delay: 150ms;
+}
+
+@utility stagger-4 {
+  animation-delay: 200ms;
+}
+
+@utility stagger-5 {
+  animation-delay: 250ms;
+}
+
+/* Reveal animation with stagger support */
+@utility animate-stagger-reveal {
+  opacity: 0;
+  animation: reveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ===== View Transitions for Theme Switching ===== */
+@supports (view-transition-name: root) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.3s;
+    animation-timing-function: ease-out;
+  }
+
+  ::view-transition-old(root) {
+    animation-name: fade-out;
+  }
+
+  ::view-transition-new(root) {
+    animation-name: fade-in;
+  }
+}
+
+/* ===== Display Typography Classes ===== */
+/* Headlines use Bricolage Grotesque with tight tracking per DESIGN.md */
+.heading-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+/* Monospace for data values and technical identifiers */
+.text-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Responsive Utility Safelist ===== */
+/* Force include commonly used responsive classes that might be missed by @source */
+@media (min-width: 1024px) {
+  .lg\:flex {
+    display: flex;
+  }
+  .lg\:hidden {
+    display: none;
+  }
+  .lg\:w-1\/2 {
+    width: 50%;
+  }
+  .lg\:col-span-2 {
+    grid-column: span 2 / span 2;
+  }
+  .lg\:col-span-1 {
+    grid-column: span 1 / span 1;
+  }
 }

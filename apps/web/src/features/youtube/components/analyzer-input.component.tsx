@@ -55,7 +55,7 @@ export const AnalyzerInput: React.FC<AnalyzerInputProps> = ({
                 disabled={isLoading || !channelId.trim()}
                 variant="default"
                 size="lg"
-                className="w-full sm:w-auto min-w-[140px] bg-primary hover:bg-primary/90"
+                className="w-full sm:w-auto min-w-[140px]"
               >
                 {isLoading ? (
                   <>

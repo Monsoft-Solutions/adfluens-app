@@ -67,7 +67,7 @@ export const VideoDetail: React.FC<VideoDetailProps> = ({ video, onBack }) => {
   };
 
   return (
-    <div className="animate-in slide-in-from-right-4 duration-300 pb-20">
+    <div className="animate-reveal pb-20">
       <Button
         variant="ghost"
         onClick={onBack}
@@ -80,8 +80,8 @@ export const VideoDetail: React.FC<VideoDetailProps> = ({ video, onBack }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Video & Info */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Video Player */}
-          <div className="bg-black rounded-xl overflow-hidden shadow-lg aspect-video w-full">
+          {/* Video Player - no shadow, uses border for definition */}
+          <div className="bg-foreground rounded-lg overflow-hidden border border-border aspect-video w-full">
             <iframe
               width="100%"
               height="100%"
@@ -95,9 +95,9 @@ export const VideoDetail: React.FC<VideoDetailProps> = ({ video, onBack }) => {
           </div>
 
           {/* Video Header & Stats */}
-          <Card className="border-border/50">
+          <Card className="border-border">
             <CardContent className="p-6">
-              <h1 className="text-xl md:text-2xl font-bold text-foreground mb-3">
+              <h1 className="text-xl md:text-2xl font-display font-semibold text-foreground mb-3 tracking-tight">
                 {video.title}
               </h1>
 
@@ -158,9 +158,9 @@ export const VideoDetail: React.FC<VideoDetailProps> = ({ video, onBack }) => {
 
         {/* Right Column: Comments */}
         <div className="lg:col-span-1">
-          <Card className="h-full flex flex-col max-h-[800px] border-border/50">
+          <Card className="h-full flex flex-col max-h-[800px] border-border">
             <CardHeader className="p-4 border-b border-border">
-              <CardTitle className="text-base font-bold flex items-center gap-2">
+              <CardTitle className="text-base font-display font-semibold flex items-center gap-2">
                 <MessageCircle className="w-5 h-5 text-primary" />
                 Top Comments
               </CardTitle>

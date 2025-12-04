@@ -8,8 +8,9 @@ import {
   LogIn,
   User,
 } from "lucide-react";
-import { Button, cn, Skeleton } from "@repo/ui";
+import { Button, cn, Skeleton, Separator, ThemeToggleIcon } from "@repo/ui";
 import { useSession, signOut } from "@/lib/auth.client";
+import { useTheme } from "@/lib/theme.provider";
 
 type NavItemProps = {
   to: string;
@@ -43,6 +44,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label }) => (
 export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const { data: session, isPending } = useSession();
+  const { theme, setTheme } = useTheme();
 
   const handleSignOut = async () => {
     await signOut();
@@ -60,11 +62,11 @@ export const Sidebar: React.FC = () => {
       {/* Logo / Brand */}
       <div className="p-6 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="bg-primary text-primary-foreground p-2.5 rounded-xl shadow-sm">
+          <div className="bg-primary text-primary-foreground p-2.5 rounded-lg">
             <Youtube className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-base font-bold text-foreground tracking-tight">
+            <h1 className="text-base font-display font-semibold text-foreground tracking-tight">
               YouTube
             </h1>
             <p className="text-xs text-muted-foreground">Analyzer</p>
@@ -140,6 +142,12 @@ export const Sidebar: React.FC = () => {
             Sign in
           </Button>
         )}
+      </div>
+
+      {/* Theme Toggle */}
+      <div className="px-4 pb-2">
+        <Separator className="mb-3" />
+        <ThemeToggleIcon theme={theme} onThemeChange={setTheme} />
       </div>
 
       {/* Footer */}
