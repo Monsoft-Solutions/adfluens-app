@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo } from "react";
+import React, { createContext, useContext, useMemo, useCallback } from "react";
 import { useSession } from "./auth.client";
 
 /**
@@ -33,6 +33,7 @@ type AuthContextValue = {
   session: Session | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  refetchSession: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -44,7 +45,15 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { data, isPending, error } = useSession();
+  const { data, isPending, error, refetch } = useSession();
+
+  /**
+   * Refetch the session data
+   * Call this after sign-in/sign-up to update the auth state
+   */
+  const refetchSession = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const value = useMemo<AuthContextValue>(() => {
     const hasSession = !!data?.session && !!data?.user && !error;
@@ -54,8 +63,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       session: hasSession ? (data.session as Session) : null,
       isLoading: isPending,
       isAuthenticated: hasSession,
+      refetchSession,
     };
-  }, [data, isPending, error]);
+  }, [data, isPending, error, refetchSession]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

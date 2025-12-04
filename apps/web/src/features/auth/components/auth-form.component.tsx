@@ -51,7 +51,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     <div className="w-full max-w-md mx-auto">
       {/* Header */}
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-foreground mb-2">
+        <h1 className="text-2xl font-display font-semibold text-foreground mb-2 tracking-tight">
           {isSignUp ? "Create your account" : "Welcome back"}
         </h1>
         <p className="text-muted-foreground">
