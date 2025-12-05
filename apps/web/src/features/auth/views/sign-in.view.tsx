@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Play } from "lucide-react";
-import { signIn } from "@/lib/auth.client";
+import { signIn } from "@repo/auth/client";
 import { useAuth } from "@/lib/auth.provider";
 import { AuthForm, type AuthFormData } from "../components/auth-form.component";
 

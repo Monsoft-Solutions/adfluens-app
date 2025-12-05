@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useMemo, useCallback } from "react";
-import { useSession } from "./auth.client";
+import { useSession, authClient } from "@repo/auth/client";
 
 /**
  * User type from Better Auth session
@@ -15,6 +15,20 @@ type User = {
 };
 
 /**
+ * Organization type from Better Auth
+ */
+type Organization = {
+  id: string;
+  name: string;
+  slug: string;
+  logo?: string | null;
+  metadata?: Record<string, unknown> | null;
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+/**
  * Session type from Better Auth
  */
 type Session = {
@@ -23,6 +37,7 @@ type Session = {
   expiresAt: Date;
   createdAt: Date;
   updatedAt: Date;
+  organizationId?: string | null;
 };
 
 /**
@@ -31,9 +46,11 @@ type Session = {
 type AuthContextValue = {
   user: User | null;
   session: Session | null;
+  organization: Organization | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   refetchSession: () => Promise<void>;
+  setActiveOrganization: (organizationId: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -55,17 +72,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     await refetch();
   }, [refetch]);
 
+  /**
+   * Set active organization
+   * Updates the session to use the specified organization
+   */
+  const setActiveOrganization = useCallback(
+    async (organizationId: string) => {
+      await authClient.organization.setActive({
+        organizationId,
+      });
+      await refetch();
+    },
+    [refetch]
+  );
+
   const value = useMemo<AuthContextValue>(() => {
     const hasSession = !!data?.session && !!data?.user && !error;
+    const sessionData = hasSession ? (data.session as Session) : null;
+    // Organization data may be included in session response when organization plugin is active
+    // If not present, it will be null and can be fetched separately if needed
+    const sessionResponse = data as
+      | { organization?: Organization }
+      | null
+      | undefined;
+    const organizationData =
+      hasSession && sessionResponse?.organization
+        ? (sessionResponse.organization as Organization)
+        : null;
 
     return {
       user: hasSession ? (data.user as User) : null,
-      session: hasSession ? (data.session as Session) : null,
+      session: sessionData,
+      organization: organizationData,
       isLoading: isPending,
       isAuthenticated: hasSession,
       refetchSession,
+      setActiveOrganization,
     };
-  }, [data, isPending, error, refetchSession]);
+  }, [data, isPending, error, refetchSession, setActiveOrganization]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
