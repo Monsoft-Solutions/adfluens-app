@@ -89,21 +89,33 @@ export const auth = betterAuth({
         /**
          * Auto-create a personal organization for each new user
          * This ensures every user has a workspace immediately after signup
+         *
+         * Note: Organization creation failure is non-blocking to prevent
+         * user signup failures due to workspace initialization issues
          */
         after: async (user) => {
-          await auth.api.createOrganization({
-            body: {
-              name: `${user.name}'s Workspace`,
-              slug: `${user.id}-workspace`,
-              userId: user.id,
-              createdBy: user.id,
-            } as {
-              name: string;
-              slug: string;
-              userId: string;
-              createdBy: string;
-            },
-          });
+          try {
+            await auth.api.createOrganization({
+              body: {
+                name: `${user.name}'s Workspace`,
+                slug: `${user.id}-workspace`,
+                userId: user.id,
+                createdBy: user.id,
+              } as {
+                name: string;
+                slug: string;
+                userId: string;
+                createdBy: string;
+              },
+            });
+          } catch (error) {
+            // Log the error but don't block user creation
+            // User can create an organization manually later if needed
+            console.error(
+              `[auth] Failed to create personal organization for user ${user.id}:`,
+              error instanceof Error ? error.message : error
+            );
+          }
         },
       },
     },

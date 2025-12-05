@@ -75,9 +75,9 @@ export const createContext = async ({
     | undefined;
 
   return {
-    user: sessionWithOrg?.user as User | null,
-    session: sessionWithOrg?.session as Session | null,
-    organization: sessionWithOrg?.organization as Organization | null,
+    user: sessionWithOrg?.user ?? null,
+    session: sessionWithOrg?.session ?? null,
+    organization: sessionWithOrg?.organization ?? null,
   };
 };
 
@@ -127,15 +127,9 @@ export const protectedProcedure = t.procedure.use(isAuthenticated);
 /**
  * Organization procedure middleware
  * Requires user to be authenticated and have an active organization
+ * Composes with isAuthenticated to avoid duplicating auth checks
  */
-const hasOrganization = t.middleware(async ({ ctx, next }) => {
-  if (!ctx.session || !ctx.user) {
-    throw new TRPCError({
-      code: "UNAUTHORIZED",
-      message: "You must be logged in to access this resource",
-    });
-  }
-
+const hasOrganization = isAuthenticated.unstable_pipe(async ({ ctx, next }) => {
   if (!ctx.organization) {
     throw new TRPCError({
       code: "BAD_REQUEST",
