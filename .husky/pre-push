@@ -1,0 +1,16 @@
+echo "🚀 Running pre-push checks..."
+
+echo "[1/4] Type checking..."
+pnpm type-check || exit 1
+
+echo "[2/4] Linting..."
+pnpm lint || exit 1
+
+echo "[3/4] Format check..."
+pnpm format:check || exit 1
+
+echo "[4/4] Building..."
+pnpm build || exit 1
+
+echo "✅ All checks passed!"
+
