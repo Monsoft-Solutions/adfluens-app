@@ -10,7 +10,7 @@ export const commentsApiResponseSchema = z.object({
             authorDisplayName: z.string(),
             authorProfileImageUrl: z.string(),
             textDisplay: z.string(),
-            likeCount: z.number(),
+            likeCount: z.coerce.number(),
             publishedAt: z.string(),
           }),
         }),
