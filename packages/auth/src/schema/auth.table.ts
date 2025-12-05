@@ -4,6 +4,7 @@ import {
   text,
   timestamp,
   varchar,
+  unique,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -135,3 +136,169 @@ export const verification = pgTable("verification", {
   /** Timestamp when verification was last updated */
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+/**
+ * Organizations table
+ * Stores organization data for multi-tenant functionality
+ */
+export const organization = pgTable("organization", {
+  /** Unique organization identifier */
+  id: varchar("id", { length: 36 }).primaryKey(),
+
+  /** Organization name */
+  name: varchar("name", { length: 255 }).notNull(),
+
+  /** Organization slug (unique identifier for URLs) */
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+
+  /** Organization logo URL */
+  logo: text("logo"),
+
+  /** Organization metadata (JSON) */
+  metadata: text("metadata"),
+
+  /** User ID who created the organization */
+  createdBy: varchar("created_by", { length: 36 })
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+
+  /** Timestamp when organization was created */
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+
+  /** Timestamp when organization was last updated */
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/**
+ * Organization members table
+ * Stores membership information linking users to organizations with roles
+ */
+export const member = pgTable(
+  "member",
+  {
+    /** Unique member identifier */
+    id: varchar("id", { length: 36 }).primaryKey(),
+
+    /** Reference to organization */
+    organizationId: varchar("organization_id", { length: 36 })
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+
+    /** Reference to user */
+    userId: varchar("user_id", { length: 36 })
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+
+    /** Member role in the organization */
+    role: varchar("role", { length: 50 }).notNull(),
+
+    /** Timestamp when member was added */
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+
+    /** Timestamp when member was last updated */
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    /** Ensure a user can only have one membership per organization */
+    uniqueUserOrg: unique().on(table.organizationId, table.userId),
+  })
+);
+
+/**
+ * Organization invitations table
+ * Stores pending invitations to join organizations
+ */
+export const invitation = pgTable("invitation", {
+  /** Unique invitation identifier */
+  id: varchar("id", { length: 36 }).primaryKey(),
+
+  /** Reference to organization */
+  organizationId: varchar("organization_id", { length: 36 })
+    .notNull()
+    .references(() => organization.id, { onDelete: "cascade" }),
+
+  /** Email address of the invited user */
+  email: varchar("email", { length: 255 }).notNull(),
+
+  /** Role to assign when invitation is accepted */
+  role: varchar("role", { length: 50 }).notNull(),
+
+  /** Invitation token for verification */
+  token: varchar("token", { length: 255 }).notNull().unique(),
+
+  /** Invitation status */
+  status: varchar("status", { length: 50 }).notNull().default("pending"),
+
+  /** Timestamp when invitation expires */
+  expiresAt: timestamp("expires_at").notNull(),
+
+  /** Timestamp when invitation was created */
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+
+  /** Timestamp when invitation was last updated */
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/**
+ * Teams table
+ * Stores teams within organizations
+ */
+export const team = pgTable("team", {
+  /** Unique team identifier */
+  id: varchar("id", { length: 36 }).primaryKey(),
+
+  /** Team name */
+  name: varchar("name", { length: 255 }).notNull(),
+
+  /** Team slug (unique within organization) */
+  slug: varchar("slug", { length: 255 }).notNull(),
+
+  /** Reference to organization */
+  organizationId: varchar("organization_id", { length: 36 })
+    .notNull()
+    .references(() => organization.id, { onDelete: "cascade" }),
+
+  /** Team metadata (JSON) */
+  metadata: text("metadata"),
+
+  /** Timestamp when team was created */
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+
+  /** Timestamp when team was last updated */
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/**
+ * Team members table
+ * Stores membership information linking users to teams
+ */
+export const teamMember = pgTable(
+  "team_member",
+  {
+    /** Unique team member identifier */
+    id: varchar("id", { length: 36 }).primaryKey(),
+
+    /** Reference to team */
+    teamId: varchar("team_id", { length: 36 })
+      .notNull()
+      .references(() => team.id, { onDelete: "cascade" }),
+
+    /** Reference to user */
+    userId: varchar("user_id", { length: 36 })
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+
+    /** Team member role */
+    role: varchar("role", { length: 50 }).notNull(),
+
+    /** Timestamp when team member was added */
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+
+    /** Timestamp when team member was last updated */
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    /** Ensure a user can only have one membership per team */
+    uniqueUserTeam: unique().on(table.teamId, table.userId),
+  })
+);

@@ -1,4 +1,6 @@
 import { createAuthClient } from "better-auth/react";
+import { organizationClient } from "better-auth/client/plugins";
+import { ac, owner, admin, viewer, creator } from "./auth.config";
 
 /**
  * Better Auth React client
@@ -7,6 +9,17 @@ import { createAuthClient } from "better-auth/react";
 export const authClient = createAuthClient({
   /** Base URL configured in the app that uses this client */
   baseURL: typeof window !== "undefined" ? window.location.origin : "",
+  plugins: [
+    organizationClient({
+      ac,
+      roles: {
+        owner,
+        admin,
+        viewer,
+        creator,
+      },
+    }),
+  ],
 });
 
 /** Export individual methods and hooks for convenience */

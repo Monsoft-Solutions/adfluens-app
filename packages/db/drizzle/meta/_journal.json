@@ -15,6 +15,13 @@
       "when": 1764811095289,
       "tag": "0001_safe_titania",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1764936506081,
+      "tag": "0002_amused_wasp",
+      "breakpoints": true
     }
   ]
 }

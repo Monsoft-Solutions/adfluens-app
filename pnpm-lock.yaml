@@ -51,7 +51,7 @@ importers:
         specifier: ^11.7.2
         version: 11.7.2(typescript@5.9.3)
       better-auth:
-        specifier: ^1.2.8
+        specifier: ^1.4.3
         version: 1.4.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       cors:
         specifier: ^2.8.5
@@ -155,7 +155,7 @@ importers:
         specifier: workspace:*
         version: link:../env
       better-auth:
-        specifier: ^1.2.8
+        specifier: ^1.4.3
         version: 1.4.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       drizzle-orm:
         specifier: ^0.38.3

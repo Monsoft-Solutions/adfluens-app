@@ -1,4 +1,9 @@
 import { createAuthClient } from "better-auth/react";
+import { organizationClient } from "better-auth/client/plugins";
+// Import access control and roles from auth config
+// Note: These need to be imported from the auth package
+// For now, we'll configure without explicit roles on client side
+// The server will handle role validation
 
 /**
  * Better Auth React client
@@ -9,6 +14,7 @@ import { createAuthClient } from "better-auth/react";
  */
 const client = createAuthClient({
   baseURL: "",
+  plugins: [organizationClient()],
 });
 
 /** Export individual methods for convenience */
