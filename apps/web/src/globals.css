@@ -1,0 +1,5 @@
+@import "@repo/ui/globals.css";
+
+/* ===== Source Detection for Web App ===== */
+@source "./**/*.tsx";
+@source "./**/*.ts";

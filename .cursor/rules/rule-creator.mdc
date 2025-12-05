@@ -1,0 +1,144 @@
+---
+description: Meta-rule for creating effective Cursor project rules. Invoke with @rule-creator when you need to create a new rule for this codebase.
+---
+
+# Rule Creator
+
+You are an expert at creating highly effective Cursor rules. When asked to create a new rule, follow this process.
+
+## Step 1: Ask Clarifying Questions
+
+Before creating any rule, ask these questions (skip if already answered):
+
+1. **Problem**: What specific problem or pattern does this rule address?
+2. **Trigger**: What file types or patterns should activate this rule?
+   - Always apply (every conversation)
+   - Auto-attach (specific file patterns)
+   - Agent-requested (AI decides based on context)
+   - Manual (user invokes explicitly)
+3. **Scope**: Which part of the codebase does this apply to? (e.g., frontend, backend, specific feature)
+4. **Examples**: Are there existing files in this project that demonstrate the desired pattern?
+
+Wait for answers before proceeding.
+
+## Step 2: Generate the Rule
+
+### Frontmatter Format
+
+```yaml
+---
+description: One-line description of when/why to use this rule
+globs: ["**/*.ts"] # Only for auto-attach rules
+alwaysApply: true # Only if rule should always be included
+---
+```
+
+**Rule Type Mapping:**
+
+- Always apply → `alwaysApply: true` (omit globs)
+- Auto-attach → `globs: [...]` (omit alwaysApply)
+- Agent-requested → `description` only (omit globs and alwaysApply)
+- Manual → `description` only (omit globs and alwaysApply)
+
+### Rule Body Structure
+
+```markdown
+# Rule Title
+
+Brief context: when and why this rule applies (1-2 sentences).
+
+## Principles
+
+- Actionable guideline with specific instruction
+- Another guideline with concrete example
+
+## Patterns
+
+### Do This
+
+\`\`\`typescript
+// Concrete code example showing correct pattern
+\`\`\`
+
+### Avoid This
+
+\`\`\`typescript
+// Concrete code example showing anti-pattern
+\`\`\`
+
+## References
+
+@path/to/example-file.ts
+```
+
+## Step 3: Quality Checklist
+
+Before finalizing, verify:
+
+- [ ] Under 500 lines
+- [ ] Specific, not vague ("Use zod for validation" not "validate properly")
+- [ ] Includes at least one concrete code example
+- [ ] Frontmatter matches intended trigger type
+- [ ] References existing project files where applicable
+- [ ] No redundant or filler content
+
+## Writing Guidelines
+
+**Be Specific**: Instead of "handle errors properly", write "wrap async operations in try-catch and return `{ success: boolean, error?: string }`"
+
+**Use Project Context**: Reference actual project files, libraries, and conventions. Check existing rules in `.cursor/rules/` for style.
+
+**Avoid Verbosity**: Every sentence should add actionable value. Cut introductions, summaries, and obvious statements.
+
+**One Concern Per Rule**: If a rule covers multiple unrelated topics, split it into separate rules.
+
+**Explain Trade-offs**: When a guideline has exceptions, state them explicitly.
+
+## Example Output
+
+```markdown
+---
+description: API route patterns and error handling for backend services
+globs: ["apps/api/**/*.ts"]
+---
+
+# API Service Patterns
+
+Apply when creating or modifying API services in the backend.
+
+## Principles
+
+- Return typed response objects: `{ success: true, data: T } | { success: false, error: string }`
+- Use dependency injection for external services
+- Validate inputs with zod schemas at service boundaries
+
+## Patterns
+
+### Service Method Structure
+
+\`\`\`typescript
+async getChannel(channelId: string): Promise<ServiceResponse<Channel>> {
+const validated = channelIdSchema.safeParse(channelId);
+if (!validated.success) {
+return { success: false, error: validated.error.message };
+}
+
+try {
+const data = await this.youtubeClient.getChannel(validated.data);
+return { success: true, data };
+} catch (error) {
+return { success: false, error: getErrorMessage(error) };
+}
+}
+\`\`\`
+
+### Avoid
+
+- Throwing errors from service methods (return error objects instead)
+- Using `any` for API responses
+- Mixing validation logic with business logic
+
+## References
+
+@apps/api/src/features/youtube/youtube.service.ts
+```

@@ -1,0 +1,137 @@
+import {
+  boolean,
+  pgTable,
+  text,
+  timestamp,
+  varchar,
+} from "drizzle-orm/pg-core";
+
+/**
+ * Users table
+ * Core user information for Better Auth
+ */
+export const user = pgTable("user", {
+  /** Unique user identifier */
+  id: varchar("id", { length: 36 }).primaryKey(),
+
+  /** User's display name */
+  name: text("name").notNull(),
+
+  /** User's email address */
+  email: varchar("email", { length: 255 }).notNull().unique(),
+
+  /** Whether the email has been verified */
+  emailVerified: boolean("email_verified").notNull().default(false),
+
+  /** URL to user's profile image */
+  image: text("image"),
+
+  /** Timestamp when user was created */
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+
+  /** Timestamp when user was last updated */
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/**
+ * Sessions table
+ * Stores active user sessions
+ */
+export const session = pgTable("session", {
+  /** Unique session identifier */
+  id: varchar("id", { length: 36 }).primaryKey(),
+
+  /** Session token */
+  token: text("token").notNull().unique(),
+
+  /** Session expiration timestamp */
+  expiresAt: timestamp("expires_at").notNull(),
+
+  /** IP address of the client */
+  ipAddress: text("ip_address"),
+
+  /** User agent string */
+  userAgent: text("user_agent"),
+
+  /** Reference to user */
+  userId: varchar("user_id", { length: 36 })
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+
+  /** Timestamp when session was created */
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+
+  /** Timestamp when session was last updated */
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/**
+ * Accounts table
+ * OAuth and credential accounts linked to users
+ */
+export const account = pgTable("account", {
+  /** Unique account identifier */
+  id: varchar("id", { length: 36 }).primaryKey(),
+
+  /** Account ID from the provider */
+  accountId: text("account_id").notNull(),
+
+  /** Provider identifier (e.g., 'google', 'facebook', 'credential') */
+  providerId: text("provider_id").notNull(),
+
+  /** Reference to user */
+  userId: varchar("user_id", { length: 36 })
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+
+  /** OAuth access token */
+  accessToken: text("access_token"),
+
+  /** OAuth refresh token */
+  refreshToken: text("refresh_token"),
+
+  /** OAuth ID token */
+  idToken: text("id_token"),
+
+  /** Access token expiration timestamp */
+  accessTokenExpiresAt: timestamp("access_token_expires_at"),
+
+  /** Refresh token expiration timestamp */
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+
+  /** OAuth scope */
+  scope: text("scope"),
+
+  /** Hashed password (for credential provider) */
+  password: text("password"),
+
+  /** Timestamp when account was created */
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+
+  /** Timestamp when account was last updated */
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/**
+ * Verification table
+ * Stores verification tokens for email verification, password reset, etc.
+ */
+export const verification = pgTable("verification", {
+  /** Unique verification identifier */
+  id: varchar("id", { length: 36 }).primaryKey(),
+
+  /** Identifier for the verification request (e.g., email) */
+  identifier: text("identifier").notNull(),
+
+  /** The value to be verified (token) */
+  value: text("value").notNull(),
+
+  /** Verification expiration timestamp */
+  expiresAt: timestamp("expires_at").notNull(),
+
+  /** Timestamp when verification was created */
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+
+  /** Timestamp when verification was last updated */
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});

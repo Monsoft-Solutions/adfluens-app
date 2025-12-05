@@ -1,0 +1,359 @@
+---
+description: Styling patterns using Tailwind CSS v4 and shadcn/ui components. Use when creating or modifying UI components, styles, or adding new shadcn components.
+globs: ["**/*.tsx", "**/*.css", "packages/ui/**/*"]
+---
+
+# Styling & Tailwind CSS v4 Guide
+
+Apply when working with styles, components, or UI. All styling uses Tailwind CSS v4 with CSS-first configuration and shadcn/ui components from `@repo/ui`.
+
+## Core Principles
+
+- **No hardcoded colors, fonts, or spacing** — Use theme tokens from `globals.css`
+- **Reuse before creating** — Check `@repo/ui` for existing components first
+- **Composition over customization** — Combine existing utilities, don't create new CSS
+- **Semantic tokens** — Use `text-foreground`, `bg-background`, not `text-gray-900`
+
+## Theme Tokens (Tailwind v4)
+
+All design tokens are defined in `packages/ui/src/globals.css` using `@theme`:
+
+```css
+@theme {
+  --font-sans: "Instrument Sans", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  /* ... more tokens */
+}
+```
+
+### Using Theme Colors
+
+```tsx
+// Good: Semantic color tokens
+<div className="bg-background text-foreground" />
+<button className="bg-primary text-primary-foreground" />
+<p className="text-muted-foreground" />
+<div className="border-border" />
+
+// Bad: Hardcoded colors
+<div className="bg-white text-black" />
+<div className="bg-[#FF4F00]" />
+<div className="text-gray-500" />
+```
+
+### Using Theme Fonts
+
+```tsx
+// Good: Theme fonts
+<h1 className="font-display text-3xl" />
+<p className="font-sans" />
+<code className="font-mono" />
+
+// Bad: Inline font-family
+<h1 style={{ fontFamily: "Inter" }} />
+```
+
+### Using Theme Radius
+
+```tsx
+// Good: Theme radii
+<div className="rounded-sm" />  // 2px
+<div className="rounded-md" />  // 4px (buttons, inputs)
+<div className="rounded-lg" />  // 8px (cards, modals)
+
+// Bad: Arbitrary values
+<div className="rounded-[6px]" />
+```
+
+## Using shadcn/ui Components
+
+### Import from @repo/ui
+
+All shadcn components are available from the shared UI package:
+
+```tsx
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Badge,
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  Skeleton,
+  ScrollArea,
+  Separator,
+  cn,
+} from "@repo/ui";
+```
+
+### Check Existing Components First
+
+Before creating custom UI, check if a shadcn component exists:
+
+1. Review `packages/ui/src/index.ts` for exported components
+2. Check shadcn/ui docs: https://ui.shadcn.com/docs/components
+
+### Installing New shadcn Components
+
+If a component doesn't exist in `@repo/ui`, install it:
+
+```bash
+# From packages/ui directory
+cd packages/ui
+pnpm dlx shadcn@latest add [component-name]
+
+# Examples:
+pnpm dlx shadcn@latest add accordion
+pnpm dlx shadcn@latest add dropdown-menu
+pnpm dlx shadcn@latest add alert
+```
+
+After installation:
+
+1. **Keep the original shadcn filename** (e.g., `button.tsx`, `card.tsx`) — do NOT add `.component.tsx` suffix
+2. Export from `packages/ui/src/index.ts`
+3. Components auto-use theme tokens from `globals.css`
+
+### Component File Naming
+
+| Component Type            | Naming Convention      | Example                    |
+| ------------------------- | ---------------------- | -------------------------- |
+| shadcn/ui base components | `[name].tsx`           | `button.tsx`, `card.tsx`   |
+| Custom feature components | `[name].component.tsx` | `video-card.component.tsx` |
+| Custom shared components  | `[name].component.tsx` | `sidebar.component.tsx`    |
+
+**Why?** shadcn components are external library code that may be regenerated or updated. Keeping original names simplifies maintenance and diffs.
+
+### Barrel Exports for @repo/ui
+
+The `@repo/ui` package uses a barrel export (`index.ts`) because:
+
+- It's a **curated public API** for a component library
+- All exports are **explicit named exports** (not `export *`)
+- Modern bundlers (Vite) tree-shake effectively with this pattern
+- Major libraries (Radix, Chakra, MUI) follow this same pattern
+
+```typescript
+// packages/ui/src/index.ts - Explicit named exports
+export { Button, buttonVariants, type ButtonProps } from "./components/button";
+export { Card, CardContent, CardHeader } from "./components/card";
+export { cn } from "./lib/utils";
+```
+
+**Note:** This is an exception. Application code (`apps/`, `@repo/types`) should use direct imports to avoid barrel file issues.
+
+### The cn() Utility
+
+Use `cn()` for conditional and merged class names:
+
+```tsx
+import { cn } from "@repo/ui";
+
+// Merge base + conditional classes
+<div className={cn(
+  "px-4 py-2 rounded-md",
+  isActive && "bg-primary text-primary-foreground",
+  disabled && "opacity-50 cursor-not-allowed"
+)} />
+
+// Override default component classes
+<Card className={cn("shadow-none", className)} />
+```
+
+## Component Styling Patterns
+
+### Variants with class-variance-authority
+
+Use `cva` for component variants (shadcn pattern):
+
+```tsx
+import { cva, type VariantProps } from "class-variance-authority";
+
+const buttonVariants = cva(
+  // Base classes
+  "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        outline: "border border-input bg-background hover:bg-accent",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 px-3",
+        lg: "h-11 px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
+```
+
+### Responsive Design
+
+Use mobile-first breakpoints:
+
+```tsx
+<div className="
+  px-4 py-2           // Mobile (default)
+  sm:px-6 sm:py-3     // ≥640px
+  md:px-8 md:py-4     // ≥768px
+  lg:px-10            // ≥1024px
+" />
+
+// Grid responsive
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" />
+```
+
+### Dark Mode
+
+Dark mode uses CSS variables that swap in `.dark` class:
+
+```tsx
+// Automatic via semantic tokens
+<div className="bg-background text-foreground" />
+
+// Explicit dark mode variants (rarely needed)
+<div className="bg-white dark:bg-gray-900" />
+```
+
+### Animations
+
+Use theme animations or Tailwind built-ins:
+
+```tsx
+// Theme animations
+<div className="animate-fade-in" />
+<div className="animate-reveal" />
+<div className="animate-shimmer" />
+
+// Tailwind built-ins
+<div className="animate-spin" />
+<div className="animate-pulse" />
+
+// Transition utilities
+<button className="transition-colors hover:bg-primary/90" />
+<div className="transition-all duration-200 ease-in-out" />
+```
+
+## Avoid These Patterns
+
+### Hardcoded Values
+
+```tsx
+// Bad
+<div className="bg-[#FF4F00] text-[#0A0A0A]" />
+<div className="rounded-[6px] p-[18px]" />
+<h1 style={{ fontFamily: "Arial" }} />
+
+// Good
+<div className="bg-primary text-foreground" />
+<div className="rounded-md p-4" />
+<h1 className="font-display" />
+```
+
+### Custom CSS in Components
+
+```tsx
+// Bad: Inline styles or CSS modules
+<div style={{ backgroundColor: "red", padding: 20 }} />;
+import styles from "./component.module.css";
+
+// Good: Tailwind utilities
+<div className="bg-destructive p-5" />;
+```
+
+### Creating Duplicate Components
+
+```tsx
+// Bad: Custom button when shadcn Button exists
+const MyButton = ({ children }) => (
+  <button className="px-4 py-2 bg-blue-500 rounded">{children}</button>
+);
+
+// Good: Use and extend existing
+import { Button } from "@repo/ui";
+<Button variant="default">{children}</Button>;
+```
+
+## Custom Utilities
+
+If you need a truly custom utility, add it to `globals.css`:
+
+```css
+@utility glass {
+  background-color: color-mix(
+    in oklch,
+    var(--color-background) 80%,
+    transparent
+  );
+  backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in oklch, var(--color-border) 50%, transparent);
+}
+
+@utility text-balance {
+  text-wrap: balance;
+}
+```
+
+Then use in components:
+
+```tsx
+<div className="glass rounded-lg p-4">Frosted glass effect</div>
+<h1 className="text-balance">Long title that balances</h1>
+```
+
+## Quick Reference
+
+| Need                 | Solution                                                   |
+| -------------------- | ---------------------------------------------------------- |
+| Color                | `bg-primary`, `text-foreground`, `border-border`           |
+| Font                 | `font-sans`, `font-display`, `font-mono`                   |
+| Radius               | `rounded-sm` (2px), `rounded-md` (4px), `rounded-lg` (8px) |
+| Spacing              | Use Tailwind scale: `p-4`, `gap-6`, `space-y-2`            |
+| Component            | Import from `@repo/ui`                                     |
+| Conditional classes  | `cn()` utility                                             |
+| New shadcn component | `pnpm dlx shadcn@latest add [name]` in `packages/ui`       |
+
+## References
+
+@packages/ui/src/globals.css
+@packages/ui/src/index.ts
+@packages/ui/src/lib/utils.ts
+@packages/ui/src/components/button.tsx
+@packages/ui/src/components/card.tsx
+@packages/ui/components.json

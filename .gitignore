@@ -10,7 +10,13 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dist-server
 *.local
+
+# Environment files
+.env
+.env.local
+.env.*.local
 
 # Editor directories and files
 .vscode/*
@@ -22,3 +28,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.turbo/cache/*
+apps/web/tsconfig.tsbuildinfo
+apps/api/tsconfig.tsbuildinfo
+.turbo/cookies/*
+.turbo/daemon/*
+*.tsbuildinfo

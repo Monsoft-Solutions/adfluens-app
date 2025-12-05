@@ -1,0 +1,36 @@
+{
+  "name": "@repo/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./src/auth.config.ts",
+      "types": "./src/auth.config.ts"
+    },
+    "./client": {
+      "import": "./src/auth.client.ts",
+      "types": "./src/auth.client.ts"
+    },
+    "./schema": {
+      "import": "./src/schema/auth.table.ts",
+      "types": "./src/schema/auth.table.ts"
+    }
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "eslint .",
+    "generate": "npx @better-auth/cli@latest generate --config ./src/auth.config.ts"
+  },
+  "dependencies": {
+    "@repo/db": "workspace:*",
+    "@repo/env": "workspace:*",
+    "better-auth": "^1.4.5",
+    "drizzle-orm": "^0.45.0"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@types/node": "^24.10.1",
+    "typescript": "~5.9.3"
+  }
+}

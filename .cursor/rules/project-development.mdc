@@ -1,0 +1,604 @@
+---
+description: Full-stack development patterns for this React 19 + tRPC + TanStack Query monorepo. Use when creating new features, views, components, or server logic.
+globs:
+  ["apps/**/*.ts", "apps/**/*.tsx", "packages/**/*.ts", "packages/**/*.tsx"]
+---
+
+# Project Development Guide
+
+This monorepo uses React 19, tRPC v11, TanStack Query v5, React Router v7, and a feature-based architecture. Follow these patterns when adding new functionality.
+
+## Monorepo Structure
+
+```
+apps/
+├── api/                    # Express + tRPC backend
+│   └── src/
+│       ├── features/       # Feature-specific routers & services
+│       ├── trpc/           # tRPC initialization & root router
+│       └── index.ts        # Express server entry
+├── web/                    # React 19 + Vite frontend
+│   └── src/
+│       ├── features/       # Feature-specific views, components & utils
+│       │   └── [feature]/
+│       │       ├── views/      # Route-level view components
+│       │       ├── components/ # Feature-specific components
+│       │       └── utils/      # Feature utilities
+│       ├── shared/         # Shared components (sidebar, layout)
+│       └── lib/            # tRPC client setup
+packages/
+├── types/                  # Shared types with Zod schemas
+├── ui/                     # shadcn/ui component library
+└── eslint-config/          # Shared ESLint configuration
+```
+
+## Creating a New Feature
+
+### Step 1: Define Types in `packages/types`
+
+Create Zod schemas and infer types for type-safe validation:
+
+```typescript
+// packages/types/src/[feature]/[entity].type.ts
+import { z } from "zod";
+
+export const playlistSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string(),
+  videoCount: z.number(),
+});
+
+export type Playlist = z.infer<typeof playlistSchema>;
+```
+
+Import types using direct paths (see [No Barrel Files](#no-barrel-files) section):
+
+```typescript
+import type { Playlist } from "@repo/types/[feature]/playlist.type";
+```
+
+### Step 2: Create Backend Service
+
+Services contain business logic and external API calls:
+
+```typescript
+// apps/api/src/features/[feature]/[feature].service.ts
+import type { Playlist } from "@repo/types/[feature]/playlist.type";
+
+/**
+ * Fetch playlists for a channel
+ */
+export const fetchPlaylists = async (
+  channelId: string
+): Promise<Playlist[]> => {
+  const apiKey = process.env.YOUTUBE_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("YouTube API key not configured on server");
+  }
+
+  // Implementation...
+  return playlists;
+};
+```
+
+### Step 3: Create tRPC Router
+
+Routers expose type-safe procedures using Zod validation:
+
+```typescript
+// apps/api/src/features/[feature]/[feature].router.ts
+import { z } from "zod";
+import { router, publicProcedure } from "../../trpc/init";
+import { fetchPlaylists } from "./[feature].service";
+
+export const playlistRouter = router({
+  /**
+   * Get playlists for a channel
+   */
+  getPlaylists: publicProcedure
+    .input(z.object({ channelId: z.string().min(1) }))
+    .query(async ({ input }) => {
+      const playlists = await fetchPlaylists(input.channelId);
+      return { playlists };
+    }),
+
+  /**
+   * Create a new playlist (mutation example)
+   */
+  createPlaylist: publicProcedure
+    .input(
+      z.object({
+        title: z.string().min(1),
+        description: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      // Implementation...
+      return { success: true };
+    }),
+});
+```
+
+### Step 4: Register Router in App Router
+
+```typescript
+// apps/api/src/trpc/router.ts
+import { router } from "./init";
+import { youtubeRouter } from "../features/youtube/youtube.router";
+import { playlistRouter } from "../features/playlist/playlist.router";
+
+export const appRouter = router({
+  youtube: youtubeRouter,
+  playlist: playlistRouter,
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### Step 5: Create Frontend Components
+
+#### Container Component (with data fetching)
+
+Use `useTRPC` hook for TanStack Query integration:
+
+```typescript
+// apps/web/src/features/[feature]/components/[feature]-list.component.tsx
+import React from "react";
+import { useTRPC } from "@/lib/trpc";
+import { useQuery } from "@tanstack/react-query";
+import type { Playlist } from "@repo/types/[feature]/playlist.type";
+import { Card, Skeleton } from "@repo/ui";
+
+type PlaylistListProps = {
+  channelId: string;
+};
+
+/**
+ * Playlist list container component
+ * Fetches and displays playlists for a channel
+ */
+export const PlaylistList: React.FC<PlaylistListProps> = ({ channelId }) => {
+  const trpc = useTRPC();
+
+  const { data, isLoading, error } = useQuery(
+    trpc.playlist.getPlaylists.queryOptions({ channelId })
+  );
+
+  if (isLoading) {
+    return <Skeleton className="h-48" />;
+  }
+
+  if (error) {
+    return <p className="text-destructive">{error.message}</p>;
+  }
+
+  return (
+    <div className="grid gap-4">
+      {data?.playlists.map((playlist) => (
+        <PlaylistCard key={playlist.id} playlist={playlist} />
+      ))}
+    </div>
+  );
+};
+```
+
+#### Presentational Component (UI only)
+
+```typescript
+// apps/web/src/features/[feature]/components/[feature]-card.component.tsx
+import React from "react";
+import type { Playlist } from "@repo/types/[feature]/playlist.type";
+import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui";
+
+type PlaylistCardProps = {
+  playlist: Playlist;
+  onClick?: (playlist: Playlist) => void;
+};
+
+/**
+ * Playlist card presentational component
+ */
+export const PlaylistCard: React.FC<PlaylistCardProps> = ({
+  playlist,
+  onClick
+}) => {
+  return (
+    <Card
+      onClick={() => onClick?.(playlist)}
+      className="cursor-pointer hover:shadow-md transition-shadow"
+    >
+      <CardHeader>
+        <CardTitle>{playlist.title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-muted-foreground">{playlist.description}</p>
+        <p className="text-sm mt-2">{playlist.videoCount} videos</p>
+      </CardContent>
+    </Card>
+  );
+};
+```
+
+#### Utility Functions (imperative tRPC calls)
+
+For event handlers or non-hook contexts, use the vanilla client:
+
+```typescript
+// apps/web/src/features/[feature]/utils/[feature].utils.ts
+import { trpcClient } from "@/lib/trpc";
+import type { Playlist } from "@repo/types/[feature]/playlist.type";
+
+/**
+ * Fetch playlists imperatively
+ * Use in event handlers or outside React components
+ */
+export const fetchPlaylists = async (
+  channelId: string
+): Promise<Playlist[]> => {
+  const { playlists } = await trpcClient.playlist.getPlaylists.query({
+    channelId,
+  });
+  return playlists;
+};
+
+/**
+ * Create playlist imperatively
+ */
+export const createPlaylist = async (title: string, description?: string) => {
+  return await trpcClient.playlist.createPlaylist.mutate({
+    title,
+    description,
+  });
+};
+```
+
+## tRPC Client Patterns
+
+### Using React Hooks (TanStack Query)
+
+```typescript
+import { useTRPC } from "@/lib/trpc";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+// Query with options
+const trpc = useTRPC();
+const { data, isLoading } = useQuery(
+  trpc.youtube.getVideos.queryOptions({ channelId })
+);
+
+// Mutation with cache invalidation
+const queryClient = useQueryClient();
+const mutation = useMutation(
+  trpc.ai.analyze.mutationOptions({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["analysis"] });
+    },
+  })
+);
+```
+
+### Using Vanilla Client (Imperative)
+
+```typescript
+import { trpcClient } from "@/lib/trpc";
+
+// Query call
+const { videos } = await trpcClient.youtube.getVideos.query({ channelId });
+
+// Mutation call
+const result = await trpcClient.ai.analyze.mutate({ video, comments });
+```
+
+## UI Component Patterns
+
+Import from `@repo/ui` for consistent styling:
+
+```typescript
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Skeleton,
+  cn, // className utility
+} from "@repo/ui";
+```
+
+Use `cn()` for conditional class merging:
+
+```typescript
+<div className={cn(
+  "base-class",
+  isActive && "active-class",
+  variant === "primary" ? "primary-styles" : "secondary-styles"
+)}>
+```
+
+## File Naming Conventions
+
+| Type       | Pattern                | Example                     |
+| ---------- | ---------------------- | --------------------------- |
+| Components | `[name].component.tsx` | `video-card.component.tsx`  |
+| Views      | `[name].view.tsx`      | `channel-analyzer.view.tsx` |
+| Services   | `[name].service.ts`    | `youtube.service.ts`        |
+| Routers    | `[name].router.ts`     | `youtube.router.ts`         |
+| Types      | `[name].type.ts`       | `youtube-video.type.ts`     |
+| Enums      | `[name].enum.ts`       | `video-sort-option.enum.ts` |
+| Utilities  | `[name].utils.ts`      | `youtube.utils.ts`          |
+| Hooks      | `use-[name].hook.ts`   | `use-video-player.hook.ts`  |
+
+## No Barrel Files
+
+This project avoids barrel files (`index.ts` files that re-export from other modules) in favor of direct imports.
+
+### Why No Barrel Files
+
+- **Faster builds**: Bundlers can tree-shake more effectively with direct imports
+- **Clearer dependencies**: Each import shows exactly which file provides it
+- **Avoids circular dependencies**: Barrel files can create hidden circular import chains
+- **Better IDE performance**: Faster autocomplete and type checking
+
+### Importing from `@repo/types`
+
+Always import types directly from their source files:
+
+```typescript
+// Good: Direct imports
+import type { YouTubeVideo } from "@repo/types/youtube/youtube-video.type";
+import type { VideoSortOption } from "@repo/types/youtube/video-sort-option.enum";
+import type { ViralAnalysisResult } from "@repo/types/ai/viral-analysis-result.type";
+
+// Bad: Barrel imports (do not use)
+import type { YouTubeVideo, VideoSortOption } from "@repo/types";
+```
+
+### Exception: `@repo/ui`
+
+The `@repo/ui` package keeps its `index.ts` as it serves as the curated public API surface for a component library with explicit named exports. This is a standard pattern for component libraries.
+
+```typescript
+// UI components use centralized import (allowed)
+import { Button, Card, cn } from "@repo/ui";
+```
+
+## Routing & Navigation
+
+The app uses React Router v7 with a sidebar layout. Routes are defined in `app.tsx`.
+
+### App Layout Structure
+
+The `AppLayout` component wraps all routes with the sidebar:
+
+```typescript
+// apps/web/src/shared/components/app-layout.component.tsx
+import React from "react";
+import { Outlet } from "react-router-dom";
+import { Sidebar } from "./sidebar.component";
+
+/**
+ * Main application layout with sidebar navigation
+ */
+export const AppLayout: React.FC = () => {
+  return (
+    <div className="min-h-screen bg-background flex">
+      <Sidebar />
+      <main className="flex-1 min-h-screen overflow-auto px-8 py-8">
+        <div className="max-w-6xl mx-auto">
+          <Outlet />
+        </div>
+      </main>
+    </div>
+  );
+};
+```
+
+### Sidebar Navigation
+
+Use `NavLink` for navigation items with active state styling:
+
+```typescript
+// apps/web/src/shared/components/sidebar.component.tsx
+import React from "react";
+import { NavLink } from "react-router-dom";
+import { cn } from "@repo/ui";
+
+const NavItem: React.FC<{ to: string; icon: React.ReactNode; label: string }> = ({
+  to,
+  icon,
+  label,
+}) => (
+  <NavLink
+    to={to}
+    className={({ isActive }) =>
+      cn(
+        "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+        "text-muted-foreground hover:text-foreground hover:bg-accent",
+        isActive && "bg-primary/10 text-primary font-medium"
+      )
+    }
+  >
+    {icon}
+    <span className="text-sm">{label}</span>
+  </NavLink>
+);
+```
+
+### Route Configuration
+
+Define routes in `app.tsx` using nested routes:
+
+```typescript
+// apps/web/src/app.tsx
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AppLayout } from "./shared/components/app-layout.component";
+import { ChannelAnalyzerView } from "./features/youtube/views/channel-analyzer.view";
+import { VideoSearchView } from "./features/search/views/video-search.view";
+import { VideoDetailView } from "./features/youtube/views/video-detail.view";
+
+const App: React.FC = () => {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<ChannelAnalyzerView />} />
+          <Route path="/search" element={<VideoSearchView />} />
+          <Route path="/video/:id" element={<VideoDetailView />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
+};
+```
+
+### Adding a New Route
+
+1. Create the view in `apps/web/src/features/[feature]/views/`
+2. Add route in `app.tsx` under the `<Route element={<AppLayout />}>` parent
+3. Add navigation item to sidebar
+
+## Creating a View Component
+
+Views are route-level components that compose feature components:
+
+```typescript
+// apps/web/src/features/[feature]/views/[feature].view.tsx
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { useTRPC } from "@/lib/trpc";
+import { AlertCircle, Loader2 } from "lucide-react";
+import { cn } from "@repo/ui";
+import type { SomeType } from "@repo/types/[feature]/some.type";
+import { SomeComponent } from "../components/some.component";
+
+/**
+ * Feature view component
+ */
+export const FeatureView: React.FC = () => {
+  const navigate = useNavigate();
+  const trpc = useTRPC();
+
+  const { data, isLoading, error } = useQuery(
+    trpc.feature.getData.queryOptions({ /* params */ })
+  );
+
+  const handleItemClick = (item: SomeType) => {
+    navigate(`/detail/${item.id}`, { state: { item } });
+  };
+
+  return (
+    <div className="animate-in fade-in duration-300">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground mb-2">Feature Title</h1>
+        <p className="text-muted-foreground">Feature description</p>
+      </div>
+
+      {error && (
+        <div className={cn(
+          "bg-destructive/10 border border-destructive/20 text-destructive",
+          "px-4 py-3 rounded-lg mb-6 flex items-center gap-3"
+        )}>
+          <AlertCircle className="w-5 h-5" />
+          <p>{error.message}</p>
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      ) : (
+        <SomeComponent data={data} onItemClick={handleItemClick} />
+      )}
+    </div>
+  );
+};
+```
+
+### Passing State Between Routes
+
+Use React Router's `state` to pass data between routes:
+
+```typescript
+// Navigate with state
+const handleClick = (video: YouTubeVideo) => {
+  navigate(`/video/${video.id}`, { state: { video } });
+};
+
+// Receive state in target view
+import { useLocation } from "react-router-dom";
+
+const VideoDetailView: React.FC = () => {
+  const location = useLocation();
+  const video = location.state?.video as YouTubeVideo | undefined;
+  // ...
+};
+```
+
+## Error Handling
+
+### Backend (Services)
+
+Throw descriptive errors that tRPC will serialize:
+
+```typescript
+if (!apiKey) {
+  throw new Error("API key not configured on server");
+}
+
+if (!response.ok) {
+  throw new Error(data.error?.message || "Request failed");
+}
+```
+
+### Frontend (Components)
+
+Handle loading and error states explicitly:
+
+```typescript
+const { data, isLoading, error } = useQuery(
+  trpc.youtube.getVideos.queryOptions({ channelId })
+);
+
+if (isLoading) return <Skeleton />;
+if (error) return <ErrorMessage error={error.message} />;
+return <VideoGrid videos={data.videos} />;
+```
+
+## Environment Variables
+
+Backend variables in `apps/api/.env`:
+
+```
+YOUTUBE_API_KEY=...
+GEMINI_API_KEY=...
+PORT=3001
+```
+
+Access via `process.env.VARIABLE_NAME` in services.
+
+## References
+
+@apps/api/src/trpc/init.ts
+@apps/api/src/trpc/router.ts
+@apps/api/src/features/youtube/youtube.router.ts
+@apps/api/src/features/youtube/youtube.service.ts
+@apps/web/src/app.tsx
+@apps/web/src/lib/trpc.ts
+@apps/web/src/shared/components/sidebar.component.tsx
+@apps/web/src/shared/components/app-layout.component.tsx
+@apps/web/src/features/youtube/views/channel-analyzer.view.tsx
+@apps/web/src/features/search/views/video-search.view.tsx
+@apps/web/src/features/youtube/components/video-card.component.tsx
+@apps/web/src/features/youtube/utils/youtube.utils.ts
+@packages/types/src/youtube/youtube-video.type.ts
+@packages/types/src/youtube/video-sort-option.enum.ts
+@packages/types/src/ai/viral-analysis-result.type.ts
+@packages/types/package.json
+@packages/ui/src/index.ts
