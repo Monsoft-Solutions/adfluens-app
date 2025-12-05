@@ -66,8 +66,48 @@ export const auth = betterAuth({
         viewer,
         creator,
       },
+      schema: {
+        organization: {
+          additionalFields: {
+            /** Track who created the organization */
+            createdBy: {
+              type: "string",
+              required: true,
+              input: true,
+              fieldName: "created_by",
+            },
+          },
+        },
+      },
     }),
   ],
+
+  /** Database hooks for custom logic on data operations */
+  databaseHooks: {
+    user: {
+      create: {
+        /**
+         * Auto-create a personal organization for each new user
+         * This ensures every user has a workspace immediately after signup
+         */
+        after: async (user) => {
+          await auth.api.createOrganization({
+            body: {
+              name: `${user.name}'s Workspace`,
+              slug: `${user.id}-workspace`,
+              userId: user.id,
+              createdBy: user.id,
+            } as {
+              name: string;
+              slug: string;
+              userId: string;
+              createdBy: string;
+            },
+          });
+        },
+      },
+    },
+  },
 });
 
 /** Export auth type for client inference */
