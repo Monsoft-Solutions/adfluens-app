@@ -1,6 +1,6 @@
 import { createAuthClient } from "better-auth/react";
 import { organizationClient } from "better-auth/client/plugins";
-import { ac, owner, admin, viewer, creator } from "./auth.config";
+import { ac, owner, admin, viewer, creator } from "./auth.roles";
 
 /**
  * Better Auth React client

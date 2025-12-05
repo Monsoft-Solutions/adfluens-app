@@ -1,57 +1,10 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { organization } from "better-auth/plugins";
-import { createAccessControl } from "better-auth/plugins/access";
 import { db } from "@repo/db/client";
 import { env } from "@repo/env";
 import * as authSchema from "./schema/auth.table";
-
-/**
- * Access control statement
- * Defines resources and actions for role-based access control
- */
-const statement = {
-  organization: ["view", "update", "delete", "manage"],
-  member: ["view", "invite", "remove", "updateRole"],
-  channel: ["analyze", "view", "manage"],
-  video: ["analyze", "view"],
-} as const;
-
-/**
- * Access control instance
- */
-const ac = createAccessControl(statement);
-
-/**
- * Custom roles with specific permissions
- */
-const owner = ac.newRole({
-  organization: ["update", "delete", "manage"],
-  member: ["invite", "remove", "updateRole"],
-  channel: ["analyze", "view", "manage"],
-  video: ["analyze", "view"],
-});
-
-const admin = ac.newRole({
-  organization: ["update", "manage"],
-  member: ["invite", "remove", "updateRole"],
-  channel: ["analyze", "view", "manage"],
-  video: ["analyze", "view"],
-});
-
-const viewer = ac.newRole({
-  organization: ["view"],
-  member: ["view"],
-  channel: ["view"],
-  video: ["view"],
-});
-
-const creator = ac.newRole({
-  organization: ["view"],
-  member: ["view"],
-  channel: ["analyze", "view", "manage"],
-  video: ["analyze", "view"],
-});
+import { ac, owner, admin, viewer, creator } from "./auth.roles";
 
 /**
  * Better Auth server configuration
@@ -120,5 +73,5 @@ export const auth = betterAuth({
 /** Export auth type for client inference */
 export type Auth = typeof auth;
 
-/** Export access control and roles for client-side usage */
-export { ac, owner, admin, viewer, creator };
+/** Re-export access control and roles for convenience */
+export { ac, owner, admin, viewer, creator } from "./auth.roles";

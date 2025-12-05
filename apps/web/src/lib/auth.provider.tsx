@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useMemo, useCallback } from "react";
-import { useSession, authClient } from "./auth.client";
+import { useSession, authClient } from "@repo/auth/client";
 
 /**
  * User type from Better Auth session

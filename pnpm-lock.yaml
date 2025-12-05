@@ -84,6 +84,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@repo/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@repo/types':
         specifier: workspace:*
         version: link:../../packages/types

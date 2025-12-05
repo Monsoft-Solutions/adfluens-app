@@ -12,6 +12,10 @@
       "import": "./src/auth.client.ts",
       "types": "./src/auth.client.ts"
     },
+    "./roles": {
+      "import": "./src/auth.roles.ts",
+      "types": "./src/auth.roles.ts"
+    },
     "./schema": {
       "import": "./src/schema/auth.table.ts",
       "types": "./src/schema/auth.table.ts"

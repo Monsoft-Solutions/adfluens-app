@@ -9,7 +9,7 @@ import {
   User,
 } from "lucide-react";
 import { Button, cn, Skeleton, Separator, ThemeToggleIcon } from "@repo/ui";
-import { useSession, signOut } from "@/lib/auth.client";
+import { useSession, signOut } from "@repo/auth/client";
 import { useTheme } from "@/lib/theme.provider";
 
 type NavItemProps = {
