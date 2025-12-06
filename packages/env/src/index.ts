@@ -39,6 +39,9 @@ export const env = createEnv({
       .string()
       .min(1, "Facebook Client Secret is required"),
 
+    /** ScrapingDog API key for web scraping */
+    SCRAPINGDOG_API_KEY: z.string().min(1, "ScrapingDog API key is required"),
+
     /** Server port (optional, defaults to 3001) */
     PORT: z.coerce.number().default(3001),
 

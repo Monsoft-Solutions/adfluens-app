@@ -1,12 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   Youtube,
   Search,
   LayoutDashboard,
+  Settings,
   LogOut,
   LogIn,
   User,
+  ChevronDown,
+  Building2,
 } from "lucide-react";
 import { Button, cn, Skeleton, Separator, ThemeToggleIcon } from "@repo/ui";
 import { useSession, signOut } from "@repo/auth/client";
@@ -45,6 +48,7 @@ export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const { data: session, isPending } = useSession();
   const { theme, setTheme } = useTheme();
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -86,6 +90,11 @@ export const Sidebar: React.FC = () => {
           icon={<Search className="w-5 h-5" />}
           label="Video Search"
         />
+        <NavItem
+          to="/settings"
+          icon={<Settings className="w-5 h-5" />}
+          label="Settings"
+        />
       </nav>
 
       {/* User Section */}
@@ -99,8 +108,15 @@ export const Sidebar: React.FC = () => {
             </div>
           </div>
         ) : session?.user ? (
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 px-2">
+          <div className="space-y-2">
+            {/* User Info Button (toggles dropdown) */}
+            <button
+              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              className={cn(
+                "w-full flex items-center gap-3 px-2 py-2 rounded-lg transition-colors",
+                "hover:bg-accent text-left"
+              )}
+            >
               {session.user.image ? (
                 <img
                   src={session.user.image}
@@ -120,16 +136,40 @@ export const Sidebar: React.FC = () => {
                   {session.user.email}
                 </p>
               </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start text-muted-foreground hover:text-foreground"
-              onClick={handleSignOut}
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign out
-            </Button>
+              <ChevronDown
+                className={cn(
+                  "w-4 h-4 text-muted-foreground transition-transform",
+                  isUserMenuOpen && "rotate-180"
+                )}
+              />
+            </button>
+
+            {/* Dropdown Menu */}
+            {isUserMenuOpen && (
+              <div className="space-y-1 pt-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    navigate("/settings");
+                    setIsUserMenuOpen(false);
+                  }}
+                >
+                  <Building2 className="w-4 h-4 mr-2" />
+                  Organization Settings
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start text-muted-foreground hover:text-foreground"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign out
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           <Button

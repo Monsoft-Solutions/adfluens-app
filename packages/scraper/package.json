@@ -1,0 +1,42 @@
+{
+  "name": "@repo/scraper",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    },
+    "./schema": {
+      "import": "./src/schema/organization-profile.table.ts",
+      "types": "./src/schema/organization-profile.table.ts"
+    },
+    "./clients": {
+      "import": "./src/clients/scrapingdog.client.ts",
+      "types": "./src/clients/scrapingdog.client.ts"
+    },
+    "./scrapers": {
+      "import": "./src/scrapers/website.scraper.ts",
+      "types": "./src/scrapers/website.scraper.ts"
+    },
+    "./types": {
+      "import": "./src/types/scraped-data.type.ts",
+      "types": "./src/types/scraped-data.type.ts"
+    }
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@repo/env": "workspace:*",
+    "axios": "^1.7.9",
+    "drizzle-orm": "^0.45.0"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@types/node": "^24.10.1",
+    "typescript": "~5.9.3"
+  }
+}

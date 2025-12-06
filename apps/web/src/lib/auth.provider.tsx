@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useMemo, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import { useSession, authClient } from "@repo/auth/client";
 
 /**
@@ -63,6 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { data, isPending, error, refetch } = useSession();
+  const hasAttemptedAutoSelect = useRef(false);
 
   /**
    * Refetch the session data
@@ -86,22 +94,106 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     [refetch]
   );
 
+  // Extract organization data from session response
+  const sessionResponse = data as
+    | { organization?: Organization }
+    | null
+    | undefined;
+  const hasSession = !!data?.session && !!data?.user && !error;
+  const organizationData =
+    hasSession && sessionResponse?.organization
+      ? (sessionResponse.organization as Organization)
+      : null;
+
+  /**
+   * Auto-select first organization if user is authenticated but has no active organization
+   * This handles the case when a new user signs up and their organization isn't auto-activated
+   */
+  useEffect(() => {
+    const autoSelectOrganization = async () => {
+      console.log("[auth] Auto-select check:", {
+        hasAttemptedAutoSelect: hasAttemptedAutoSelect.current,
+        isPending,
+        hasSession,
+        organizationData,
+      });
+
+      // Skip if already attempted, still loading, no session, or already has organization
+      if (
+        hasAttemptedAutoSelect.current ||
+        isPending ||
+        !hasSession ||
+        organizationData
+      ) {
+        return;
+      }
+
+      hasAttemptedAutoSelect.current = true;
+      console.log("[auth] Attempting to auto-select organization...");
+
+      try {
+        // Log available organization methods
+        console.log(
+          "[auth] Available organization methods:",
+          Object.keys(authClient.organization)
+        );
+
+        // Fetch user's organizations (returns memberships with organization data)
+        const orgsResponse = await authClient.organization.list();
+        console.log("[auth] Organizations list response:", orgsResponse);
+        console.log(
+          "[auth] Response data:",
+          JSON.stringify(orgsResponse, null, 2)
+        );
+
+        // Handle the response - it might be memberships array or organizations array
+        const orgsData = orgsResponse.data;
+        if (orgsData && orgsData.length > 0) {
+          const firstItem = orgsData[0];
+          console.log("[auth] First item from list:", firstItem);
+
+          // Extract organization ID - could be direct org or membership with org
+          const orgId =
+            firstItem?.id ||
+            (firstItem as { organization?: { id: string } })?.organization
+              ?.id ||
+            (firstItem as { organizationId?: string })?.organizationId;
+
+          console.log("[auth] Organization ID to select:", orgId);
+
+          if (orgId) {
+            // Set the first organization as active
+            const setActiveResult = await authClient.organization.setActive({
+              organizationId: orgId,
+            });
+            console.log("[auth] Set active result:", setActiveResult);
+            // Refetch session to get updated organization data
+            await refetch();
+            console.log("[auth] Session refetched after setting org active");
+          }
+        } else {
+          console.warn("[auth] No organizations found for user");
+        }
+      } catch (err) {
+        console.error("[auth] Failed to auto-select organization:", err);
+      }
+    };
+
+    void autoSelectOrganization();
+  }, [hasSession, organizationData, isPending, refetch]);
+
+  // Reset the auto-select flag when user logs out
+  useEffect(() => {
+    if (!hasSession) {
+      hasAttemptedAutoSelect.current = false;
+    }
+  }, [hasSession]);
+
   const value = useMemo<AuthContextValue>(() => {
-    const hasSession = !!data?.session && !!data?.user && !error;
-    const sessionData = hasSession ? (data.session as Session) : null;
-    // Organization data may be included in session response when organization plugin is active
-    // If not present, it will be null and can be fetched separately if needed
-    const sessionResponse = data as
-      | { organization?: Organization }
-      | null
-      | undefined;
-    const organizationData =
-      hasSession && sessionResponse?.organization
-        ? (sessionResponse.organization as Organization)
-        : null;
+    const sessionData = hasSession ? (data?.session as Session) : null;
 
     return {
-      user: hasSession ? (data.user as User) : null,
+      user: hasSession ? (data?.user as User) : null,
       session: sessionData,
       organization: organizationData,
       isLoading: isPending,
@@ -109,7 +201,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       refetchSession,
       setActiveOrganization,
     };
-  }, [data, isPending, error, refetchSession, setActiveOrganization]);
+  }, [
+    data,
+    hasSession,
+    organizationData,
+    isPending,
+    refetchSession,
+    setActiveOrganization,
+  ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

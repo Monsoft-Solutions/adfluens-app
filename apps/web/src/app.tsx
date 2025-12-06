@@ -10,6 +10,7 @@ import { ProtectedRoute } from "./shared/components/protected-route.component";
 import { ChannelAnalyzerView } from "./features/youtube/views/channel-analyzer.view";
 import { VideoDetailView } from "./features/youtube/views/video-detail.view";
 import { VideoSearchView } from "./features/search/views/video-search.view";
+import { OrganizationSettingsView } from "./features/organization/views/organization-settings.view";
 import { SignInView } from "./features/auth/views/sign-in.view";
 import { SignUpView } from "./features/auth/views/sign-up.view";
 
@@ -55,6 +56,10 @@ const App: React.FC = () => {
                       <Route path="/" element={<ChannelAnalyzerView />} />
                       <Route path="/search" element={<VideoSearchView />} />
                       <Route path="/video/:id" element={<VideoDetailView />} />
+                      <Route
+                        path="/settings"
+                        element={<OrganizationSettingsView />}
+                      />
                     </Route>
                   </Route>
                 </Routes>
