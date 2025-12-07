@@ -63,26 +63,5 @@ export {
   type ExtractOrganizationProfileOptions,
 } from "./functions";
 
-// Schemas and types (re-exported from @repo/types - the single source of truth)
-export {
-  organizationProfileSchema,
-  brandVoiceSchema,
-  targetAudienceSchema,
-  competitivePositioningSchema,
-  contentThemesSchema,
-  businessModelSchema,
-  socialProofSchema,
-  websiteScrapingResultSchema,
-  type OrganizationProfile,
-  type OrganizationProfileExtraction,
-  type BrandVoice,
-  type TargetAudienceDetails,
-  type CompetitivePositioning,
-  type ContentThemes,
-  type BusinessModel,
-  type SocialProof,
-  type WebsiteScrapingResult,
-} from "./schemas";
-
 // Telemetry configuration
 export { telemetryConfig } from "./telemetry";

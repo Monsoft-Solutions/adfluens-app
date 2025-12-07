@@ -25,11 +25,7 @@ export {
 } from "./clients/scrapingdog.client";
 
 // Scraper exports
-export {
-  scrapeWebsite,
-  type ScrapedBusinessInfo,
-  type WebsiteScrapingResult,
-} from "./scrapers/website.scraper";
+export { scrapeWebsite } from "./scrapers/website.scraper";
 
 // Type exports
 export { SocialPlatform } from "./types/social-platform.enum";

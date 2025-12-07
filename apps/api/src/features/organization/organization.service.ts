@@ -5,8 +5,8 @@ import {
   scrapedPage,
   scrapeWebsite,
   type OrganizationProfile,
-  type ScrapedBusinessInfo,
 } from "@repo/scraper";
+import type { ScrapedBusinessInfo } from "@repo/types/organization/organization-profile.type";
 
 /**
  * Generate a unique ID for new organization profiles

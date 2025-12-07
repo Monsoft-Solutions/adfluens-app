@@ -1,6 +1,6 @@
 import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp, jsonb, index } from "drizzle-orm/pg-core";
-import type { ScrapedBusinessInfo } from "../types/scraped-data.type";
+import type { ScrapedBusinessInfo } from "@repo/types/organization/organization-profile.type";
 
 /**
  * Organization profile table

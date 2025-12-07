@@ -1,9 +1,7 @@
 import { extractOrganizationProfile } from "@repo/ai/functions";
+import type { WebsiteScrapingResult } from "@repo/types/organization/website-scraping-result.type";
+
 import { scrapingDogClient } from "../clients/scrapingdog.client";
-import type {
-  ScrapedBusinessInfo,
-  WebsiteScrapingResult,
-} from "../types/scraped-data.type";
 
 /**
  * Scrape a website and extract business information
@@ -59,8 +57,3 @@ export async function scrapeWebsite(
     };
   }
 }
-
-/**
- * Re-export for convenience
- */
-export type { ScrapedBusinessInfo, WebsiteScrapingResult };

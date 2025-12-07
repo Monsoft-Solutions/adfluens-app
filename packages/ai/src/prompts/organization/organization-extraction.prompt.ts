@@ -76,3 +76,15 @@ Extract credibility indicators:
 ## Output Format
 
 Return a structured JSON object matching the schema provided. All fields are optional - only include fields where you have confident information to extract.`;
+
+/**
+ * Generate the user prompt for organization profile extraction.
+ *
+ * @param websiteContent - Markdown content from the scraped website
+ * @returns Formatted prompt string for the AI model
+ */
+export function getOrganizationExtractionPrompt(
+  websiteContent: string
+): string {
+  return `Extract comprehensive organization information from this website content:\n\n${websiteContent}`;
+}
