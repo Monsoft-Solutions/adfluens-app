@@ -1,5 +1,6 @@
 /**
  * Business information extracted from website scraping
+ * Note: Raw content is stored separately in the scraped_page table
  */
 export type ScrapedBusinessInfo = {
   /** Business or company name */
@@ -40,9 +41,6 @@ export type ScrapedBusinessInfo = {
 
   /** Target audience or customer segments */
   targetAudience?: string[];
-
-  /** Raw markdown content from the website */
-  rawContent?: string;
 };
 
 /**
@@ -52,8 +50,11 @@ export type WebsiteScrapingResult = {
   /** Whether the scraping was successful */
   success: boolean;
 
-  /** Extracted business information */
+  /** Extracted business information (parsed data) */
   data?: ScrapedBusinessInfo;
+
+  /** Raw webpage content (markdown) - stored separately in scraped_page table */
+  rawContent?: string;
 
   /** Error message if scraping failed */
   error?: string;

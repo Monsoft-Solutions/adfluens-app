@@ -59,25 +59,47 @@ export type Context = {
 export const createContext = async ({
   req,
 }: CreateExpressContextOptions): Promise<Context> => {
+  const headers = fromNodeHeaders(req.headers);
+
   const sessionData = await auth.api.getSession({
-    headers: fromNodeHeaders(req.headers),
+    headers,
   });
 
-  // Organization data may be included in session response when organization plugin is active
-  // Type assertion needed as Better Auth types may vary
-  const sessionWithOrg = sessionData as
-    | {
-        user?: User;
-        session?: Session;
-        organization?: Organization;
+  if (!sessionData?.session || !sessionData?.user) {
+    return {
+      user: null,
+      session: null,
+      organization: null,
+    };
+  }
+
+  const session = sessionData.session as Session & {
+    activeOrganizationId?: string | null;
+  };
+  const user = sessionData.user as User;
+
+  // Fetch organization if there's an active organization ID in the session
+  let organization: Organization | null = null;
+  if (session.activeOrganizationId) {
+    try {
+      const orgData = await auth.api.getFullOrganization({
+        headers,
+        query: {
+          organizationId: session.activeOrganizationId,
+        },
+      });
+      if (orgData) {
+        organization = orgData as unknown as Organization;
       }
-    | null
-    | undefined;
+    } catch {
+      // Organization fetch failed, continue without organization
+    }
+  }
 
   return {
-    user: sessionWithOrg?.user ?? null,
-    session: sessionWithOrg?.session ?? null,
-    organization: sessionWithOrg?.organization ?? null,
+    user,
+    session,
+    organization,
   };
 };
 

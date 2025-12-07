@@ -6,6 +6,7 @@ export default defineConfig({
     "./src/schema/index.ts",
     "../auth/src/schema/auth.table.ts",
     "../scraper/src/schema/organization-profile.table.ts",
+    "../scraper/src/schema/scraped-page.table.ts",
   ],
   out: "./drizzle",
   dialect: "postgresql",

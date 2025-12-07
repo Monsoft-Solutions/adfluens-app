@@ -8,6 +8,13 @@
       "when": 1764978342649,
       "tag": "0000_rapid_lady_ursula",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1765028204461,
+      "tag": "0001_slow_korvac",
+      "breakpoints": true
     }
   ]
 }

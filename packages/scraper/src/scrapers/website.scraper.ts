@@ -7,11 +7,10 @@ import type {
 /**
  * Parse markdown content to extract business information
  * Uses pattern matching to identify common business information patterns
+ * Note: Raw content is returned separately, not included in parsed info
  */
 function parseBusinessInfo(markdown: string): ScrapedBusinessInfo {
-  const info: ScrapedBusinessInfo = {
-    rawContent: markdown,
-  };
+  const info: ScrapedBusinessInfo = {};
 
   // Extract business name from first H1 or title-like content
   const h1Match = markdown.match(/^#\s+(.+)$/m);
@@ -171,6 +170,7 @@ export async function scrapeWebsite(
     return {
       success: true,
       data: businessInfo,
+      rawContent: markdown,
       url: normalizedUrl,
       scrapedAt,
     };

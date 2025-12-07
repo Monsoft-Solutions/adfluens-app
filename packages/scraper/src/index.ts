@@ -11,6 +11,13 @@ export {
   type OrganizationProfile,
 } from "./schema/organization-profile.table";
 
+export {
+  scrapedPage,
+  scrapedPageRelations,
+  type NewScrapedPage,
+  type ScrapedPage,
+} from "./schema/scraped-page.table";
+
 // Client exports
 export {
   ScrapingDogClient,
