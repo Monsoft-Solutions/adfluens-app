@@ -79,6 +79,34 @@
     "./organization/website-scraping-result.type": {
       "import": "./src/organization/website-scraping-result.type.ts",
       "types": "./src/organization/website-scraping-result.type.ts"
+    },
+    "./social-media/social-media-platform.enum": {
+      "import": "./src/social-media/social-media-platform.enum.ts",
+      "types": "./src/social-media/social-media-platform.enum.ts"
+    },
+    "./social-media/social-media-account.type": {
+      "import": "./src/social-media/social-media-account.type.ts",
+      "types": "./src/social-media/social-media-account.type.ts"
+    },
+    "./social-media/platform-data.type": {
+      "import": "./src/social-media/platform-data.type.ts",
+      "types": "./src/social-media/platform-data.type.ts"
+    },
+    "./social-media/instagram-platform-data.type": {
+      "import": "./src/social-media/instagram-platform-data.type.ts",
+      "types": "./src/social-media/instagram-platform-data.type.ts"
+    },
+    "./social-media/tiktok-platform-data.type": {
+      "import": "./src/social-media/tiktok-platform-data.type.ts",
+      "types": "./src/social-media/tiktok-platform-data.type.ts"
+    },
+    "./social-media/facebook-platform-data.type": {
+      "import": "./src/social-media/facebook-platform-data.type.ts",
+      "types": "./src/social-media/facebook-platform-data.type.ts"
+    },
+    "./social-media/youtube-platform-data.type": {
+      "import": "./src/social-media/youtube-platform-data.type.ts",
+      "types": "./src/social-media/youtube-platform-data.type.ts"
     }
   },
   "scripts": {

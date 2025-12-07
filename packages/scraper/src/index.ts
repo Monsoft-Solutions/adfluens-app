@@ -18,6 +18,13 @@ export {
   type ScrapedPageRow,
 } from "./schema/scraped-page.table";
 
+export {
+  socialMediaAccountTable,
+  socialMediaAccountTableRelations,
+  type SocialMediaAccountInsert,
+  type SocialMediaAccountRow,
+} from "./schema/social-media-account.table";
+
 // Client exports
 export {
   ScrapingDogClient,
