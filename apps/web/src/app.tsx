@@ -13,6 +13,7 @@ import { VideoSearchView } from "./features/search/views/video-search.view";
 import { OrganizationSettingsView } from "./features/organization/views/organization-settings.view";
 import { InstagramView } from "./features/social-media/views/instagram.view";
 import { FacebookView } from "./features/social-media/views/facebook.view";
+import { TiktokView } from "./features/social-media/views/tiktok.view";
 import { SignInView } from "./features/auth/views/sign-in.view";
 import { SignUpView } from "./features/auth/views/sign-up.view";
 
@@ -70,6 +71,7 @@ const App: React.FC = () => {
                         path="/social/facebook"
                         element={<FacebookView />}
                       />
+                      <Route path="/social/tiktok" element={<TiktokView />} />
                     </Route>
                   </Route>
                 </Routes>

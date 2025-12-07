@@ -2,6 +2,7 @@ import axios, { AxiosError } from "axios";
 import { env } from "@repo/env";
 import type { ScrapecreatorInstagramProfileResponse } from "@repo/types/scrapecreator/scrapecreator-instagram-profile.type";
 import type { ScrapecreatorFacebookPageResponse } from "@repo/types/scrapecreator/scrapecreator-facebook-page.type";
+import type { ScrapecreatorTiktokProfileResponse } from "@repo/types/scrapecreator/scrapecreator-tiktok-profile.type";
 
 /** ScrapeCreator API base URL */
 const SCRAPECREATOR_API_URL = "https://api.scrapecreators.com/v1";
@@ -145,6 +146,68 @@ export class ScrapeCreatorClient {
         return response.data;
       } catch (error) {
         lastError = error;
+
+        // Only retry on rate limit errors (429)
+        if (isRateLimitError(error) && attempt < MAX_RETRIES) {
+          const delay = getBackoffDelay(attempt);
+          console.warn(
+            `[ScrapeCreator] Rate limited (429). Retry ${attempt + 1}/${MAX_RETRIES} after ${Math.round(delay)}ms`
+          );
+          await sleep(delay);
+          continue;
+        }
+
+        // For non-rate-limit errors or max retries exceeded, throw immediately
+        throw error;
+      }
+    }
+
+    // This should not be reached, but TypeScript needs it
+    throw lastError;
+  }
+
+  /**
+   * Scrape a TikTok profile using ScrapeCreator API
+   * Implements exponential backoff retry for 429 rate limit errors
+   * @param handle - The TikTok username/handle (without @)
+   * @returns The TikTok profile data from ScrapeCreator
+   */
+  async scrapeTiktokProfile(
+    handle: string
+  ): Promise<ScrapecreatorTiktokProfileResponse> {
+    const url = `${SCRAPECREATOR_API_URL}/tiktok/profile`;
+    const params = {
+      handle: handle.replace(/^@/, ""), // Remove @ if present
+    };
+
+    let lastError: unknown;
+
+    console.log("Scraping TikTok profile for handle:", handle);
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const response = await axios.get<ScrapecreatorTiktokProfileResponse>(
+          url,
+          {
+            params,
+            headers: {
+              "x-api-key": this.apiKey,
+            },
+            timeout: 30000, // 30 second timeout
+          }
+        );
+
+        console.log("TikTok profile response:", response.data);
+
+        if (!response.data.success) {
+          throw new Error("ScrapeCreator API returned unsuccessful response");
+        }
+
+        return response.data;
+      } catch (error) {
+        lastError = error;
+
+        console.log("TikTok profile error:", error);
 
         // Only retry on rate limit errors (429)
         if (isRateLimitError(error) && attempt < MAX_RETRIES) {

@@ -29,3 +29,9 @@ export {
   extractFacebookHandle,
   type FacebookScrapingResult,
 } from "./scrapers/social-media/facebook.scraper";
+
+export {
+  scrapeTiktokProfile,
+  extractTiktokHandle,
+  type TiktokScrapingResult,
+} from "./scrapers/social-media/tiktok.scraper";

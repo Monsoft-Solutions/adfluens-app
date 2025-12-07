@@ -10,6 +10,7 @@ import type { ScrapedBusinessInfo } from "@repo/types/organization/organization-
 import {
   scrapeAndSaveInstagramProfile,
   scrapeAndSaveFacebookProfile,
+  scrapeAndSaveTiktokProfile,
 } from "../social-media/social-media.service";
 
 /**
@@ -59,6 +60,8 @@ export async function getOrganizationProfile(
  * If profile doesn't exist, creates it; otherwise updates it
  * Automatically triggers website scraping if website URL changes
  * Automatically triggers Instagram scraping if Instagram URL changes
+ * Automatically triggers Facebook scraping if Facebook URL changes
+ * Automatically triggers TikTok scraping if TikTok URL changes
  */
 export async function upsertOrganizationProfile(
   organizationId: string,
@@ -80,6 +83,11 @@ export async function upsertOrganizationProfile(
   const facebookChanged =
     input.facebookUrl !== undefined &&
     input.facebookUrl !== existingProfile?.facebookUrl;
+
+  // Check if TikTok URL changed (for auto-scraping)
+  const tiktokChanged =
+    input.tiktokUrl !== undefined &&
+    input.tiktokUrl !== existingProfile?.tiktokUrl;
 
   if (existingProfile) {
     // Update existing profile
@@ -119,6 +127,12 @@ export async function upsertOrganizationProfile(
       void scrapeAndSaveFacebookProfile(updatedProfile.id, input.facebookUrl);
     }
 
+    // Auto-scrape TikTok if URL changed and is not empty
+    if (tiktokChanged && input.tiktokUrl) {
+      // Fire and forget scraping - don't block the response
+      void scrapeAndSaveTiktokProfile(updatedProfile.id, input.tiktokUrl);
+    }
+
     return updatedProfile;
   } else {
     // Create new profile
@@ -154,6 +168,11 @@ export async function upsertOrganizationProfile(
     // Auto-scrape Facebook if URL is provided
     if (input.facebookUrl) {
       void scrapeAndSaveFacebookProfile(newProfile.id, input.facebookUrl);
+    }
+
+    // Auto-scrape TikTok if URL is provided
+    if (input.tiktokUrl) {
+      void scrapeAndSaveTiktokProfile(newProfile.id, input.tiktokUrl);
     }
 
     return newProfile;

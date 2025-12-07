@@ -20,6 +20,8 @@ import {
   extractInstagramHandle,
   scrapeFacebookPage,
   extractFacebookHandle,
+  scrapeTiktokProfile,
+  extractTiktokHandle,
 } from "@repo/scraper";
 import type { SocialMediaAccount } from "@repo/types/social-media/social-media-account.type";
 import type { SocialMediaPlatform } from "@repo/types/social-media/social-media-platform.enum";
@@ -222,6 +224,43 @@ export async function scrapeAndSaveFacebookProfile(
 }
 
 /**
+ * Scrape and save a TikTok profile
+ * @param organizationProfileId - The organization profile ID to associate with
+ * @param tiktokUrl - The TikTok URL or handle
+ * @returns The saved social media account
+ */
+export async function scrapeAndSaveTiktokProfile(
+  organizationProfileId: string,
+  tiktokUrl: string
+): Promise<SocialMediaAccountRow | null> {
+  try {
+    const result = await scrapeTiktokProfile(tiktokUrl);
+
+    if (!result.success || !result.data) {
+      console.error(
+        `[social-media] Failed to scrape TikTok ${tiktokUrl}:`,
+        result.error
+      );
+      return null;
+    }
+
+    const account = await upsertSocialMediaAccount(
+      organizationProfileId,
+      result.data,
+      result.scrapedAt
+    );
+
+    return account;
+  } catch (error) {
+    console.error(
+      `[social-media] Error scraping TikTok ${tiktokUrl}:`,
+      error instanceof Error ? error.message : error
+    );
+    return null;
+  }
+}
+
+/**
  * Refresh (re-scrape) a social media account
  * @param organizationId - The organization ID
  * @param platform - The social media platform
@@ -281,6 +320,9 @@ export async function refreshSocialMediaAccount(
     case "facebook":
       account = await scrapeAndSaveFacebookProfile(profile.id, platformUrl);
       break;
+    case "tiktok":
+      account = await scrapeAndSaveTiktokProfile(profile.id, platformUrl);
+      break;
     default:
       throw new Error(`Scraping not yet implemented for ${platform}`);
   }
@@ -301,3 +343,8 @@ export { extractInstagramHandle };
  * Extract Facebook handle from URL (re-export for router use)
  */
 export { extractFacebookHandle };
+
+/**
+ * Extract TikTok handle from URL (re-export for router use)
+ */
+export { extractTiktokHandle };
