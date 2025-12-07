@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@repo/env": "workspace:*",
-    "@repo/scraper": "workspace:*",
+    "@repo/types": "workspace:*",
     "drizzle-orm": "^0.45.0",
     "pg": "^8.16.3"
   },
