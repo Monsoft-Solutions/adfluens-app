@@ -10,6 +10,7 @@ import {
   User,
   ChevronDown,
   Building2,
+  Instagram,
 } from "lucide-react";
 import { Button, cn, Skeleton, Separator, ThemeToggleIcon } from "@repo/ui";
 import { useSession, signOut } from "@repo/auth/client";
@@ -79,7 +80,7 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         <NavItem
           to="/"
           icon={<LayoutDashboard className="w-5 h-5" />}
@@ -95,6 +96,18 @@ export const Sidebar: React.FC = () => {
           icon={<Settings className="w-5 h-5" />}
           label="Settings"
         />
+
+        {/* Social Media Section */}
+        <div className="pt-4">
+          <p className="px-4 pb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Social Media
+          </p>
+          <NavItem
+            to="/social/instagram"
+            icon={<Instagram className="w-5 h-5" />}
+            label="Instagram"
+          />
+        </div>
       </nav>
 
       {/* User Section */}

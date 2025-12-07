@@ -1,0 +1,115 @@
+import axios, { AxiosError } from "axios";
+import { env } from "@repo/env";
+import type { ScrapecreatorInstagramProfileResponse } from "@repo/types/scrapecreator/scrapecreator-instagram-profile.type";
+
+/** ScrapeCreator API base URL */
+const SCRAPECREATOR_API_URL = "https://api.scrapecreators.com/v1";
+
+/** Retry configuration */
+const MAX_RETRIES = 5;
+const BASE_DELAY_MS = 1000;
+const MAX_DELAY_MS = 30000;
+
+/**
+ * Calculate exponential backoff delay with jitter
+ * @param attempt - The current retry attempt (0-based)
+ * @returns Delay in milliseconds
+ */
+function getBackoffDelay(attempt: number): number {
+  const delay = Math.min(BASE_DELAY_MS * Math.pow(2, attempt), MAX_DELAY_MS);
+  const jitter = delay * 0.2 * Math.random();
+  return delay + jitter;
+}
+
+/**
+ * Sleep for a specified duration
+ * @param ms - Duration in milliseconds
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Check if an error is a rate limit error (429)
+ */
+function isRateLimitError(error: unknown): boolean {
+  if (error instanceof AxiosError) {
+    return error.response?.status === 429;
+  }
+  return false;
+}
+
+/**
+ * ScrapeCreator API client for social media scraping
+ * Uses ScrapeCreator's API to fetch social media profile data
+ * Includes exponential backoff retry logic for rate limiting (429 errors)
+ */
+export class ScrapeCreatorClient {
+  private apiKey: string;
+
+  constructor() {
+    this.apiKey = env.SCRAPECREATOR_API_KEY;
+  }
+
+  /**
+   * Scrape an Instagram profile by handle using ScrapeCreator API
+   * Implements exponential backoff retry for 429 rate limit errors
+   * @param handle - The Instagram username/handle (without @)
+   * @returns The Instagram profile data from ScrapeCreator
+   */
+  async scrapeInstagramProfile(
+    handle: string
+  ): Promise<ScrapecreatorInstagramProfileResponse> {
+    const url = `${SCRAPECREATOR_API_URL}/instagram/profile`;
+    const params = {
+      handle: handle.replace(/^@/, ""), // Remove @ if present
+      trim: "true",
+    };
+
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const response = await axios.get<ScrapecreatorInstagramProfileResponse>(
+          url,
+          {
+            params,
+            headers: {
+              "x-api-key": this.apiKey,
+            },
+            timeout: 30000, // 30 second timeout
+          }
+        );
+
+        if (!response.data.success) {
+          throw new Error("ScrapeCreator API returned unsuccessful response");
+        }
+
+        return response.data;
+      } catch (error) {
+        lastError = error;
+
+        // Only retry on rate limit errors (429)
+        if (isRateLimitError(error) && attempt < MAX_RETRIES) {
+          const delay = getBackoffDelay(attempt);
+          console.warn(
+            `[ScrapeCreator] Rate limited (429). Retry ${attempt + 1}/${MAX_RETRIES} after ${Math.round(delay)}ms`
+          );
+          await sleep(delay);
+          continue;
+        }
+
+        // For non-rate-limit errors or max retries exceeded, throw immediately
+        throw error;
+      }
+    }
+
+    // This should not be reached, but TypeScript needs it
+    throw lastError;
+  }
+}
+
+/**
+ * Singleton instance of the ScrapeCreator client
+ */
+export const scrapeCreatorClient = new ScrapeCreatorClient();

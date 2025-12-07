@@ -178,3 +178,17 @@ export const invitationTableRelations = relations(
     }),
   })
 );
+
+/**
+ * Better Auth Drizzle adapter requires tables to be exported with exact model names.
+ * These aliases ensure the adapter can find the correct tables.
+ */
+export {
+  userTable as user,
+  sessionTable as session,
+  accountTable as account,
+  verificationTable as verification,
+  organizationTable as organization,
+  memberTable as member,
+  invitationTable as invitation,
+};

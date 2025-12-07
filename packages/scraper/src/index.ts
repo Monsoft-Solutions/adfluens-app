@@ -9,5 +9,17 @@ export {
   scrapingDogClient,
 } from "./clients/scrapingdog.client";
 
+export {
+  ScrapeCreatorClient,
+  scrapeCreatorClient,
+} from "./clients/scrapecreator.client";
+
 // Scraper exports
 export { scrapeWebsite } from "./scrapers/website.scraper";
+
+// Social media scraper exports
+export {
+  scrapeInstagramProfile,
+  extractInstagramHandle,
+  type InstagramScrapingResult,
+} from "./scrapers/social-media/instagram.scraper";

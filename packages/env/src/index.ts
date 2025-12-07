@@ -42,6 +42,11 @@ export const env = createEnv({
     /** ScrapingDog API key for web scraping */
     SCRAPINGDOG_API_KEY: z.string().min(1, "ScrapingDog API key is required"),
 
+    /** ScrapeCreator API key for social media scraping */
+    SCRAPECREATOR_API_KEY: z
+      .string()
+      .min(1, "ScrapeCreator API key is required"),
+
     /** Server port (optional, defaults to 3001) */
     PORT: z.coerce.number().default(3001),
 

@@ -11,6 +11,7 @@ import { ChannelAnalyzerView } from "./features/youtube/views/channel-analyzer.v
 import { VideoDetailView } from "./features/youtube/views/video-detail.view";
 import { VideoSearchView } from "./features/search/views/video-search.view";
 import { OrganizationSettingsView } from "./features/organization/views/organization-settings.view";
+import { InstagramView } from "./features/social-media/views/instagram.view";
 import { SignInView } from "./features/auth/views/sign-in.view";
 import { SignUpView } from "./features/auth/views/sign-up.view";
 
@@ -59,6 +60,10 @@ const App: React.FC = () => {
                       <Route
                         path="/settings"
                         element={<OrganizationSettingsView />}
+                      />
+                      <Route
+                        path="/social/instagram"
+                        element={<InstagramView />}
                       />
                     </Route>
                   </Route>

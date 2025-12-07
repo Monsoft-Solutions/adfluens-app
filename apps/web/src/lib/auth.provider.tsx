@@ -122,25 +122,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       hasAttemptedAutoSelect.current = true;
 
       try {
-        // Fetch user's organizations
+        // Fetch user's organizations (returns memberships with nested organization)
         const orgsResponse = await authClient.organization.list();
         const orgsData = orgsResponse.data;
 
         if (orgsData && orgsData.length > 0) {
           const firstItem = orgsData[0];
 
-          // Extract organization ID - could be direct org or membership with org
+          // Extract organization ID from membership response
+          // Note: list() returns memberships, so org is nested under 'organization' property
+          // The 'id' at top level is the membership ID, NOT the organization ID
           const orgId =
-            firstItem?.id ||
             (firstItem as { organization?: { id: string } })?.organization
               ?.id ||
-            (firstItem as { organizationId?: string })?.organizationId;
+            (firstItem as { organizationId?: string })?.organizationId ||
+            firstItem?.id; // Fallback to id only if others aren't present
 
           if (orgId) {
             // Set the first organization as active
             await authClient.organization.setActive({
               organizationId: orgId,
             });
+            // Refetch to update the active organization state
+            await refetch();
           }
         }
       } catch (err) {
@@ -149,7 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     void autoSelectOrganization();
-  }, [hasSession, organizationData, isPending, isOrgPending]);
+  }, [hasSession, organizationData, isPending, isOrgPending, refetch]);
 
   // Reset the auto-select flag when user logs out
   useEffect(() => {

@@ -107,6 +107,14 @@
     "./social-media/youtube-platform-data.type": {
       "import": "./src/social-media/youtube-platform-data.type.ts",
       "types": "./src/social-media/youtube-platform-data.type.ts"
+    },
+    "./scrapecreator/scrapecreator-instagram-profile.type": {
+      "import": "./src/scrapecreator/scrapecreator-instagram-profile.type.ts",
+      "types": "./src/scrapecreator/scrapecreator-instagram-profile.type.ts"
+    },
+    "./social-media/social-media-account-data.type": {
+      "import": "./src/social-media/social-media-account-data.type.ts",
+      "types": "./src/social-media/social-media-account-data.type.ts"
     }
   },
   "scripts": {

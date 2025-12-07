@@ -7,6 +7,7 @@ import {
 } from "@repo/db";
 import { scrapeWebsite } from "@repo/scraper";
 import type { ScrapedBusinessInfo } from "@repo/types/organization/organization-profile.type";
+import { scrapeAndSaveInstagramProfile } from "../social-media/social-media.service";
 
 /**
  * Generate a unique ID for new organization profiles
@@ -54,6 +55,7 @@ export async function getOrganizationProfile(
  * Create or update an organization profile
  * If profile doesn't exist, creates it; otherwise updates it
  * Automatically triggers website scraping if website URL changes
+ * Automatically triggers Instagram scraping if Instagram URL changes
  */
 export async function upsertOrganizationProfile(
   organizationId: string,
@@ -65,6 +67,11 @@ export async function upsertOrganizationProfile(
   const websiteChanged =
     input.websiteUrl !== undefined &&
     input.websiteUrl !== existingProfile?.websiteUrl;
+
+  // Check if Instagram URL changed (for auto-scraping)
+  const instagramChanged =
+    input.instagramUrl !== undefined &&
+    input.instagramUrl !== existingProfile?.instagramUrl;
 
   if (existingProfile) {
     // Update existing profile
@@ -92,6 +99,12 @@ export async function upsertOrganizationProfile(
       void scrapeAndUpdateProfile(updatedProfile.id, input.websiteUrl);
     }
 
+    // Auto-scrape Instagram if URL changed and is not empty
+    if (instagramChanged && input.instagramUrl) {
+      // Fire and forget scraping - don't block the response
+      void scrapeAndSaveInstagramProfile(updatedProfile.id, input.instagramUrl);
+    }
+
     return updatedProfile;
   } else {
     // Create new profile
@@ -117,6 +130,11 @@ export async function upsertOrganizationProfile(
     // Auto-scrape if website URL is provided
     if (input.websiteUrl) {
       void scrapeAndUpdateProfile(newProfile.id, input.websiteUrl);
+    }
+
+    // Auto-scrape Instagram if URL is provided
+    if (input.instagramUrl) {
+      void scrapeAndSaveInstagramProfile(newProfile.id, input.instagramUrl);
     }
 
     return newProfile;
