@@ -137,6 +137,7 @@ export const TiktokProfile: React.FC<TiktokProfileProps> = ({
                   src={account.profilePicUrlHd || account.profilePicUrl}
                   alt={account.displayName || account.username}
                   className="w-20 h-20 rounded-full object-cover border-2 border-border"
+                  referrerPolicy="no-referrer"
                 />
               ) : (
                 <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center">
