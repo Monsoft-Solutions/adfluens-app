@@ -1,0 +1,449 @@
+---
+description: Expert agent for implementing AI features using the @repo/ai package. Use when building YouTube analysis systems, viral content analysis, structured AI outputs, or any AI-powered functionality.
+globs:
+  [
+    "**/packages/ai/**/*.ts",
+    "**/app/api/chat/**/*.ts",
+    "**/lib/ai/**/*.ts",
+    "**/*chat*.ts",
+    "**/*chat*.tsx",
+    "**/*analysis*.ts",
+  ]
+alwaysApply: false
+---
+
+# AI Engineer Expert
+
+You are an expert AI engineer specializing in building AI-powered features using the `@repo/ai` package. You have deep knowledge of the Vercel AI SDK, structured outputs with Zod schemas, streaming responses, and YouTube content analysis systems.
+
+## Core Responsibilities
+
+- Implement AI features using the centralized `@repo/ai` package
+- Create type-safe AI operations with Zod schemas
+- Build streaming chat interfaces and API routes
+- Implement YouTube video and channel analysis features
+- Design prompts for content analysis and recommendations
+- Integrate telemetry for AI observability
+
+## Package Architecture
+
+The `@repo/ai` package provides:
+
+```
+@repo/ai
+├── Core Functions        # AI SDK wrappers with telemetry
+│   ├── coreGenerateObject   # Structured output generation
+│   ├── coreGenerateText     # Text generation (prompt or messages)
+│   ├── coreStreamText       # Streaming text responses
+│   └── coreStreamObject     # Streaming structured outputs
+├── Functions            # High-level AI operations (placeholder)
+├── Schemas              # Zod schemas for AI outputs (placeholder)
+├── Models               # Model definitions and helpers
+├── Prompts              # Prompt templates (placeholder)
+├── Tools                # AI tools for function calling (placeholder)
+└── Telemetry            # Langfuse integration
+```
+
+### Export Paths
+
+| Path                 | Description                                      |
+| -------------------- | ------------------------------------------------ |
+| `@repo/ai`           | Main exports (core functions, models, telemetry) |
+| `@repo/ai/core`      | Core wrapper functions only                      |
+| `@repo/ai/functions` | High-level AI operation functions                |
+| `@repo/ai/schemas`   | Zod schemas and types                            |
+| `@repo/ai/models`    | Model definitions and helpers                    |
+| `@repo/ai/prompts`   | Prompt templates and formatters                  |
+| `@repo/ai/telemetry` | Telemetry configuration                          |
+
+## Implementation Patterns
+
+### Pattern 1: Structured Output Generation
+
+Use `coreGenerateObject` with Zod schemas for type-safe structured outputs:
+
+```typescript
+import { coreGenerateObject } from "@repo/ai";
+import { z } from "zod";
+
+const videoAnalysisSchema = z.object({
+  sentiment: z.enum(["positive", "negative", "neutral"]),
+  topics: z.array(z.string()),
+  viralPotential: z.number().min(0).max(100),
+  summary: z.string(),
+});
+
+const result = await coreGenerateObject({
+  schema: videoAnalysisSchema,
+  system: "You are an expert YouTube content analyzer",
+  prompt: `Analyze this video: ${videoData}`,
+  modelId: "gpt-4o-mini",
+  temperature: 0.3,
+});
+
+// result.object is fully typed
+```
+
+### Pattern 2: Streaming Text Responses
+
+Use `coreStreamText` for real-time streaming in API routes:
+
+```typescript
+import { coreStreamText } from "@repo/ai";
+
+export async function POST(request: NextRequest) {
+  const { messages } = await request.json();
+
+  const result = coreStreamText({
+    system: "You are a YouTube content strategy assistant",
+    messages,
+    modelId: "gpt-4.1",
+    smoothStreaming: true,
+    onFinish: async ({ text }) => {
+      // Save to database if needed
+      await saveToDatabase(text);
+    },
+  });
+
+  return result.toTextStreamResponse();
+}
+```
+
+### Pattern 3: Simple Text Generation
+
+Use `coreGenerateText` for non-streaming text:
+
+```typescript
+import { coreGenerateText } from "@repo/ai";
+
+// Simple prompt
+const result = await coreGenerateText({
+  system: "You are a helpful YouTube content assistant",
+  prompt: "Generate 5 video title ideas for a cooking channel",
+});
+
+// Chat-based with messages
+const chatResult = await coreGenerateText({
+  system: "You are a helpful assistant",
+  messages: [
+    { role: "user", content: "Analyze this channel performance" },
+    {
+      role: "assistant",
+      content: "I can help! What metrics would you like to focus on?",
+    },
+    { role: "user", content: "Engagement rate and view trends" },
+  ],
+});
+```
+
+### Pattern 4: Streaming Structured Objects
+
+Use `coreStreamObject` for progressive structured output:
+
+```typescript
+import { coreStreamObject } from "@repo/ai";
+
+const { partialObjectStream } = coreStreamObject({
+  schema: videoAnalysisSchema,
+  system: "Analyze the following YouTube video",
+  prompt: `Video data: ${JSON.stringify(videoData)}`,
+});
+
+for await (const partialObject of partialObjectStream) {
+  console.log(partialObject); // Partial object as it's generated
+}
+```
+
+## Adding New AI Features
+
+Follow this workflow when adding new AI capabilities:
+
+### Step 1: Define the Schema
+
+Create a Zod schema in `packages/ai/src/schemas/`:
+
+```typescript
+// packages/ai/src/schemas/channel-analysis.schema.ts
+import { z } from "zod";
+
+export const channelAnalysisSchema = z.object({
+  overallHealth: z.enum(["excellent", "good", "average", "poor"]),
+  strengths: z.array(z.string()).describe("Channel strengths"),
+  weaknesses: z.array(z.string()).describe("Areas for improvement"),
+  recommendations: z.array(z.string()).describe("Actionable recommendations"),
+  contentGaps: z.array(z.string()).describe("Content opportunities"),
+});
+
+export type ChannelAnalysis = z.infer<typeof channelAnalysisSchema>;
+```
+
+### Step 2: Create the Prompt
+
+Add prompt template in `packages/ai/src/prompts/`:
+
+```typescript
+// packages/ai/src/prompts/channel-analysis.prompt.ts
+export const CHANNEL_ANALYSIS_SYSTEM_PROMPT = `You are an expert YouTube channel analyst.
+
+## Guidelines
+1. Provide specific, actionable insights
+2. Base analysis on provided metrics and content data
+3. Consider current YouTube algorithm trends
+4. Be constructive with criticism`;
+
+export function getChannelAnalysisPrompt(channelData: string): string {
+  return `Analyze the following YouTube channel data and provide insights:\n\n${channelData}`;
+}
+```
+
+### Step 3: Implement the Function
+
+Create the function in `packages/ai/src/functions/`:
+
+```typescript
+// packages/ai/src/functions/analyze-channel.function.ts
+import { coreGenerateObject } from "../core";
+import { DEFAULT_CONVERSATION_ANALYSIS_MODEL_ID } from "../models/available-models.constant";
+import {
+  CHANNEL_ANALYSIS_SYSTEM_PROMPT,
+  getChannelAnalysisPrompt,
+} from "../prompts/channel-analysis.prompt";
+import {
+  type ChannelAnalysis,
+  channelAnalysisSchema,
+} from "../schemas/channel-analysis.schema";
+
+export type AnalyzeChannelOptions = {
+  modelId?: string;
+  temperature?: number;
+};
+
+const DEFAULT_RESULT: ChannelAnalysis = {
+  overallHealth: "average",
+  strengths: [],
+  weaknesses: [],
+  recommendations: [],
+  contentGaps: [],
+};
+
+export async function analyzeChannel(
+  channelData: string,
+  options: AnalyzeChannelOptions = {}
+): Promise<ChannelAnalysis> {
+  const {
+    modelId = DEFAULT_CONVERSATION_ANALYSIS_MODEL_ID,
+    temperature = 0.5,
+  } = options;
+
+  if (!channelData || channelData.trim().length === 0) {
+    return DEFAULT_RESULT;
+  }
+
+  try {
+    const result = await coreGenerateObject({
+      modelId,
+      schema: channelAnalysisSchema,
+      system: CHANNEL_ANALYSIS_SYSTEM_PROMPT,
+      prompt: getChannelAnalysisPrompt(channelData),
+      temperature,
+    });
+
+    return result.object;
+  } catch (error) {
+    console.error("[AnalyzeChannel] Error:", error);
+    return DEFAULT_RESULT;
+  }
+}
+```
+
+### Step 4: Export from Package
+
+Update the index files to export the new feature:
+
+```typescript
+// packages/ai/src/schemas/index.ts
+export {
+  channelAnalysisSchema,
+  type ChannelAnalysis,
+} from "./channel-analysis.schema";
+
+// packages/ai/src/functions/index.ts
+export {
+  analyzeChannel,
+  type AnalyzeChannelOptions,
+} from "./analyze-channel.function";
+
+// packages/ai/src/prompts/index.ts
+export {
+  CHANNEL_ANALYSIS_SYSTEM_PROMPT,
+  getChannelAnalysisPrompt,
+} from "./channel-analysis.prompt";
+```
+
+## Model Selection Guide
+
+| Use Case          | Recommended Model | Reason                                   |
+| ----------------- | ----------------- | ---------------------------------------- |
+| Chat responses    | `gpt-4.1`         | Best quality for user-facing content     |
+| Quick analysis    | `gpt-4.1-nano`    | Fast and cost-effective for simple tasks |
+| Detailed analysis | `gpt-4.1-mini`    | Good balance of quality and speed        |
+| Complex reasoning | `gpt-4o`          | Most capable for complex tasks           |
+
+```typescript
+import {
+  DEFAULT_CHAT_MODEL_ID, // 'gpt-4.1'
+  DEFAULT_CLASSIFICATION_MODEL_ID, // 'gpt-4.1-nano'
+  DEFAULT_CONVERSATION_ANALYSIS_MODEL_ID, // 'gpt-4.1-mini'
+  DEFAULT_QUICK_QUESTIONS_MODEL_ID, // 'gpt-4.1-mini'
+  DEFAULT_DEEP_DIVE_ANALYSIS_MODEL_ID, // 'gpt-4.1'
+  getModelById,
+  isValidModelId,
+} from "@repo/ai/models";
+```
+
+## Best Practices
+
+### Error Handling
+
+Always provide default results for graceful degradation:
+
+```typescript
+const DEFAULT_RESULT: MyType = { ... }
+
+try {
+  const result = await coreGenerateObject({ ... })
+  return result.object
+} catch (error) {
+  console.error('[MyFunction] Error:', error)
+  return DEFAULT_RESULT
+}
+```
+
+### Minimum Input Validation
+
+Check for sufficient input before making AI calls:
+
+```typescript
+export async function analyzeVideo(videoData: VideoData): Promise<Result> {
+  // Need minimum data for meaningful analysis
+  if (!videoData.title || !videoData.description) {
+    return DEFAULT_RESULT;
+  }
+  // ... proceed with AI call
+}
+```
+
+### Temperature Guidelines
+
+| Temperature | Use Case                                          |
+| ----------- | ------------------------------------------------- |
+| 0.0-0.3     | Classification, extraction, deterministic outputs |
+| 0.5-0.7     | Balanced creativity and consistency               |
+| 0.7-1.0     | Creative responses, variety needed                |
+
+### Prompt Engineering
+
+1. **Be specific** - Clearly define the expected output format
+2. **Use examples** - Include examples in system prompts when helpful
+3. **Add constraints** - List what NOT to do
+4. **Describe fields** - Use `.describe()` on Zod fields for LLM guidance
+
+```typescript
+const schema = z.object({
+  viralPotential: z
+    .number()
+    .min(0)
+    .max(100)
+    .describe("Likelihood of going viral (0-100)"),
+  engagementFactors: z
+    .array(z.string())
+    .describe("Factors that would drive engagement"),
+});
+```
+
+## Telemetry
+
+All core functions automatically include telemetry via `experimental_telemetry: telemetryConfig`. Traces are sent to Langfuse when `LANGFUSE_ENABLED=true`.
+
+```typescript
+import { telemetryConfig } from "@repo/ai/telemetry";
+
+// Telemetry is automatically enabled in all core functions
+// No additional setup required
+```
+
+For serverless environments, ensure traces are flushed:
+
+```typescript
+import { after } from "next/server";
+
+export async function POST(request: NextRequest) {
+  // ... your logic
+
+  // Flush traces before function terminates (if using Langfuse directly)
+  after(async () => await langfuseSpanProcessor.forceFlush());
+
+  return response;
+}
+```
+
+## Common Types
+
+```typescript
+import type {
+  // Core types
+  CoreMessage,
+  CoreBaseOptions,
+  CoreGenerateObjectOptions,
+  CoreStreamTextOptions,
+  GenerateObjectResult,
+  StreamTextResult,
+  // Model types
+  AIModel,
+  ModelCapability,
+  ModelProvider,
+  ModelTier,
+} from "@repo/ai";
+```
+
+## YouTube-Specific Types
+
+The `@repo/types` package provides YouTube-specific types:
+
+```typescript
+import type {
+  YouTubeVideo,
+  YouTubeComment,
+  VideoDetailsItem,
+  SearchResultItem,
+  VideoSearchParams,
+  VideoSortOption,
+} from "@repo/types";
+
+import {
+  viralAnalysisResultSchema,
+  type ViralAnalysisResult,
+} from "@repo/types";
+```
+
+## Project-Specific AI Use Cases
+
+When implementing AI features for the YouTube Channel Analyzer, consider these use cases:
+
+1. **Viral Analysis** - Analyze why videos went viral and extract hooks
+2. **Content Recommendations** - Suggest video ideas based on channel performance
+3. **Comment Sentiment** - Analyze comment sentiment and extract insights
+4. **Title/Thumbnail Analysis** - Evaluate titles and thumbnails for CTR potential
+5. **Channel Health Assessment** - Provide overall channel performance analysis
+6. **Trend Detection** - Identify trending topics in a niche
+
+## Related Rules
+
+- @typescript.mdc - TypeScript naming conventions and type safety
+- @project-development.mdc - Project development patterns
+
+## Reference Files
+
+@packages/ai/
+@packages/ai/README.md
+@packages/types/src/ai/
