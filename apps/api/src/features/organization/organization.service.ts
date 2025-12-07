@@ -7,7 +7,10 @@ import {
 } from "@repo/db";
 import { scrapeWebsite } from "@repo/scraper";
 import type { ScrapedBusinessInfo } from "@repo/types/organization/organization-profile.type";
-import { scrapeAndSaveInstagramProfile } from "../social-media/social-media.service";
+import {
+  scrapeAndSaveInstagramProfile,
+  scrapeAndSaveFacebookProfile,
+} from "../social-media/social-media.service";
 
 /**
  * Generate a unique ID for new organization profiles
@@ -73,6 +76,11 @@ export async function upsertOrganizationProfile(
     input.instagramUrl !== undefined &&
     input.instagramUrl !== existingProfile?.instagramUrl;
 
+  // Check if Facebook URL changed (for auto-scraping)
+  const facebookChanged =
+    input.facebookUrl !== undefined &&
+    input.facebookUrl !== existingProfile?.facebookUrl;
+
   if (existingProfile) {
     // Update existing profile
     const result = await db
@@ -105,6 +113,12 @@ export async function upsertOrganizationProfile(
       void scrapeAndSaveInstagramProfile(updatedProfile.id, input.instagramUrl);
     }
 
+    // Auto-scrape Facebook if URL changed and is not empty
+    if (facebookChanged && input.facebookUrl) {
+      // Fire and forget scraping - don't block the response
+      void scrapeAndSaveFacebookProfile(updatedProfile.id, input.facebookUrl);
+    }
+
     return updatedProfile;
   } else {
     // Create new profile
@@ -135,6 +149,11 @@ export async function upsertOrganizationProfile(
     // Auto-scrape Instagram if URL is provided
     if (input.instagramUrl) {
       void scrapeAndSaveInstagramProfile(newProfile.id, input.instagramUrl);
+    }
+
+    // Auto-scrape Facebook if URL is provided
+    if (input.facebookUrl) {
+      void scrapeAndSaveFacebookProfile(newProfile.id, input.facebookUrl);
     }
 
     return newProfile;

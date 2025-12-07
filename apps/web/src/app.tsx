@@ -12,6 +12,7 @@ import { VideoDetailView } from "./features/youtube/views/video-detail.view";
 import { VideoSearchView } from "./features/search/views/video-search.view";
 import { OrganizationSettingsView } from "./features/organization/views/organization-settings.view";
 import { InstagramView } from "./features/social-media/views/instagram.view";
+import { FacebookView } from "./features/social-media/views/facebook.view";
 import { SignInView } from "./features/auth/views/sign-in.view";
 import { SignUpView } from "./features/auth/views/sign-up.view";
 
@@ -64,6 +65,10 @@ const App: React.FC = () => {
                       <Route
                         path="/social/instagram"
                         element={<InstagramView />}
+                      />
+                      <Route
+                        path="/social/facebook"
+                        element={<FacebookView />}
                       />
                     </Route>
                   </Route>

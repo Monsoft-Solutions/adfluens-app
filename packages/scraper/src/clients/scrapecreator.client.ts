@@ -1,6 +1,7 @@
 import axios, { AxiosError } from "axios";
 import { env } from "@repo/env";
 import type { ScrapecreatorInstagramProfileResponse } from "@repo/types/scrapecreator/scrapecreator-instagram-profile.type";
+import type { ScrapecreatorFacebookPageResponse } from "@repo/types/scrapecreator/scrapecreator-facebook-page.type";
 
 /** ScrapeCreator API base URL */
 const SCRAPECREATOR_API_URL = "https://api.scrapecreators.com/v1";
@@ -71,6 +72,62 @@ export class ScrapeCreatorClient {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
         const response = await axios.get<ScrapecreatorInstagramProfileResponse>(
+          url,
+          {
+            params,
+            headers: {
+              "x-api-key": this.apiKey,
+            },
+            timeout: 30000, // 30 second timeout
+          }
+        );
+
+        if (!response.data.success) {
+          throw new Error("ScrapeCreator API returned unsuccessful response");
+        }
+
+        return response.data;
+      } catch (error) {
+        lastError = error;
+
+        // Only retry on rate limit errors (429)
+        if (isRateLimitError(error) && attempt < MAX_RETRIES) {
+          const delay = getBackoffDelay(attempt);
+          console.warn(
+            `[ScrapeCreator] Rate limited (429). Retry ${attempt + 1}/${MAX_RETRIES} after ${Math.round(delay)}ms`
+          );
+          await sleep(delay);
+          continue;
+        }
+
+        // For non-rate-limit errors or max retries exceeded, throw immediately
+        throw error;
+      }
+    }
+
+    // This should not be reached, but TypeScript needs it
+    throw lastError;
+  }
+
+  /**
+   * Scrape a Facebook page/profile using ScrapeCreator API
+   * Implements exponential backoff retry for 429 rate limit errors
+   * @param facebookUrl - The full Facebook page URL (e.g., "https://www.facebook.com/breastaugmentationmiami/")
+   * @returns The Facebook page data from ScrapeCreator
+   */
+  async scrapeFacebookProfile(
+    facebookUrl: string
+  ): Promise<ScrapecreatorFacebookPageResponse> {
+    const url = `${SCRAPECREATOR_API_URL}/facebook/profile`;
+    const params = {
+      url: facebookUrl,
+    };
+
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const response = await axios.get<ScrapecreatorFacebookPageResponse>(
           url,
           {
             params,

@@ -15,7 +15,12 @@ import {
   organizationProfileTable,
   type SocialMediaAccountRow,
 } from "@repo/db";
-import { scrapeInstagramProfile, extractInstagramHandle } from "@repo/scraper";
+import {
+  scrapeInstagramProfile,
+  extractInstagramHandle,
+  scrapeFacebookPage,
+  extractFacebookHandle,
+} from "@repo/scraper";
 import type { SocialMediaAccount } from "@repo/types/social-media/social-media-account.type";
 import type { SocialMediaPlatform } from "@repo/types/social-media/social-media-platform.enum";
 
@@ -180,6 +185,43 @@ export async function scrapeAndSaveInstagramProfile(
 }
 
 /**
+ * Scrape and save a Facebook page
+ * @param organizationProfileId - The organization profile ID to associate with
+ * @param facebookUrl - The Facebook page URL or handle
+ * @returns The saved social media account
+ */
+export async function scrapeAndSaveFacebookProfile(
+  organizationProfileId: string,
+  facebookUrl: string
+): Promise<SocialMediaAccountRow | null> {
+  try {
+    const result = await scrapeFacebookPage(facebookUrl);
+
+    if (!result.success || !result.data) {
+      console.error(
+        `[social-media] Failed to scrape Facebook ${facebookUrl}:`,
+        result.error
+      );
+      return null;
+    }
+
+    const account = await upsertSocialMediaAccount(
+      organizationProfileId,
+      result.data,
+      result.scrapedAt
+    );
+
+    return account;
+  } catch (error) {
+    console.error(
+      `[social-media] Error scraping Facebook ${facebookUrl}:`,
+      error instanceof Error ? error.message : error
+    );
+    return null;
+  }
+}
+
+/**
  * Refresh (re-scrape) a social media account
  * @param organizationId - The organization ID
  * @param platform - The social media platform
@@ -236,6 +278,9 @@ export async function refreshSocialMediaAccount(
     case "instagram":
       account = await scrapeAndSaveInstagramProfile(profile.id, platformUrl);
       break;
+    case "facebook":
+      account = await scrapeAndSaveFacebookProfile(profile.id, platformUrl);
+      break;
     default:
       throw new Error(`Scraping not yet implemented for ${platform}`);
   }
@@ -251,3 +296,8 @@ export async function refreshSocialMediaAccount(
  * Extract Instagram handle from URL (re-export for router use)
  */
 export { extractInstagramHandle };
+
+/**
+ * Extract Facebook handle from URL (re-export for router use)
+ */
+export { extractFacebookHandle };

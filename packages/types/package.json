@@ -112,6 +112,10 @@
       "import": "./src/scrapecreator/scrapecreator-instagram-profile.type.ts",
       "types": "./src/scrapecreator/scrapecreator-instagram-profile.type.ts"
     },
+    "./scrapecreator/scrapecreator-facebook-page.type": {
+      "import": "./src/scrapecreator/scrapecreator-facebook-page.type.ts",
+      "types": "./src/scrapecreator/scrapecreator-facebook-page.type.ts"
+    },
     "./social-media/social-media-account-data.type": {
       "import": "./src/social-media/social-media-account-data.type.ts",
       "types": "./src/social-media/social-media-account-data.type.ts"

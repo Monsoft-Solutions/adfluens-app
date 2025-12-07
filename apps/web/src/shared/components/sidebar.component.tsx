@@ -11,6 +11,7 @@ import {
   ChevronDown,
   Building2,
   Instagram,
+  Facebook,
 } from "lucide-react";
 import { Button, cn, Skeleton, Separator, ThemeToggleIcon } from "@repo/ui";
 import { useSession, signOut } from "@repo/auth/client";
@@ -106,6 +107,11 @@ export const Sidebar: React.FC = () => {
             to="/social/instagram"
             icon={<Instagram className="w-5 h-5" />}
             label="Instagram"
+          />
+          <NavItem
+            to="/social/facebook"
+            icon={<Facebook className="w-5 h-5" />}
+            label="Facebook"
           />
         </div>
       </nav>

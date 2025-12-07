@@ -23,3 +23,9 @@ export {
   extractInstagramHandle,
   type InstagramScrapingResult,
 } from "./scrapers/social-media/instagram.scraper";
+
+export {
+  scrapeFacebookPage,
+  extractFacebookHandle,
+  type FacebookScrapingResult,
+} from "./scrapers/social-media/facebook.scraper";
