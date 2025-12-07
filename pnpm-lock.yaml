@@ -175,6 +175,9 @@ importers:
       '@opentelemetry/sdk-trace-node':
         specifier: ^2.2.0
         version: 2.2.0(@opentelemetry/api@1.9.0)
+      '@repo/types':
+        specifier: workspace:*
+        version: link:../types
       ai:
         specifier: ^5.0.107
         version: 5.0.108(zod@4.1.13)
@@ -302,9 +305,15 @@ importers:
 
   packages/scraper:
     dependencies:
+      '@repo/ai':
+        specifier: workspace:*
+        version: link:../ai
       '@repo/env':
         specifier: workspace:*
         version: link:../env
+      '@repo/types':
+        specifier: workspace:*
+        version: link:../types
       axios:
         specifier: ^1.7.9
         version: 1.13.2

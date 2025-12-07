@@ -58,6 +58,7 @@
     "@langfuse/otel": "^4.4.9",
     "@langfuse/tracing": "^4.4.9",
     "@opentelemetry/sdk-trace-node": "^2.2.0",
+    "@repo/types": "workspace:*",
     "ai": "^5.0.107",
     "zod": "^4.1.13"
   },

@@ -13,6 +13,9 @@
  *
  * // Import models
  * import { AVAILABLE_MODELS, DEFAULT_CHAT_MODEL_ID } from '@repo/ai/models'
+ *
+ * // Import extraction functions
+ * import { extractOrganizationProfile } from '@repo/ai/functions'
  * ```
  */
 
@@ -43,10 +46,7 @@ export {
 export {
   AVAILABLE_MODELS,
   DEFAULT_CHAT_MODEL_ID,
-  DEFAULT_CLASSIFICATION_MODEL_ID,
-  DEFAULT_CONVERSATION_ANALYSIS_MODEL_ID,
-  DEFAULT_QUICK_QUESTIONS_MODEL_ID,
-  DEFAULT_DEEP_DIVE_ANALYSIS_MODEL_ID,
+  DEFAULT_DATA_EXTRACTION_MODEL_ID,
   getModelById,
   getRecommendedModels,
   getModelsByTier,
@@ -56,6 +56,33 @@ export {
   type ModelProvider,
   type ModelTier,
 } from "./models";
+
+// AI operation functions
+export {
+  extractOrganizationProfile,
+  type ExtractOrganizationProfileOptions,
+} from "./functions";
+
+// Schemas and types (re-exported from @repo/types - the single source of truth)
+export {
+  organizationProfileSchema,
+  brandVoiceSchema,
+  targetAudienceSchema,
+  competitivePositioningSchema,
+  contentThemesSchema,
+  businessModelSchema,
+  socialProofSchema,
+  websiteScrapingResultSchema,
+  type OrganizationProfile,
+  type OrganizationProfileExtraction,
+  type BrandVoice,
+  type TargetAudienceDetails,
+  type CompetitivePositioning,
+  type ContentThemes,
+  type BusinessModel,
+  type SocialProof,
+  type WebsiteScrapingResult,
+} from "./schemas";
 
 // Telemetry configuration
 export { telemetryConfig } from "./telemetry";

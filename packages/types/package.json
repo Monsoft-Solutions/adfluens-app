@@ -47,6 +47,10 @@
     "./ai/chat-message.type": {
       "import": "./src/ai/chat-message.type.ts",
       "types": "./src/ai/chat-message.type.ts"
+    },
+    "./organization/organization-profile.type": {
+      "import": "./src/organization/organization-profile.type.ts",
+      "types": "./src/organization/organization-profile.type.ts"
     }
   },
   "scripts": {
