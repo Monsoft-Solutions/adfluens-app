@@ -6,7 +6,7 @@ import type { ScrapedBusinessInfo } from "@repo/types/organization/organization-
  * Organization profile table
  * Stores website, social media links, and scraped business information
  */
-export const organizationProfile = pgTable(
+export const organizationProfileTable = pgTable(
   "organization_profile",
   {
     /** Unique identifier */
@@ -46,8 +46,8 @@ export const organizationProfile = pgTable(
  * Note: The organization table is defined in the auth package
  * This relation is for documentation purposes - actual FK is handled by application logic
  */
-export const organizationProfileRelations = relations(
-  organizationProfile,
+export const organizationProfileTableRelations = relations(
+  organizationProfileTable,
   () => ({
     // Organization relation would be defined here if we had access to the auth schema
     // For now, organizationId is enforced at the application level
@@ -55,7 +55,9 @@ export const organizationProfileRelations = relations(
 );
 
 /** Type for inserting a new organization profile */
-export type NewOrganizationProfile = typeof organizationProfile.$inferInsert;
+export type OrganizationProfileInsert =
+  typeof organizationProfileTable.$inferInsert;
 
 /** Type for selecting an organization profile */
-export type OrganizationProfile = typeof organizationProfile.$inferSelect;
+export type OrganizationProfileRow =
+  typeof organizationProfileTable.$inferSelect;

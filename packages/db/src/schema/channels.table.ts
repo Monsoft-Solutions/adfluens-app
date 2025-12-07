@@ -10,7 +10,7 @@ import {
  * YouTube channels table
  * Stores cached channel information from the YouTube API
  */
-export const channels = pgTable("channels", {
+export const channelsTable = pgTable("channels", {
   /** YouTube channel ID (e.g., UC...) */
   id: varchar("id", { length: 255 }).primaryKey(),
 

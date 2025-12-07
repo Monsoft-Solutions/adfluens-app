@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
 import { db } from "@repo/db/client";
 import {
-  organizationProfile,
-  scrapedPage,
+  organizationProfileTable,
+  scrapedPageTable,
   scrapeWebsite,
-  type OrganizationProfile,
+  type OrganizationProfileRow,
 } from "@repo/scraper";
 import type { ScrapedBusinessInfo } from "@repo/types/organization/organization-profile.type";
 
@@ -40,11 +40,11 @@ export type UpdateProfileInput = {
  */
 export async function getOrganizationProfile(
   organizationId: string
-): Promise<OrganizationProfile | null> {
+): Promise<OrganizationProfileRow | null> {
   const result = await db
     .select()
-    .from(organizationProfile)
-    .where(eq(organizationProfile.organizationId, organizationId))
+    .from(organizationProfileTable)
+    .where(eq(organizationProfileTable.organizationId, organizationId))
     .limit(1);
 
   return result[0] ?? null;
@@ -58,7 +58,7 @@ export async function getOrganizationProfile(
 export async function upsertOrganizationProfile(
   organizationId: string,
   input: UpdateProfileInput
-): Promise<OrganizationProfile> {
+): Promise<OrganizationProfileRow> {
   const existingProfile = await getOrganizationProfile(organizationId);
 
   // Check if website URL changed (for auto-scraping)
@@ -69,7 +69,7 @@ export async function upsertOrganizationProfile(
   if (existingProfile) {
     // Update existing profile
     const result = await db
-      .update(organizationProfile)
+      .update(organizationProfileTable)
       .set({
         websiteUrl: input.websiteUrl ?? existingProfile.websiteUrl,
         instagramUrl: input.instagramUrl ?? existingProfile.instagramUrl,
@@ -78,7 +78,7 @@ export async function upsertOrganizationProfile(
         twitterUrl: input.twitterUrl ?? existingProfile.twitterUrl,
         linkedinUrl: input.linkedinUrl ?? existingProfile.linkedinUrl,
       })
-      .where(eq(organizationProfile.id, existingProfile.id))
+      .where(eq(organizationProfileTable.id, existingProfile.id))
       .returning();
 
     const updatedProfile = result[0];
@@ -96,7 +96,7 @@ export async function upsertOrganizationProfile(
   } else {
     // Create new profile
     const result = await db
-      .insert(organizationProfile)
+      .insert(organizationProfileTable)
       .values({
         id: generateProfileId(),
         organizationId,
@@ -138,16 +138,16 @@ async function scrapeAndUpdateProfile(
     if (result.success && result.data) {
       // Update organization profile with parsed data
       await db
-        .update(organizationProfile)
+        .update(organizationProfileTable)
         .set({
           scrapedData: result.data,
           scrapedAt: result.scrapedAt,
         })
-        .where(eq(organizationProfile.id, profileId));
+        .where(eq(organizationProfileTable.id, profileId));
 
       // Save raw content to scraped_page table
       if (result.rawContent) {
-        await db.insert(scrapedPage).values({
+        await db.insert(scrapedPageTable).values({
           id: generateScrapedPageId(),
           organizationProfileId: profileId,
           pageUrl: result.url,
@@ -195,16 +195,16 @@ export async function rescrapeOrganizationWebsite(
 
   // Update the profile with parsed data
   await db
-    .update(organizationProfile)
+    .update(organizationProfileTable)
     .set({
       scrapedData: result.data ?? null,
       scrapedAt: result.scrapedAt,
     })
-    .where(eq(organizationProfile.id, profile.id));
+    .where(eq(organizationProfileTable.id, profile.id));
 
   // Save raw content to scraped_page table
   if (result.rawContent) {
-    await db.insert(scrapedPage).values({
+    await db.insert(scrapedPageTable).values({
       id: generateScrapedPageId(),
       organizationProfileId: profile.id,
       pageUrl: result.url,

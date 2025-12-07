@@ -5,17 +5,17 @@
 
 // Schema exports
 export {
-  organizationProfile,
-  organizationProfileRelations,
-  type NewOrganizationProfile,
-  type OrganizationProfile,
+  organizationProfileTable,
+  organizationProfileTableRelations,
+  type OrganizationProfileInsert,
+  type OrganizationProfileRow,
 } from "./schema/organization-profile.table";
 
 export {
-  scrapedPage,
-  scrapedPageRelations,
-  type NewScrapedPage,
-  type ScrapedPage,
+  scrapedPageTable,
+  scrapedPageTableRelations,
+  type ScrapedPageInsert,
+  type ScrapedPageRow,
 } from "./schema/scraped-page.table";
 
 // Client exports
