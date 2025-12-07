@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@repo/db/client";
 import {
   organizationProfile,
+  scrapedPage,
   scrapeWebsite,
   type OrganizationProfile,
   type ScrapedBusinessInfo,
@@ -10,8 +11,15 @@ import {
 /**
  * Generate a unique ID for new organization profiles
  */
-function generateId(): string {
+function generateProfileId(): string {
   return `org_profile_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
+
+/**
+ * Generate a unique ID for scraped pages
+ */
+function generateScrapedPageId(): string {
+  return `scraped_page_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 }
 
 /**
@@ -90,7 +98,7 @@ export async function upsertOrganizationProfile(
     const result = await db
       .insert(organizationProfile)
       .values({
-        id: generateId(),
+        id: generateProfileId(),
         organizationId,
         websiteUrl: input.websiteUrl ?? null,
         instagramUrl: input.instagramUrl ?? null,
@@ -118,6 +126,7 @@ export async function upsertOrganizationProfile(
 /**
  * Scrape a website and update the profile with scraped data
  * This is called automatically when website URL changes
+ * Saves raw content to scraped_page table and parsed data to organization_profile
  */
 async function scrapeAndUpdateProfile(
   profileId: string,
@@ -127,6 +136,7 @@ async function scrapeAndUpdateProfile(
     const result = await scrapeWebsite(websiteUrl);
 
     if (result.success && result.data) {
+      // Update organization profile with parsed data
       await db
         .update(organizationProfile)
         .set({
@@ -134,6 +144,17 @@ async function scrapeAndUpdateProfile(
           scrapedAt: result.scrapedAt,
         })
         .where(eq(organizationProfile.id, profileId));
+
+      // Save raw content to scraped_page table
+      if (result.rawContent) {
+        await db.insert(scrapedPage).values({
+          id: generateScrapedPageId(),
+          organizationProfileId: profileId,
+          pageUrl: result.url,
+          content: result.rawContent,
+          scrapedAt: result.scrapedAt,
+        });
+      }
     } else {
       console.error(
         `[organization] Failed to scrape website ${websiteUrl}:`,
@@ -151,6 +172,7 @@ async function scrapeAndUpdateProfile(
 /**
  * Manually trigger website scraping for an organization profile
  * Returns the scraped data or throws an error
+ * Saves raw content to scraped_page table and parsed data to organization_profile
  */
 export async function rescrapeOrganizationWebsite(
   organizationId: string
@@ -171,7 +193,7 @@ export async function rescrapeOrganizationWebsite(
     throw new Error(result.error || "Failed to scrape website");
   }
 
-  // Update the profile with scraped data
+  // Update the profile with parsed data
   await db
     .update(organizationProfile)
     .set({
@@ -179,6 +201,17 @@ export async function rescrapeOrganizationWebsite(
       scrapedAt: result.scrapedAt,
     })
     .where(eq(organizationProfile.id, profile.id));
+
+  // Save raw content to scraped_page table
+  if (result.rawContent) {
+    await db.insert(scrapedPage).values({
+      id: generateScrapedPageId(),
+      organizationProfileId: profile.id,
+      pageUrl: result.url,
+      content: result.rawContent,
+      scrapedAt: result.scrapedAt,
+    });
+  }
 
   return result.data ?? null;
 }

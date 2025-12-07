@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.31.0",
+    "@repo/ai": "workspace:*",
     "@repo/auth": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/env": "workspace:*",
