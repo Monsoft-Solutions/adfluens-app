@@ -120,9 +120,17 @@
       "import": "./src/scrapecreator/scrapecreator-tiktok-profile.type.ts",
       "types": "./src/scrapecreator/scrapecreator-tiktok-profile.type.ts"
     },
+    "./scrapecreator/scrapecreator-instagram-posts.type": {
+      "import": "./src/scrapecreator/scrapecreator-instagram-posts.type.ts",
+      "types": "./src/scrapecreator/scrapecreator-instagram-posts.type.ts"
+    },
     "./social-media/social-media-account-data.type": {
       "import": "./src/social-media/social-media-account-data.type.ts",
       "types": "./src/social-media/social-media-account-data.type.ts"
+    },
+    "./social-media/instagram-post.type": {
+      "import": "./src/social-media/instagram-post.type.ts",
+      "types": "./src/social-media/instagram-post.type.ts"
     }
   },
   "scripts": {

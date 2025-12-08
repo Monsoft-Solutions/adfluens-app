@@ -1,11 +1,13 @@
 import axios, { AxiosError } from "axios";
 import { env } from "@repo/env";
 import type { ScrapecreatorInstagramProfileResponse } from "@repo/types/scrapecreator/scrapecreator-instagram-profile.type";
+import type { ScrapecreatorInstagramPostsResponse } from "@repo/types/scrapecreator/scrapecreator-instagram-posts.type";
 import type { ScrapecreatorFacebookPageResponse } from "@repo/types/scrapecreator/scrapecreator-facebook-page.type";
 import type { ScrapecreatorTiktokProfileResponse } from "@repo/types/scrapecreator/scrapecreator-tiktok-profile.type";
 
-/** ScrapeCreator API base URL */
+/** ScrapeCreator API base URLs */
 const SCRAPECREATOR_API_URL = "https://api.scrapecreators.com/v1";
+const SCRAPECREATOR_API_URL_V2 = "https://api.scrapecreators.com/v2";
 
 /** Retry configuration */
 const MAX_RETRIES = 5;
@@ -208,6 +210,70 @@ export class ScrapeCreatorClient {
         lastError = error;
 
         console.log("TikTok profile error:", error);
+
+        // Only retry on rate limit errors (429)
+        if (isRateLimitError(error) && attempt < MAX_RETRIES) {
+          const delay = getBackoffDelay(attempt);
+          console.warn(
+            `[ScrapeCreator] Rate limited (429). Retry ${attempt + 1}/${MAX_RETRIES} after ${Math.round(delay)}ms`
+          );
+          await sleep(delay);
+          continue;
+        }
+
+        // For non-rate-limit errors or max retries exceeded, throw immediately
+        throw error;
+      }
+    }
+
+    // This should not be reached, but TypeScript needs it
+    throw lastError;
+  }
+
+  /**
+   * Scrape Instagram posts for a user using ScrapeCreator API v2
+   * Implements exponential backoff retry for 429 rate limit errors
+   * @param handle - The Instagram username/handle (without @)
+   * @param cursor - Optional pagination cursor (next_max_id from previous response)
+   * @returns The Instagram posts data from ScrapeCreator
+   */
+  async scrapeInstagramPosts(
+    handle: string,
+    cursor?: string
+  ): Promise<ScrapecreatorInstagramPostsResponse> {
+    const url = `${SCRAPECREATOR_API_URL_V2}/instagram/user/posts`;
+    const params: Record<string, string> = {
+      handle: handle.replace(/^@/, ""), // Remove @ if present
+      trim: "true",
+    };
+
+    // Add pagination cursor if provided
+    if (cursor) {
+      params.max_id = cursor;
+    }
+
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const response = await axios.get<ScrapecreatorInstagramPostsResponse>(
+          url,
+          {
+            params,
+            headers: {
+              "x-api-key": this.apiKey,
+            },
+            timeout: 30000, // 30 second timeout
+          }
+        );
+
+        if (!response.data.success) {
+          throw new Error("ScrapeCreator API returned unsuccessful response");
+        }
+
+        return response.data;
+      } catch (error) {
+        lastError = error;
 
         // Only retry on rate limit errors (429)
         if (isRateLimitError(error) && attempt < MAX_RETRIES) {

@@ -10,6 +10,8 @@ export {
   scrapedPageTableRelations,
   socialMediaAccountTable,
   socialMediaAccountTableRelations,
+  socialMediaPostTable,
+  socialMediaPostTableRelations,
 } from "./schema";
 
 // Re-export drizzle-orm utilities for convenience
@@ -42,3 +44,9 @@ export type {
   SocialMediaAccountInsert,
   SocialMediaAccountRow,
 } from "./schema/social-media-account.table";
+
+// Re-export social media post types
+export type {
+  SocialMediaPostInsert,
+  SocialMediaPostRow,
+} from "./schema/social-media-post.table";

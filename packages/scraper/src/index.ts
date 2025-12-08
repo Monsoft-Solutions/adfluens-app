@@ -25,6 +25,12 @@ export {
 } from "./scrapers/social-media/instagram.scraper";
 
 export {
+  scrapeInstagramPosts,
+  extractInstagramHandle as extractInstagramHandleForPosts,
+  type InstagramPostsScrapingResult,
+} from "./scrapers/social-media/instagram-posts.scraper";
+
+export {
   scrapeFacebookPage,
   extractFacebookHandle,
   type FacebookScrapingResult,

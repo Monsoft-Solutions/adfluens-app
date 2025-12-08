@@ -11,9 +11,12 @@ import {
   db,
   eq,
   and,
+  desc,
   socialMediaAccountTable,
+  socialMediaPostTable,
   organizationProfileTable,
   type SocialMediaAccountRow,
+  type SocialMediaPostRow,
 } from "@repo/db";
 import {
   scrapeInstagramProfile,
@@ -22,9 +25,11 @@ import {
   extractFacebookHandle,
   scrapeTiktokProfile,
   extractTiktokHandle,
+  scrapeInstagramPosts,
 } from "@repo/scraper";
 import type { SocialMediaAccount } from "@repo/types/social-media/social-media-account.type";
 import type { SocialMediaPlatform } from "@repo/types/social-media/social-media-platform.enum";
+import type { InstagramPost } from "@repo/types/social-media/instagram-post.type";
 
 /**
  * Generate a unique ID for social media accounts
@@ -348,3 +353,176 @@ export { extractFacebookHandle };
  * Extract TikTok handle from URL (re-export for router use)
  */
 export { extractTiktokHandle };
+
+// =============================================================================
+// Instagram Posts Functions
+// =============================================================================
+
+/**
+ * Upsert Instagram posts (insert new, update existing by platformPostId)
+ * @param socialMediaAccountId - The social media account ID
+ * @param posts - Array of Instagram posts to upsert
+ * @param scrapedAt - Timestamp of when posts were scraped
+ * @returns Array of upserted post records
+ */
+async function upsertInstagramPosts(
+  socialMediaAccountId: string,
+  posts: InstagramPost[],
+  scrapedAt: Date
+): Promise<SocialMediaPostRow[]> {
+  const results: SocialMediaPostRow[] = [];
+
+  for (const post of posts) {
+    // Check if post already exists
+    const existing = await db
+      .select()
+      .from(socialMediaPostTable)
+      .where(
+        and(
+          eq(socialMediaPostTable.socialMediaAccountId, socialMediaAccountId),
+          eq(socialMediaPostTable.platformPostId, post.platformPostId)
+        )
+      )
+      .limit(1);
+
+    if (existing[0]) {
+      // Update existing post
+      const result = await db
+        .update(socialMediaPostTable)
+        .set({
+          shortcode: post.shortcode,
+          mediaType: post.mediaType,
+          productType: post.productType,
+          caption: post.caption,
+          postUrl: post.postUrl,
+          thumbnailUrl: post.thumbnailUrl,
+          playCount: post.playCount,
+          likeCount: post.likeCount,
+          commentCount: post.commentCount,
+          videoDuration: post.videoDuration,
+          hasAudio: post.hasAudio,
+          takenAt: post.takenAt,
+          mediaUrls: post.mediaUrls,
+          scrapedAt,
+        })
+        .where(eq(socialMediaPostTable.id, existing[0].id))
+        .returning();
+
+      if (result[0]) {
+        results.push(result[0]);
+      }
+    } else {
+      // Insert new post
+      const result = await db
+        .insert(socialMediaPostTable)
+        .values({
+          socialMediaAccountId,
+          platformPostId: post.platformPostId,
+          shortcode: post.shortcode,
+          mediaType: post.mediaType,
+          productType: post.productType,
+          caption: post.caption,
+          postUrl: post.postUrl,
+          thumbnailUrl: post.thumbnailUrl,
+          playCount: post.playCount,
+          likeCount: post.likeCount,
+          commentCount: post.commentCount,
+          videoDuration: post.videoDuration,
+          hasAudio: post.hasAudio,
+          takenAt: post.takenAt,
+          mediaUrls: post.mediaUrls,
+          scrapedAt,
+        })
+        .returning();
+
+      if (result[0]) {
+        results.push(result[0]);
+      }
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Scrape and save Instagram posts for an account
+ * @param socialMediaAccountId - The social media account ID
+ * @param handle - The Instagram handle
+ * @param cursor - Optional pagination cursor
+ * @returns Object containing posts, pagination cursor, and hasMore flag
+ */
+export async function scrapeAndSaveInstagramPosts(
+  socialMediaAccountId: string,
+  handle: string,
+  cursor?: string
+): Promise<{
+  posts: SocialMediaPostRow[];
+  nextCursor?: string;
+  hasMore: boolean;
+}> {
+  try {
+    const result = await scrapeInstagramPosts(handle, cursor);
+
+    if (!result.success || !result.data) {
+      console.error(
+        `[social-media] Failed to scrape Instagram posts for ${handle}:`,
+        result.error
+      );
+      return { posts: [], hasMore: false };
+    }
+
+    const posts = await upsertInstagramPosts(
+      socialMediaAccountId,
+      result.data,
+      result.scrapedAt
+    );
+
+    return {
+      posts,
+      nextCursor: result.nextCursor,
+      hasMore: result.hasMore,
+    };
+  } catch (error) {
+    console.error(
+      `[social-media] Error scraping Instagram posts for ${handle}:`,
+      error instanceof Error ? error.message : error
+    );
+    return { posts: [], hasMore: false };
+  }
+}
+
+/**
+ * Get Instagram posts for a social media account
+ * @param socialMediaAccountId - The social media account ID
+ * @param limit - Optional limit for number of posts to return (default: 50)
+ * @returns Array of posts ordered by takenAt descending
+ */
+export async function getInstagramPosts(
+  socialMediaAccountId: string,
+  limit: number = 50
+): Promise<SocialMediaPostRow[]> {
+  const posts = await db
+    .select()
+    .from(socialMediaPostTable)
+    .where(eq(socialMediaPostTable.socialMediaAccountId, socialMediaAccountId))
+    .orderBy(desc(socialMediaPostTable.takenAt))
+    .limit(limit);
+
+  return posts;
+}
+
+/**
+ * Get Instagram posts count for a social media account
+ * @param socialMediaAccountId - The social media account ID
+ * @returns Number of posts stored for the account
+ */
+export async function getInstagramPostsCount(
+  socialMediaAccountId: string
+): Promise<number> {
+  const result = await db
+    .select()
+    .from(socialMediaPostTable)
+    .where(eq(socialMediaPostTable.socialMediaAccountId, socialMediaAccountId));
+
+  return result.length;
+}
