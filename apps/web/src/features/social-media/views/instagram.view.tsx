@@ -1,7 +1,7 @@
 /**
  * Instagram View
  *
- * Displays the Instagram profile data for the current organization.
+ * Displays the Instagram profile data and posts for the current organization.
  * Allows users to view and refresh their Instagram profile information.
  *
  * @module web/features/social-media/views/instagram
@@ -24,6 +24,7 @@ import {
   cn,
 } from "@repo/ui";
 import { InstagramProfile } from "../components/instagram-profile.component";
+import { InstagramPostsGrid } from "../components/instagram-posts-grid.component";
 
 /**
  * Instagram view component
@@ -46,16 +47,30 @@ export const InstagramView: React.FC = () => {
     enabled: !!organization,
   });
 
+  // Fetch Instagram posts
+  const {
+    data: postsData,
+    isLoading: isLoadingPosts,
+    error: postsError,
+  } = useQuery({
+    ...trpc.socialMedia.getInstagramPosts.queryOptions({ limit: 50 }),
+    enabled: !!organization && !!accountData?.account,
+  });
+
   // Refresh mutation
   const refreshMutation = useMutation({
     ...trpc.socialMedia.refreshAccount.mutationOptions(),
     onSuccess: () => {
       setSuccessMessage("Instagram profile refreshed successfully!");
       setError(null);
+      // Invalidate both account and posts queries
       queryClient.invalidateQueries({
         queryKey: trpc.socialMedia.getAccount.queryKey({
           platform: "instagram",
         }),
+      });
+      queryClient.invalidateQueries({
+        queryKey: trpc.socialMedia.getInstagramPosts.queryKey({ limit: 50 }),
       });
       setTimeout(() => setSuccessMessage(null), 3000);
     },
@@ -169,12 +184,33 @@ export const InstagramView: React.FC = () => {
           </CardContent>
         </Card>
       ) : accountData?.account ? (
-        // Profile Display
-        <InstagramProfile
-          account={accountData.account}
-          onRefresh={handleRefresh}
-          isRefreshing={refreshMutation.isPending}
-        />
+        // Profile and Posts Display
+        <div className="space-y-6">
+          <InstagramProfile
+            account={accountData.account}
+            onRefresh={handleRefresh}
+            isRefreshing={refreshMutation.isPending}
+          />
+
+          {/* Posts Grid */}
+          <InstagramPostsGrid
+            posts={postsData?.posts ?? null}
+            isLoading={isLoadingPosts}
+          />
+
+          {/* Posts Error */}
+          {postsError && (
+            <div
+              className={cn(
+                "bg-destructive/10 border border-destructive/20 text-destructive",
+                "px-4 py-3 rounded-lg flex items-center gap-3"
+              )}
+            >
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <p>Failed to load posts: {postsError.message}</p>
+            </div>
+          )}
+        </div>
       ) : (
         // No Data State
         <Card>

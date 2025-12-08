@@ -526,3 +526,82 @@ export async function getInstagramPostsCount(
 
   return result.length;
 }
+
+/**
+ * Scrape and save an Instagram profile along with initial posts
+ * This is used when setting up an Instagram profile for the first time.
+ * @param organizationProfileId - The organization profile ID to associate with
+ * @param instagramUrl - The Instagram URL or handle
+ * @returns void - Fire and forget, logs errors internally
+ */
+export async function scrapeInstagramProfileAndInitialPosts(
+  organizationProfileId: string,
+  instagramUrl: string
+): Promise<void> {
+  try {
+    // Step 1: Scrape and save the Instagram profile
+    const account = await scrapeAndSaveInstagramProfile(
+      organizationProfileId,
+      instagramUrl
+    );
+
+    if (!account) {
+      console.error(
+        `[social-media] Failed to scrape Instagram profile ${instagramUrl}, skipping posts scraping`
+      );
+      return;
+    }
+
+    // Step 2: Extract handle for posts scraping
+    const handle = extractInstagramHandle(instagramUrl);
+
+    if (!handle) {
+      console.error(
+        `[social-media] Could not extract handle from ${instagramUrl}, skipping posts scraping`
+      );
+      return;
+    }
+
+    // Step 3: Scrape and save the first batch of posts (typically ~12 posts per API call)
+    // We'll make up to 2 calls to get approximately 20-24 posts
+    const firstBatch = await scrapeAndSaveInstagramPosts(account.id, handle);
+
+    // If there are more posts and we got posts in the first batch, fetch another batch
+    if (
+      firstBatch.hasMore &&
+      firstBatch.nextCursor &&
+      firstBatch.posts.length > 0
+    ) {
+      await scrapeAndSaveInstagramPosts(
+        account.id,
+        handle,
+        firstBatch.nextCursor
+      );
+    }
+  } catch (error) {
+    console.error(
+      `[social-media] Error in scrapeInstagramProfileAndInitialPosts for ${instagramUrl}:`,
+      error instanceof Error ? error.message : error
+    );
+  }
+}
+
+/**
+ * Get Instagram posts for an organization
+ * @param organizationId - The organization ID
+ * @param limit - Optional limit for number of posts to return (default: 50)
+ * @returns Array of posts ordered by takenAt descending, or null if no account found
+ */
+export async function getInstagramPostsForOrganization(
+  organizationId: string,
+  limit: number = 50
+): Promise<SocialMediaPostRow[] | null> {
+  // Get the Instagram account for this organization
+  const account = await getSocialMediaAccount(organizationId, "instagram");
+
+  if (!account) {
+    return null;
+  }
+
+  return getInstagramPosts(account.id, limit);
+}

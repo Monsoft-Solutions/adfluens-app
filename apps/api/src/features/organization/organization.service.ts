@@ -8,7 +8,7 @@ import {
 import { scrapeWebsite } from "@repo/scraper";
 import type { ScrapedBusinessInfo } from "@repo/types/organization/organization-profile.type";
 import {
-  scrapeAndSaveInstagramProfile,
+  scrapeInstagramProfileAndInitialPosts,
   scrapeAndSaveFacebookProfile,
   scrapeAndSaveTiktokProfile,
 } from "../social-media/social-media.service";
@@ -115,10 +115,13 @@ export async function upsertOrganizationProfile(
       void scrapeAndUpdateProfile(updatedProfile.id, input.websiteUrl);
     }
 
-    // Auto-scrape Instagram if URL changed and is not empty
+    // Auto-scrape Instagram profile and initial posts if URL changed and is not empty
     if (instagramChanged && input.instagramUrl) {
       // Fire and forget scraping - don't block the response
-      void scrapeAndSaveInstagramProfile(updatedProfile.id, input.instagramUrl);
+      void scrapeInstagramProfileAndInitialPosts(
+        updatedProfile.id,
+        input.instagramUrl
+      );
     }
 
     // Auto-scrape Facebook if URL changed and is not empty
@@ -160,9 +163,12 @@ export async function upsertOrganizationProfile(
       void scrapeAndUpdateProfile(newProfile.id, input.websiteUrl);
     }
 
-    // Auto-scrape Instagram if URL is provided
+    // Auto-scrape Instagram profile and initial posts if URL is provided
     if (input.instagramUrl) {
-      void scrapeAndSaveInstagramProfile(newProfile.id, input.instagramUrl);
+      void scrapeInstagramProfileAndInitialPosts(
+        newProfile.id,
+        input.instagramUrl
+      );
     }
 
     // Auto-scrape Facebook if URL is provided
