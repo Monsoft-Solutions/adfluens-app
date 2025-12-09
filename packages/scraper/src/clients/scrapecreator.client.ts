@@ -186,8 +186,6 @@ export class ScrapeCreatorClient {
 
     let lastError: unknown;
 
-    console.log("Scraping TikTok profile for handle:", handle);
-
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
         const response = await axios.get<ScrapecreatorTiktokProfileResponse>(
@@ -201,8 +199,6 @@ export class ScrapeCreatorClient {
           }
         );
 
-        console.log("TikTok profile response:", response.data);
-
         if (!response.data.success) {
           throw new Error("ScrapeCreator API returned unsuccessful response");
         }
@@ -210,8 +206,6 @@ export class ScrapeCreatorClient {
         return response.data;
       } catch (error) {
         lastError = error;
-
-        console.log("TikTok profile error:", error);
 
         // Only retry on rate limit errors (429)
         if (isRateLimitError(error) && attempt < MAX_RETRIES) {

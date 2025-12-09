@@ -1,6 +1,19 @@
 import { Storage } from "@google-cloud/storage";
 import { env } from "@repo/env";
+import convert from "heic-convert";
 import path from "path";
+import sharp from "sharp";
+
+/**
+ * HEIC/HEIF formats require heic-convert because sharp's prebuilt binaries
+ * don't include HEIC decoding support. See:
+ * https://sharp.pixelplumbing.com/install/#building-from-source
+ * https://github.com/lovell/sharp/issues/4472
+ */
+const HEIC_FORMATS = ["image/heic", "image/heif"];
+
+/** Other unsupported formats that can be converted directly with sharp */
+const SHARP_CONVERTIBLE_FORMATS = ["image/avif"];
 
 export class MediaStorageService {
   private storage: Storage;
@@ -74,21 +87,77 @@ export class MediaStorageService {
       const contentType =
         response.headers.get("content-type") || "application/octet-stream";
 
+      // Process buffer and content type (may be converted)
+      let processedBuffer: Buffer = buffer;
+      let processedContentType = contentType;
+
+      // Convert HEIC/HEIF using heic-convert (sharp prebuilt doesn't support HEIC)
+      if (HEIC_FORMATS.some((fmt) => contentType.includes(fmt))) {
+        try {
+          // First convert HEIC to JPEG using heic-convert
+          const jpegBuffer = await convert({
+            buffer: buffer,
+            format: "JPEG",
+            quality: 0.85,
+          });
+          // Then convert JPEG to WebP using sharp for better compression
+          processedBuffer = await sharp(jpegBuffer)
+            .webp({ quality: 85 })
+            .toBuffer();
+          processedContentType = "image/webp";
+        } catch (error) {
+          console.warn(
+            `Failed to convert ${contentType} to WebP:`,
+            error instanceof Error ? error.message : error
+          );
+        }
+      }
+      // Convert other unsupported formats using sharp directly
+      else if (
+        SHARP_CONVERTIBLE_FORMATS.some((fmt) => contentType.includes(fmt))
+      ) {
+        try {
+          processedBuffer = await sharp(buffer)
+            .webp({ quality: 85 })
+            .toBuffer();
+          processedContentType = "image/webp";
+        } catch (error) {
+          console.warn(
+            `Failed to convert ${contentType} to WebP:`,
+            error instanceof Error ? error.message : error
+          );
+        }
+      }
+
       // Determine filename
       let finalFilename = filename;
       if (!finalFilename) {
         // Try to get extension from content-type or url
         const ext =
-          this.getExtensionFromContentType(contentType) ||
+          this.getExtensionFromContentType(processedContentType) ||
           path.extname(url).split("?")[0] ||
           ".bin";
         const name = path.basename(url).split("?")[0] || `file-${Date.now()}`;
         finalFilename = `${name}${ext.startsWith(".") ? "" : "."}${ext}`;
       }
 
+      // If image was converted, ensure .webp extension
+      if (
+        processedContentType === "image/webp" &&
+        contentType !== "image/webp"
+      ) {
+        if (finalFilename) {
+          finalFilename = finalFilename.replace(/\.[^.]+$/, ".webp");
+        }
+      }
+
       const destinationPath = `${destinationFolder}/${finalFilename}`;
 
-      return await this.uploadFile(buffer, destinationPath, contentType);
+      return await this.uploadFile(
+        processedBuffer,
+        destinationPath,
+        processedContentType
+      );
     } catch (error) {
       console.error(`Error uploading from URL ${url}:`, error);
       throw error;
@@ -123,6 +192,9 @@ export class MediaStorageService {
       "image/png": "png",
       "image/gif": "gif",
       "image/webp": "webp",
+      "image/heic": "heic",
+      "image/heif": "heif",
+      "image/avif": "avif",
       "video/mp4": "mp4",
       "video/quicktime": "mov",
       "application/pdf": "pdf",
