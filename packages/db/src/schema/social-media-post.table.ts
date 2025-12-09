@@ -52,6 +52,9 @@ export const socialMediaPostTable = pgTable(
     /** Thumbnail/display image URL */
     thumbnailUrl: text("thumbnail_url"),
 
+    /** Original Thumbnail URL (from source) */
+    originalThumbnailUrl: text("original_thumbnail_url"),
+
     /** Number of video plays (for videos/reels) */
     playCount: integer("play_count"),
 

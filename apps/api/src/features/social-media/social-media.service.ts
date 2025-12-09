@@ -27,6 +27,7 @@ import {
   extractTiktokHandle,
   scrapeInstagramPosts,
 } from "@repo/scraper";
+import { mediaStorage } from "@repo/media-storage";
 import type { SocialMediaAccount } from "@repo/types/social-media/social-media-account.type";
 import type { SocialMediaPlatform } from "@repo/types/social-media/social-media-platform.enum";
 import type { InstagramPost } from "@repo/types/social-media/instagram-post.type";
@@ -359,6 +360,83 @@ export { extractTiktokHandle };
 // =============================================================================
 
 /**
+ * Process post media by uploading to Google Cloud Storage
+ * @param post - The Instagram post to process
+ * @param accountHandle - The Instagram account handle
+ * @returns The post with updated media URLs
+ */
+async function processPostMedia(
+  post: InstagramPost,
+  accountHandle: string
+): Promise<InstagramPost> {
+  const processedPost = { ...post };
+  // Use a clean folder structure: instagram/handle/posts/shortcode
+  const folder = `instagram/${accountHandle}/posts/${post.shortcode}`;
+
+  // Process thumbnail
+  if (post.thumbnailUrl) {
+    try {
+      const storedUrl = await mediaStorage.uploadFromUrl(
+        post.thumbnailUrl,
+        folder,
+        "thumbnail.jpg"
+      );
+      processedPost.originalThumbnailUrl = post.thumbnailUrl;
+      processedPost.thumbnailUrl = storedUrl;
+    } catch (error) {
+      console.warn(
+        `[social-media] Failed to upload thumbnail for post ${post.shortcode}:`,
+        error
+      );
+      // Keep original URL on failure, but ensure it's set as original too just in case
+      processedPost.originalThumbnailUrl = post.thumbnailUrl;
+    }
+  }
+
+  // Process media URLs
+  if (post.mediaUrls && post.mediaUrls.length > 0) {
+    const processedMediaUrls: typeof post.mediaUrls = [];
+
+    for (let i = 0; i < post.mediaUrls.length; i++) {
+      const media = post.mediaUrls[i];
+      if (!media) continue;
+
+      try {
+        // Determine extension based on type, fallback to jpg/mp4
+        const extension = media.type === "video" ? "mp4" : "jpg";
+        const filename = `media_${i}.${extension}`;
+
+        const storedUrl = await mediaStorage.uploadFromUrl(
+          media.url,
+          folder,
+          filename
+        );
+
+        processedMediaUrls.push({
+          ...media,
+          url: storedUrl,
+          originalUrl: media.url,
+        });
+      } catch (error) {
+        console.warn(
+          `[social-media] Failed to upload media ${i} for post ${post.shortcode}:`,
+          error
+        );
+        // Keep original if upload fails
+        processedMediaUrls.push({
+          ...media,
+          originalUrl: media.url,
+        });
+      }
+    }
+
+    processedPost.mediaUrls = processedMediaUrls;
+  }
+
+  return processedPost;
+}
+
+/**
  * Upsert Instagram posts (insert new, update existing by platformPostId)
  * @param socialMediaAccountId - The social media account ID
  * @param posts - Array of Instagram posts to upsert
@@ -396,6 +474,7 @@ async function upsertInstagramPosts(
           caption: post.caption,
           postUrl: post.postUrl,
           thumbnailUrl: post.thumbnailUrl,
+          originalThumbnailUrl: post.originalThumbnailUrl,
           playCount: post.playCount,
           likeCount: post.likeCount,
           commentCount: post.commentCount,
@@ -424,6 +503,7 @@ async function upsertInstagramPosts(
           caption: post.caption,
           postUrl: post.postUrl,
           thumbnailUrl: post.thumbnailUrl,
+          originalThumbnailUrl: post.originalThumbnailUrl,
           playCount: post.playCount,
           likeCount: post.likeCount,
           commentCount: post.commentCount,
@@ -471,9 +551,17 @@ export async function scrapeAndSaveInstagramPosts(
       return { posts: [], hasMore: false };
     }
 
+    // Process posts to upload media to GCS
+    // We process sequentially to avoid overwhelming the network or rate limits
+    const processedPosts: InstagramPost[] = [];
+    for (const post of result.data) {
+      const processed = await processPostMedia(post, handle);
+      processedPosts.push(processed);
+    }
+
     const posts = await upsertInstagramPosts(
       socialMediaAccountId,
-      result.data,
+      processedPosts,
       result.scrapedAt
     );
 

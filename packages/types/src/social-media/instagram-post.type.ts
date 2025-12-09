@@ -39,8 +39,11 @@ export type InstagramProductType = z.infer<typeof instagramProductTypeSchema>;
  * Media item within a post (image or video URL)
  */
 export const instagramPostMediaSchema = z.object({
-  /** Media URL */
+  /** Media URL (GCS or public URL) */
   url: z.string(),
+
+  /** Original Media URL (from source) */
+  originalUrl: z.string().optional(),
 
   /** Width in pixels */
   width: z.number(),
@@ -78,8 +81,11 @@ export const instagramPostSchema = z.object({
   /** Full URL to the post */
   postUrl: z.string(),
 
-  /** Thumbnail/display image URL */
+  /** Thumbnail/display image URL (GCS or public) */
   thumbnailUrl: z.string(),
+
+  /** Original Thumbnail URL (from source) */
+  originalThumbnailUrl: z.string().optional().nullable(),
 
   /** Number of video plays (for videos/reels) */
   playCount: z.number().nullable(),

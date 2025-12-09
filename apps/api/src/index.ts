@@ -8,6 +8,7 @@ import { appRouter } from "./trpc/router";
 import { createContext } from "./trpc/init";
 import { auth } from "@repo/auth";
 import { env } from "@repo/env";
+import { mediaStorage } from "@repo/media-storage";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,6 +16,14 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = env.PORT;
 const isDev = env.NODE_ENV !== "production";
+
+// Configure GCS CORS on startup in development
+if (isDev) {
+  mediaStorage
+    .configureBucketCors()
+    // .then(() => console.log("✅ GCS Bucket CORS configured"))
+    .catch((err) => console.error("❌ Failed to configure GCS CORS:", err));
+}
 
 // CORS Middleware - must be before auth handler
 app.use(
