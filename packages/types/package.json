@@ -124,6 +124,10 @@
       "import": "./src/scrapecreator/scrapecreator-instagram-posts.type.ts",
       "types": "./src/scrapecreator/scrapecreator-instagram-posts.type.ts"
     },
+    "./scrapecreator/scrapecreator-tiktok-posts.type": {
+      "import": "./src/scrapecreator/scrapecreator-tiktok-posts.type.ts",
+      "types": "./src/scrapecreator/scrapecreator-tiktok-posts.type.ts"
+    },
     "./social-media/social-media-account-data.type": {
       "import": "./src/social-media/social-media-account-data.type.ts",
       "types": "./src/social-media/social-media-account-data.type.ts"
@@ -131,6 +135,10 @@
     "./social-media/instagram-post.type": {
       "import": "./src/social-media/instagram-post.type.ts",
       "types": "./src/social-media/instagram-post.type.ts"
+    },
+    "./social-media/tiktok-post.type": {
+      "import": "./src/social-media/tiktok-post.type.ts",
+      "types": "./src/social-media/tiktok-post.type.ts"
     }
   },
   "scripts": {

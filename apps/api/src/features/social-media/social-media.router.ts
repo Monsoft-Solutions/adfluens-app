@@ -12,6 +12,7 @@ import {
   getSocialMediaAccount,
   refreshSocialMediaAccount,
   getInstagramPostsForOrganization,
+  getTiktokPostsForOrganization,
 } from "./social-media.service";
 import { SocialMediaPlatform } from "@repo/types/social-media/social-media-platform.enum";
 
@@ -78,6 +79,25 @@ export const socialMediaRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const posts = await getInstagramPostsForOrganization(
+        ctx.organization.id,
+        input.limit
+      );
+      return { posts };
+    }),
+
+  /**
+   * Get TikTok posts for the current organization
+   * Returns posts stored in the database, ordered by takenAt descending
+   * Requires authentication and active organization
+   */
+  getTiktokPosts: organizationProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).optional().default(50),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const posts = await getTiktokPostsForOrganization(
         ctx.organization.id,
         input.limit
       );

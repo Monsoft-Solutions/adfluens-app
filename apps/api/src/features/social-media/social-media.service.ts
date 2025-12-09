@@ -26,11 +26,13 @@ import {
   scrapeTiktokProfile,
   extractTiktokHandle,
   scrapeInstagramPosts,
+  scrapeTiktokPosts,
 } from "@repo/scraper";
 import { mediaStorage } from "@repo/media-storage";
 import type { SocialMediaAccount } from "@repo/types/social-media/social-media-account.type";
 import type { SocialMediaPlatform } from "@repo/types/social-media/social-media-platform.enum";
 import type { InstagramPost } from "@repo/types/social-media/instagram-post.type";
+import type { TiktokPost } from "@repo/types/social-media/tiktok-post.type";
 
 /**
  * Generate a unique ID for social media accounts
@@ -373,7 +375,7 @@ async function processPostMedia(
   // Use a clean folder structure: instagram/handle/posts/shortcode
   const folder = `instagram/${accountHandle}/posts/${post.shortcode}`;
 
-  // Process thumbnail
+  // Process thumbnail - only store GCS URLs, never original
   if (post.thumbnailUrl) {
     try {
       const storedUrl = await mediaStorage.uploadFromUrl(
@@ -388,8 +390,9 @@ async function processPostMedia(
         `[social-media] Failed to upload thumbnail for post ${post.shortcode}:`,
         error
       );
-      // Keep original URL on failure, but ensure it's set as original too just in case
+      // Set to null on failure - we MUST NOT use original URLs
       processedPost.originalThumbnailUrl = post.thumbnailUrl;
+      processedPost.thumbnailUrl = null;
     }
   }
 
@@ -422,11 +425,8 @@ async function processPostMedia(
           `[social-media] Failed to upload media ${i} for post ${post.shortcode}:`,
           error
         );
-        // Keep original if upload fails
-        processedMediaUrls.push({
-          ...media,
-          originalUrl: media.url,
-        });
+        // Skip media if upload fails - we MUST NOT use original URLs
+        // Only store originalUrl for reference, but don't include in processed list
       }
     }
 
@@ -692,4 +692,328 @@ export async function getInstagramPostsForOrganization(
   }
 
   return getInstagramPosts(account.id, limit);
+}
+
+// =============================================================================
+// TikTok Posts Functions
+// =============================================================================
+
+/**
+ * Process TikTok post media by uploading cover image and video to Google Cloud Storage
+ * @param post - The TikTok post to process
+ * @param accountHandle - The TikTok account handle
+ * @returns The post with updated media URLs
+ */
+async function processTiktokPostMedia(
+  post: TiktokPost,
+  accountHandle: string
+): Promise<TiktokPost> {
+  const processedPost = { ...post };
+  // Use a clean folder structure: tiktok/handle/posts/aweme_id
+  const folder = `tiktok/${accountHandle}/posts/${post.shortcode}`;
+
+  // Process thumbnail/cover image - only store GCS URLs, never original
+  if (post.thumbnailUrl) {
+    try {
+      const storedUrl = await mediaStorage.uploadFromUrl(
+        post.thumbnailUrl,
+        folder,
+        "thumbnail.jpg"
+      );
+      processedPost.originalThumbnailUrl = post.thumbnailUrl;
+      processedPost.thumbnailUrl = storedUrl;
+    } catch (error) {
+      console.warn(
+        `[social-media] Failed to upload thumbnail for TikTok post ${post.shortcode}:`,
+        error
+      );
+      // Set to null on failure - we MUST NOT use original URLs
+      processedPost.originalThumbnailUrl = post.thumbnailUrl;
+      processedPost.thumbnailUrl = null;
+    }
+  }
+
+  // Process video - only store GCS URLs, never original
+  if (post.videoUrl) {
+    try {
+      const storedUrl = await mediaStorage.uploadFromUrl(
+        post.videoUrl,
+        folder,
+        "video.mp4"
+      );
+      processedPost.originalVideoUrl = post.videoUrl;
+      processedPost.videoUrl = storedUrl;
+    } catch (error) {
+      console.warn(
+        `[social-media] Failed to upload video for TikTok post ${post.shortcode}:`,
+        error
+      );
+      // Set to null on failure - we MUST NOT use original URLs
+      processedPost.originalVideoUrl = post.videoUrl;
+      processedPost.videoUrl = null;
+    }
+  }
+
+  return processedPost;
+}
+
+/**
+ * Build media URLs array for TikTok post (video)
+ * Returns null if no video URL is available
+ */
+function buildTiktokMediaUrls(post: TiktokPost) {
+  if (!post.videoUrl) {
+    return null;
+  }
+
+  return [
+    {
+      url: post.videoUrl,
+      originalUrl: post.originalVideoUrl ?? undefined,
+      width: post.videoWidth ?? 0,
+      height: post.videoHeight ?? 0,
+      type: "video" as const,
+    },
+  ];
+}
+
+/**
+ * Upsert TikTok posts (insert new, update existing by platformPostId)
+ * @param socialMediaAccountId - The social media account ID
+ * @param posts - Array of TikTok posts to upsert
+ * @param scrapedAt - Timestamp of when posts were scraped
+ * @returns Array of upserted post records
+ */
+async function upsertTiktokPosts(
+  socialMediaAccountId: string,
+  posts: TiktokPost[],
+  scrapedAt: Date
+): Promise<SocialMediaPostRow[]> {
+  const results: SocialMediaPostRow[] = [];
+
+  for (const post of posts) {
+    // Build media URLs array for this post
+    const mediaUrls = buildTiktokMediaUrls(post);
+
+    // Check if post already exists
+    const existing = await db
+      .select()
+      .from(socialMediaPostTable)
+      .where(
+        and(
+          eq(socialMediaPostTable.socialMediaAccountId, socialMediaAccountId),
+          eq(socialMediaPostTable.platformPostId, post.platformPostId)
+        )
+      )
+      .limit(1);
+
+    if (existing[0]) {
+      // Update existing post
+      const result = await db
+        .update(socialMediaPostTable)
+        .set({
+          shortcode: post.shortcode,
+          mediaType: "video", // All TikTok posts are videos
+          productType: null,
+          caption: post.caption,
+          postUrl: post.postUrl,
+          thumbnailUrl: post.thumbnailUrl,
+          originalThumbnailUrl: post.originalThumbnailUrl,
+          playCount: post.playCount,
+          likeCount: post.likeCount,
+          commentCount: post.commentCount,
+          videoDuration: post.videoDuration,
+          hasAudio: true, // TikTok videos have audio by default
+          takenAt: post.takenAt,
+          mediaUrls,
+          scrapedAt,
+        })
+        .where(eq(socialMediaPostTable.id, existing[0].id))
+        .returning();
+
+      if (result[0]) {
+        results.push(result[0]);
+      }
+    } else {
+      // Insert new post
+      const result = await db
+        .insert(socialMediaPostTable)
+        .values({
+          socialMediaAccountId,
+          platformPostId: post.platformPostId,
+          shortcode: post.shortcode,
+          mediaType: "video", // All TikTok posts are videos
+          productType: null,
+          caption: post.caption,
+          postUrl: post.postUrl,
+          thumbnailUrl: post.thumbnailUrl,
+          originalThumbnailUrl: post.originalThumbnailUrl,
+          playCount: post.playCount,
+          likeCount: post.likeCount,
+          commentCount: post.commentCount,
+          videoDuration: post.videoDuration,
+          hasAudio: true, // TikTok videos have audio by default
+          takenAt: post.takenAt,
+          mediaUrls,
+          scrapedAt,
+        })
+        .returning();
+
+      if (result[0]) {
+        results.push(result[0]);
+      }
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Scrape and save TikTok posts for an account
+ * @param socialMediaAccountId - The social media account ID
+ * @param handle - The TikTok handle
+ * @param cursor - Optional pagination cursor
+ * @returns Object containing posts, pagination cursor, and hasMore flag
+ */
+export async function scrapeAndSaveTiktokPosts(
+  socialMediaAccountId: string,
+  handle: string,
+  cursor?: number
+): Promise<{
+  posts: SocialMediaPostRow[];
+  nextCursor?: number;
+  hasMore: boolean;
+}> {
+  try {
+    const result = await scrapeTiktokPosts(handle, cursor);
+
+    if (!result.success || !result.data) {
+      console.error(
+        `[social-media] Failed to scrape TikTok posts for ${handle}:`,
+        result.error
+      );
+      return { posts: [], hasMore: false };
+    }
+
+    // Process posts to upload cover images to GCS
+    // We process sequentially to avoid overwhelming the network or rate limits
+    const processedPosts: TiktokPost[] = [];
+    for (const post of result.data) {
+      const processed = await processTiktokPostMedia(post, handle);
+      processedPosts.push(processed);
+    }
+
+    const posts = await upsertTiktokPosts(
+      socialMediaAccountId,
+      processedPosts,
+      result.scrapedAt
+    );
+
+    return {
+      posts,
+      nextCursor: result.nextCursor,
+      hasMore: result.hasMore,
+    };
+  } catch (error) {
+    console.error(
+      `[social-media] Error scraping TikTok posts for ${handle}:`,
+      error instanceof Error ? error.message : error
+    );
+    return { posts: [], hasMore: false };
+  }
+}
+
+/**
+ * Get TikTok posts for a social media account
+ * @param socialMediaAccountId - The social media account ID
+ * @param limit - Optional limit for number of posts to return (default: 50)
+ * @returns Array of posts ordered by takenAt descending
+ */
+export async function getTiktokPosts(
+  socialMediaAccountId: string,
+  limit: number = 50
+): Promise<SocialMediaPostRow[]> {
+  const posts = await db
+    .select()
+    .from(socialMediaPostTable)
+    .where(eq(socialMediaPostTable.socialMediaAccountId, socialMediaAccountId))
+    .orderBy(desc(socialMediaPostTable.takenAt))
+    .limit(limit);
+
+  return posts;
+}
+
+/**
+ * Scrape and save a TikTok profile along with initial posts
+ * This is used when setting up a TikTok profile for the first time.
+ * @param organizationProfileId - The organization profile ID to associate with
+ * @param tiktokUrl - The TikTok URL or handle
+ * @returns void - Fire and forget, logs errors internally
+ */
+export async function scrapeTiktokProfileAndInitialPosts(
+  organizationProfileId: string,
+  tiktokUrl: string
+): Promise<void> {
+  try {
+    // Step 1: Scrape and save the TikTok profile
+    const account = await scrapeAndSaveTiktokProfile(
+      organizationProfileId,
+      tiktokUrl
+    );
+
+    if (!account) {
+      console.error(
+        `[social-media] Failed to scrape TikTok profile ${tiktokUrl}, skipping posts scraping`
+      );
+      return;
+    }
+
+    // Step 2: Extract handle for posts scraping
+    const handle = extractTiktokHandle(tiktokUrl);
+
+    if (!handle) {
+      console.error(
+        `[social-media] Could not extract handle from ${tiktokUrl}, skipping posts scraping`
+      );
+      return;
+    }
+
+    // Step 3: Scrape and save the first batch of posts
+    // TikTok API typically returns ~30 posts per call
+    const firstBatch = await scrapeAndSaveTiktokPosts(account.id, handle);
+
+    // If there are more posts and we got posts in the first batch, fetch another batch
+    if (
+      firstBatch.hasMore &&
+      firstBatch.nextCursor &&
+      firstBatch.posts.length > 0
+    ) {
+      await scrapeAndSaveTiktokPosts(account.id, handle, firstBatch.nextCursor);
+    }
+  } catch (error) {
+    console.error(
+      `[social-media] Error in scrapeTiktokProfileAndInitialPosts for ${tiktokUrl}:`,
+      error instanceof Error ? error.message : error
+    );
+  }
+}
+
+/**
+ * Get TikTok posts for an organization
+ * @param organizationId - The organization ID
+ * @param limit - Optional limit for number of posts to return (default: 50)
+ * @returns Array of posts ordered by takenAt descending, or null if no account found
+ */
+export async function getTiktokPostsForOrganization(
+  organizationId: string,
+  limit: number = 50
+): Promise<SocialMediaPostRow[] | null> {
+  // Get the TikTok account for this organization
+  const account = await getSocialMediaAccount(organizationId, "tiktok");
+
+  if (!account) {
+    return null;
+  }
+
+  return getTiktokPosts(account.id, limit);
 }

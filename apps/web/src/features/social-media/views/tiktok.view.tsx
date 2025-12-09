@@ -24,6 +24,7 @@ import {
   cn,
 } from "@repo/ui";
 import { TiktokProfile } from "../components/tiktok-profile.component";
+import { TiktokPostsGrid } from "../components/tiktok-posts-grid.component";
 
 /**
  * TikTok icon component
@@ -60,16 +61,30 @@ export const TiktokView: React.FC = () => {
     enabled: !!organization,
   });
 
+  // Fetch TikTok posts
+  const {
+    data: postsData,
+    isLoading: isLoadingPosts,
+    error: postsError,
+  } = useQuery({
+    ...trpc.socialMedia.getTiktokPosts.queryOptions({ limit: 50 }),
+    enabled: !!organization && !!accountData?.account,
+  });
+
   // Refresh mutation
   const refreshMutation = useMutation({
     ...trpc.socialMedia.refreshAccount.mutationOptions(),
     onSuccess: () => {
       setSuccessMessage("TikTok profile refreshed successfully!");
       setError(null);
+      // Invalidate both account and posts queries
       queryClient.invalidateQueries({
         queryKey: trpc.socialMedia.getAccount.queryKey({
           platform: "tiktok",
         }),
+      });
+      queryClient.invalidateQueries({
+        queryKey: trpc.socialMedia.getTiktokPosts.queryKey({ limit: 50 }),
       });
       setTimeout(() => setSuccessMessage(null), 3000);
     },
@@ -186,12 +201,33 @@ export const TiktokView: React.FC = () => {
           </Card>
         </div>
       ) : accountData?.account ? (
-        // Profile Display
-        <TiktokProfile
-          account={accountData.account}
-          onRefresh={handleRefresh}
-          isRefreshing={refreshMutation.isPending}
-        />
+        // Profile and Posts Display
+        <div className="space-y-6">
+          <TiktokProfile
+            account={accountData.account}
+            onRefresh={handleRefresh}
+            isRefreshing={refreshMutation.isPending}
+          />
+
+          {/* Posts Grid */}
+          <TiktokPostsGrid
+            posts={postsData?.posts ?? null}
+            isLoading={isLoadingPosts}
+          />
+
+          {/* Posts Error */}
+          {postsError && (
+            <div
+              className={cn(
+                "bg-destructive/10 border border-destructive/20 text-destructive",
+                "px-4 py-3 rounded-lg flex items-center gap-3"
+              )}
+            >
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <p>Failed to load posts: {postsError.message}</p>
+            </div>
+          )}
+        </div>
       ) : (
         // No Data State
         <Card>

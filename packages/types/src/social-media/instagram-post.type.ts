@@ -81,8 +81,8 @@ export const instagramPostSchema = z.object({
   /** Full URL to the post */
   postUrl: z.string(),
 
-  /** Thumbnail/display image URL (GCS or public) */
-  thumbnailUrl: z.string(),
+  /** Thumbnail/display image URL (GCS only, null if upload failed) */
+  thumbnailUrl: z.string().nullable(),
 
   /** Original Thumbnail URL (from source) */
   originalThumbnailUrl: z.string().optional().nullable(),

@@ -41,3 +41,8 @@ export {
   extractTiktokHandle,
   type TiktokScrapingResult,
 } from "./scrapers/social-media/tiktok.scraper";
+
+export {
+  scrapeTiktokPosts,
+  type TiktokPostsScrapingResult,
+} from "./scrapers/social-media/tiktok-posts.scraper";

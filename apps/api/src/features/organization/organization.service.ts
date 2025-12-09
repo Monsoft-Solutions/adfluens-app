@@ -10,7 +10,7 @@ import type { ScrapedBusinessInfo } from "@repo/types/organization/organization-
 import {
   scrapeInstagramProfileAndInitialPosts,
   scrapeAndSaveFacebookProfile,
-  scrapeAndSaveTiktokProfile,
+  scrapeTiktokProfileAndInitialPosts,
 } from "../social-media/social-media.service";
 
 /**
@@ -130,10 +130,13 @@ export async function upsertOrganizationProfile(
       void scrapeAndSaveFacebookProfile(updatedProfile.id, input.facebookUrl);
     }
 
-    // Auto-scrape TikTok if URL changed and is not empty
+    // Auto-scrape TikTok profile and initial posts if URL changed and is not empty
     if (tiktokChanged && input.tiktokUrl) {
       // Fire and forget scraping - don't block the response
-      void scrapeAndSaveTiktokProfile(updatedProfile.id, input.tiktokUrl);
+      void scrapeTiktokProfileAndInitialPosts(
+        updatedProfile.id,
+        input.tiktokUrl
+      );
     }
 
     return updatedProfile;
@@ -176,9 +179,9 @@ export async function upsertOrganizationProfile(
       void scrapeAndSaveFacebookProfile(newProfile.id, input.facebookUrl);
     }
 
-    // Auto-scrape TikTok if URL is provided
+    // Auto-scrape TikTok profile and initial posts if URL is provided
     if (input.tiktokUrl) {
-      void scrapeAndSaveTiktokProfile(newProfile.id, input.tiktokUrl);
+      void scrapeTiktokProfileAndInitialPosts(newProfile.id, input.tiktokUrl);
     }
 
     return newProfile;
