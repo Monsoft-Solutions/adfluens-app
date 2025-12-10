@@ -1,3 +1,4 @@
+/// <reference path="./heic-convert.d.ts" />
 import { Storage } from "@google-cloud/storage";
 import { env } from "@repo/env";
 import convert from "heic-convert";
