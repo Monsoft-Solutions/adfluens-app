@@ -1,20 +1,25 @@
 /**
- * Scraper package exports
- * Provides web scraping functionality
+ * @monsoft/scraper
+ * Web and social media scraping clients for ScrapingDog and ScrapeCreator APIs
  */
 
-// Client exports
+// ScrapingDog client exports
 export {
   ScrapingDogClient,
   scrapingDogClient,
+  getScrapingDogClient,
+  type ScrapingDogClientConfig,
 } from "./clients/scrapingdog.client";
 
+// ScrapeCreator client exports
 export {
   ScrapeCreatorClient,
   scrapeCreatorClient,
+  getScrapeCreatorClient,
+  type ScrapeCreatorClientConfig,
 } from "./clients/scrapecreator.client";
 
-// Scraper exports
+// Website scraper (requires @monsoft/ai peer dependency)
 export { scrapeWebsite } from "./scrapers/website.scraper";
 
 // Social media scraper exports

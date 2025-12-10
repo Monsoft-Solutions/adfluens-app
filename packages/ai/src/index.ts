@@ -1,21 +1,21 @@
 /**
- * @repo/ai
+ * @monsoft/ai
  *
- * Centralized AI package for the YouTube Channel Analyzer application.
- * Consolidates all AI-related operations, models, prompts, and schemas.
+ * AI utilities for structured outputs, text generation, and content analysis.
+ * Built on top of the Vercel AI SDK.
  *
- * @module @repo/ai
+ * @module @monsoft/ai
  *
  * @example
  * ```typescript
  * // Import core AI functions
- * import { coreGenerateObject, coreGenerateText, coreStreamText } from '@repo/ai'
+ * import { coreGenerateObject, coreGenerateText, coreStreamText } from '@monsoft/ai'
  *
  * // Import models
- * import { AVAILABLE_MODELS, DEFAULT_CHAT_MODEL_ID } from '@repo/ai/models'
+ * import { AVAILABLE_MODELS, DEFAULT_CHAT_MODEL_ID } from '@monsoft/ai/models'
  *
  * // Import extraction functions
- * import { extractOrganizationProfile } from '@repo/ai/functions'
+ * import { extractOrganizationProfile } from '@monsoft/ai/functions'
  * ```
  */
 

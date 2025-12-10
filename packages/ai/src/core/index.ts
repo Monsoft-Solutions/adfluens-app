@@ -1,10 +1,10 @@
 /**
- * @repo/ai/core
+ * @monsoft/ai/core
  *
  * Core AI wrapper functions for centralized configuration and telemetry.
  * Use these functions instead of directly importing from 'ai' package.
  *
- * @module @repo/ai/core
+ * @module @monsoft/ai/core
  *
  * @example
  * ```typescript
@@ -13,7 +13,7 @@
  *   coreGenerateText,
  *   coreStreamObject,
  *   coreStreamText,
- * } from '@repo/ai/core'
+ * } from '@monsoft/ai/core'
  *
  * // Generate structured output
  * const result = await coreGenerateObject({

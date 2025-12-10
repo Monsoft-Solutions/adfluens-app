@@ -1,44 +1,71 @@
 {
-  "name": "@repo/scraper",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@monsoft/scraper",
+  "version": "0.0.1",
+  "description": "Web and social media scraping clients for ScrapingDog and ScrapeCreator APIs",
   "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./src/index.ts",
-      "types": "./src/index.ts"
-    },
-    "./schema": {
-      "import": "./src/schema/organization-profile.table.ts",
-      "types": "./src/schema/organization-profile.table.ts"
-    },
-    "./clients": {
-      "import": "./src/clients/scrapingdog.client.ts",
-      "types": "./src/clients/scrapingdog.client.ts"
-    },
-    "./scrapers": {
-      "import": "./src/scrapers/website.scraper.ts",
-      "types": "./src/scrapers/website.scraper.ts"
-    },
-    "./types": {
-      "import": "./src/types/scraped-data.type.ts",
-      "types": "./src/types/scraped-data.type.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "prepublishOnly": "pnpm run build",
     "type-check": "tsc --noEmit",
     "lint": "eslint ."
   },
+  "keywords": [
+    "scraper",
+    "web-scraping",
+    "scrapingdog",
+    "scrapecreator",
+    "instagram",
+    "tiktok",
+    "facebook",
+    "social-media"
+  ],
+  "author": "Monsoft",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/monsoft/scraper.git"
+  },
+  "bugs": {
+    "url": "https://github.com/monsoft/scraper/issues"
+  },
+  "homepage": "https://github.com/monsoft/scraper#readme",
+  "engines": {
+    "node": ">=18"
+  },
+  "sideEffects": false,
   "dependencies": {
-    "@repo/ai": "workspace:*",
-    "@repo/env": "workspace:*",
-    "@repo/types": "workspace:*",
-    "axios": "^1.7.9",
-    "drizzle-orm": "^0.45.0"
+    "axios": "^1.7.9"
+  },
+  "peerDependencies": {
+    "@monsoft/ai": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@monsoft/ai": {
+      "optional": true
+    }
   },
   "devDependencies": {
+    "@monsoft/ai": "workspace:*",
+    "@repo/types": "workspace:*",
     "@repo/eslint-config": "workspace:*",
     "@types/node": "^24.10.1",
+    "drizzle-orm": "^0.45.0",
+    "tsup": "^8.0.0",
     "typescript": "~5.9.3"
   }
 }

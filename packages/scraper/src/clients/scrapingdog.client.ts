@@ -1,5 +1,4 @@
 import axios, { AxiosError } from "axios";
-import { env } from "@repo/env";
 
 /** ScrapingDog API base URL */
 const SCRAPINGDOG_API_URL = "https://api.scrapingdog.com/scrape";
@@ -8,6 +7,14 @@ const SCRAPINGDOG_API_URL = "https://api.scrapingdog.com/scrape";
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 1000;
 const MAX_DELAY_MS = 30000;
+
+/**
+ * Configuration options for ScrapingDogClient
+ */
+export type ScrapingDogClientConfig = {
+  /** API key for ScrapingDog. Falls back to SCRAPINGDOG_API_KEY env variable if not provided */
+  apiKey?: string;
+};
 
 /**
  * Calculate exponential backoff delay with jitter
@@ -71,8 +78,14 @@ type ScrapingDogResponse = {
 export class ScrapingDogClient {
   private apiKey: string;
 
-  constructor() {
-    this.apiKey = env.SCRAPINGDOG_API_KEY;
+  constructor(config: ScrapingDogClientConfig = {}) {
+    const apiKey = config.apiKey ?? process.env.SCRAPINGDOG_API_KEY;
+    if (!apiKey) {
+      throw new Error(
+        "SCRAPINGDOG_API_KEY is required. Pass via constructor or set as environment variable."
+      );
+    }
+    this.apiKey = apiKey;
   }
 
   /**
@@ -146,6 +159,27 @@ export class ScrapingDogClient {
 }
 
 /**
- * Singleton instance of the ScrapingDog client
+ * Lazily initialized singleton instance of the ScrapingDog client.
+ * Only instantiated when first accessed. Requires SCRAPINGDOG_API_KEY env variable.
  */
-export const scrapingDogClient = new ScrapingDogClient();
+let _scrapingDogClientInstance: ScrapingDogClient | null = null;
+
+export function getScrapingDogClient(): ScrapingDogClient {
+  if (!_scrapingDogClientInstance) {
+    _scrapingDogClientInstance = new ScrapingDogClient();
+  }
+  return _scrapingDogClientInstance;
+}
+
+/**
+ * @deprecated Use getScrapingDogClient() for lazy initialization, or create your own instance with new ScrapingDogClient({ apiKey })
+ */
+export const scrapingDogClient = {
+  get instance(): ScrapingDogClient {
+    return getScrapingDogClient();
+  },
+  scrape: (url: string, options?: Parameters<ScrapingDogClient["scrape"]>[1]) =>
+    getScrapingDogClient().scrape(url, options),
+  scrapeAsMarkdown: (url: string, dynamic?: boolean) =>
+    getScrapingDogClient().scrapeAsMarkdown(url, dynamic),
+};

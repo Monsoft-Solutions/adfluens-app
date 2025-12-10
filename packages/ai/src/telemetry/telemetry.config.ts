@@ -4,7 +4,7 @@
  * Centralized configuration for AI SDK telemetry.
  * Uses Langfuse for observability and tracing.
  *
- * @module @repo/ai/telemetry
+ * @module @monsoft/ai/telemetry
  */
 
 /**
@@ -15,7 +15,7 @@
  *
  * @example
  * ```typescript
- * import { telemetryConfig } from '@repo/ai/telemetry'
+ * import { telemetryConfig } from '@monsoft/ai/telemetry'
  *
  * const result = await generateText({
  *   model: openai('gpt-4o'),

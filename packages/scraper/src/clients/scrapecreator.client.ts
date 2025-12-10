@@ -1,10 +1,17 @@
 import axios, { AxiosError } from "axios";
-import { env } from "@repo/env";
 import type { ScrapecreatorInstagramProfileResponse } from "@repo/types/scrapecreator/scrapecreator-instagram-profile.type";
 import type { ScrapecreatorInstagramPostsResponse } from "@repo/types/scrapecreator/scrapecreator-instagram-posts.type";
 import type { ScrapecreatorFacebookPageResponse } from "@repo/types/scrapecreator/scrapecreator-facebook-page.type";
 import type { ScrapecreatorTiktokProfileResponse } from "@repo/types/scrapecreator/scrapecreator-tiktok-profile.type";
 import type { ScrapecreatorTiktokPostsResponse } from "@repo/types/scrapecreator/scrapecreator-tiktok-posts.type";
+
+/**
+ * Configuration options for ScrapeCreatorClient
+ */
+export type ScrapeCreatorClientConfig = {
+  /** API key for ScrapeCreator. Falls back to SCRAPECREATOR_API_KEY env variable if not provided */
+  apiKey?: string;
+};
 
 /** ScrapeCreator API base URLs */
 const SCRAPECREATOR_API_URL = "https://api.scrapecreators.com/v1";
@@ -53,8 +60,14 @@ function isRateLimitError(error: unknown): boolean {
 export class ScrapeCreatorClient {
   private apiKey: string;
 
-  constructor() {
-    this.apiKey = env.SCRAPECREATOR_API_KEY;
+  constructor(config: ScrapeCreatorClientConfig = {}) {
+    const apiKey = config.apiKey ?? process.env.SCRAPECREATOR_API_KEY;
+    if (!apiKey) {
+      throw new Error(
+        "SCRAPECREATOR_API_KEY is required. Pass via constructor or set as environment variable."
+      );
+    }
+    this.apiKey = apiKey;
   }
 
   /**
@@ -357,6 +370,33 @@ export class ScrapeCreatorClient {
 }
 
 /**
- * Singleton instance of the ScrapeCreator client
+ * Lazily initialized singleton instance of the ScrapeCreator client.
+ * Only instantiated when first accessed. Requires SCRAPECREATOR_API_KEY env variable.
  */
-export const scrapeCreatorClient = new ScrapeCreatorClient();
+let _scrapeCreatorClientInstance: ScrapeCreatorClient | null = null;
+
+export function getScrapeCreatorClient(): ScrapeCreatorClient {
+  if (!_scrapeCreatorClientInstance) {
+    _scrapeCreatorClientInstance = new ScrapeCreatorClient();
+  }
+  return _scrapeCreatorClientInstance;
+}
+
+/**
+ * @deprecated Use getScrapeCreatorClient() for lazy initialization, or create your own instance with new ScrapeCreatorClient({ apiKey })
+ */
+export const scrapeCreatorClient = {
+  get instance(): ScrapeCreatorClient {
+    return getScrapeCreatorClient();
+  },
+  scrapeInstagramProfile: (handle: string) =>
+    getScrapeCreatorClient().scrapeInstagramProfile(handle),
+  scrapeFacebookProfile: (facebookUrl: string) =>
+    getScrapeCreatorClient().scrapeFacebookProfile(facebookUrl),
+  scrapeTiktokProfile: (handle: string) =>
+    getScrapeCreatorClient().scrapeTiktokProfile(handle),
+  scrapeInstagramPosts: (handle: string, cursor?: string) =>
+    getScrapeCreatorClient().scrapeInstagramPosts(handle, cursor),
+  scrapeTiktokPosts: (handle: string, cursor?: number) =>
+    getScrapeCreatorClient().scrapeTiktokPosts(handle, cursor),
+};

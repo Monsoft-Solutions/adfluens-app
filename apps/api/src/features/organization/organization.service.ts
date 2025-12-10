@@ -5,7 +5,7 @@ import {
   scrapedPageTable,
   type OrganizationProfileRow,
 } from "@repo/db";
-import { scrapeWebsite } from "@repo/scraper";
+import { scrapeWebsite } from "@monsoft/scraper";
 import type { ScrapedBusinessInfo } from "@repo/types/organization/organization-profile.type";
 import {
   scrapeInstagramProfileAndInitialPosts,

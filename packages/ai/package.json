@@ -1,70 +1,89 @@
 {
-  "name": "@repo/ai",
+  "name": "@monsoft/ai",
   "version": "0.0.1",
-  "private": true,
+  "description": "AI utilities for structured outputs, text generation, and content analysis",
   "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+      "import": "./dist/index.js"
     },
     "./core": {
       "types": "./dist/core/index.d.ts",
-      "import": "./dist/core/index.js",
-      "default": "./dist/core/index.js"
+      "import": "./dist/core/index.js"
     },
     "./functions": {
       "types": "./dist/functions/index.d.ts",
-      "import": "./dist/functions/index.js",
-      "default": "./dist/functions/index.js"
-    },
-    "./schemas": {
-      "types": "./dist/schemas/index.d.ts",
-      "import": "./dist/schemas/index.js",
-      "default": "./dist/schemas/index.js"
-    },
-    "./prompts": {
-      "types": "./dist/prompts/index.d.ts",
-      "import": "./dist/prompts/index.js",
-      "default": "./dist/prompts/index.js"
+      "import": "./dist/functions/index.js"
     },
     "./models": {
       "types": "./dist/models/index.d.ts",
-      "import": "./dist/models/index.js",
-      "default": "./dist/models/index.js"
+      "import": "./dist/models/index.js"
+    },
+    "./prompts": {
+      "types": "./dist/prompts/index.d.ts",
+      "import": "./dist/prompts/index.js"
     },
     "./tools": {
       "types": "./dist/tools/index.d.ts",
-      "import": "./dist/tools/index.js",
-      "default": "./dist/tools/index.js"
+      "import": "./dist/tools/index.js"
     },
     "./telemetry": {
       "types": "./dist/telemetry/index.d.ts",
-      "import": "./dist/telemetry/index.js",
-      "default": "./dist/telemetry/index.js"
+      "import": "./dist/telemetry/index.js"
     }
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "prepublishOnly": "pnpm run build",
     "lint": "eslint . --max-warnings 0",
-    "format": "pnpm -w format",
     "typecheck": "tsc --noEmit"
   },
+  "keywords": [
+    "ai",
+    "llm",
+    "openai",
+    "structured-output",
+    "text-generation",
+    "vercel-ai-sdk"
+  ],
+  "author": "Monsoft",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/monsoft/ai.git"
+  },
+  "bugs": {
+    "url": "https://github.com/monsoft/ai/issues"
+  },
+  "homepage": "https://github.com/monsoft/ai#readme",
+  "engines": {
+    "node": ">=18"
+  },
+  "sideEffects": false,
   "dependencies": {
     "@ai-sdk/openai": "^2.0.77",
     "@ai-sdk/provider-utils": "^3.0.18",
     "@langfuse/otel": "^4.4.9",
     "@langfuse/tracing": "^4.4.9",
     "@opentelemetry/sdk-trace-node": "^2.2.0",
-    "@repo/types": "workspace:*",
     "ai": "^5.0.107",
     "zod": "^4.1.13"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
+    "@repo/types": "workspace:*",
     "@repo/eslint-config": "workspace:*",
+    "@types/node": "^24.10.1",
+    "tsup": "^8.0.0",
     "typescript": "^5.9.3"
   }
 }

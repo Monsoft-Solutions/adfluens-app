@@ -1,243 +1,216 @@
-# @repo/ai
+# @monsoft/ai
 
-Centralized AI package for the YouTube Channel Analyzer application. Consolidates all AI-related operations, models, prompts, and schemas built on top of the [Vercel AI SDK](https://sdk.vercel.ai/).
+AI utilities for structured outputs, text generation, and content analysis. Built on top of the Vercel AI SDK.
 
 ## Features
 
-- **Core Wrappers**: Centralized configuration for AI SDK functions with telemetry
-- **Type-Safe Schemas**: Zod schemas for structured AI outputs
-- **Model Management**: Centralized model definitions with capability metadata
-- **Telemetry**: Langfuse integration for AI observability
+- **Core AI Functions** - Wrapper functions with centralized configuration and telemetry
+  - `coreGenerateObject` - Generate structured JSON output
+  - `coreGenerateText` - Generate text responses
+  - `coreStreamObject` - Stream structured JSON output
+  - `coreStreamText` - Stream text responses
+- **Model Management** - Pre-configured AI models with capability metadata
+- **Extraction Functions** - High-level functions for common AI tasks
+- **Telemetry** - Built-in Langfuse integration for observability
+- Full TypeScript support with type-safe schemas
+- ESM module format
 
 ## Installation
 
-This is a workspace package. Add it to your app's `package.json`:
-
-```json
-{
-  "dependencies": {
-    "@repo/ai": "workspace:*"
-  }
-}
-```
-
-Required environment variables:
-
 ```bash
-OPENAI_API_KEY=sk-...
-LANGFUSE_SECRET_KEY=...  # Optional, for telemetry
-LANGFUSE_PUBLIC_KEY=...  # Optional, for telemetry
+npm install @monsoft/ai
+# or
+pnpm add @monsoft/ai
+# or
+yarn add @monsoft/ai
 ```
 
-## Quick Start
+## Usage
 
-```typescript
-// Import core AI functions
-import { coreGenerateObject, coreGenerateText, coreStreamText } from "@repo/ai";
-
-// Import model configuration
-import { AVAILABLE_MODELS, DEFAULT_CHAT_MODEL_ID } from "@repo/ai/models";
-```
-
-## Architecture
-
-```
-packages/ai/src/
-├── core/                    # AI SDK wrappers with centralized config
-│   ├── generate-object.core.ts
-│   ├── generate-text.core.ts
-│   ├── stream-object.core.ts
-│   └── stream-text.core.ts
-├── functions/               # High-level AI operations (placeholder)
-├── schemas/                 # Zod schemas for structured outputs
-├── models/                  # Model definitions and helpers
-│   └── available-models.constant.ts
-├── prompts/                 # Prompt templates
-│   └── chat/
-└── telemetry/               # Observability configuration
-    └── telemetry.config.ts
-```
-
-### Export Paths
-
-The package provides multiple export paths for granular imports:
-
-| Path                 | Description                                      |
-| -------------------- | ------------------------------------------------ |
-| `@repo/ai`           | Main exports (core functions, models, telemetry) |
-| `@repo/ai/core`      | Core wrapper functions only                      |
-| `@repo/ai/functions` | High-level AI operation functions                |
-| `@repo/ai/schemas`   | Zod schemas and types                            |
-| `@repo/ai/models`    | Model definitions and helpers                    |
-| `@repo/ai/prompts`   | Prompt templates and formatters                  |
-| `@repo/ai/telemetry` | Telemetry configuration                          |
-
-## Core Functions
-
-Core functions wrap the AI SDK with centralized configuration and telemetry.
-
-### coreGenerateObject
-
-Generate structured objects using a Zod schema:
-
-```typescript
-import { coreGenerateObject } from "@repo/ai";
-import { z } from "zod";
-
-const userSchema = z.object({
-  name: z.string(),
-  age: z.number(),
-  interests: z.array(z.string()),
-});
-
-const result = await coreGenerateObject({
-  schema: userSchema,
-  system: "You are a helpful assistant that extracts user information",
-  prompt:
-    "Extract info from: John Doe is 30 years old and loves hiking and photography",
-  modelId: "gpt-4o-mini", // Optional, defaults to DEFAULT_CHAT_MODEL_ID
-  temperature: 0.3, // Optional, defaults to 0.7
-});
-
-console.log(result.object);
-// { name: 'John Doe', age: 30, interests: ['hiking', 'photography'] }
-```
-
-### coreGenerateText
-
-Generate text responses (supports both prompt and messages):
-
-```typescript
-import { coreGenerateText } from "@repo/ai";
-
-// Simple prompt
-const result = await coreGenerateText({
-  system: "You are a helpful assistant",
-  prompt: "Write a haiku about coding",
-});
-
-// Chat-based with messages
-const chatResult = await coreGenerateText({
-  system: "You are a helpful assistant",
-  messages: [
-    { role: "user", content: "Hello!" },
-    { role: "assistant", content: "Hi there!" },
-    { role: "user", content: "How are you?" },
-  ],
-});
-```
-
-### coreStreamText
-
-Stream text responses in real-time:
-
-```typescript
-import { coreStreamText } from "@repo/ai";
-
-const result = coreStreamText({
-  system: "You are a helpful assistant",
-  messages: [{ role: "user", content: "Tell me a story" }],
-  modelId: "gpt-4.1",
-  smoothStreaming: true, // Enable word-by-word streaming
-  onFinish: async ({ text }) => {
-    await saveToDatabase(text);
-  },
-});
-
-// Use in API route
-return result.toTextStreamResponse();
-```
-
-### coreStreamObject
-
-Stream structured objects progressively:
-
-```typescript
-import { coreStreamObject } from "@repo/ai";
-
-const { partialObjectStream } = coreStreamObject({
-  schema: mySchema,
-  system: "Generate a user profile",
-  prompt: "Create a detailed profile for a tech enthusiast",
-});
-
-for await (const partialObject of partialObjectStream) {
-  console.log(partialObject); // Partial object as it's generated
-}
-```
-
-## Model Configuration
-
-### Available Models
+### Core AI Functions
 
 ```typescript
 import {
-  type AIModel,
-  AVAILABLE_MODELS,
-  DEFAULT_CHAT_MODEL_ID,
-  type ModelTier,
-  getModelById,
-  getModelsByTier,
-  getRecommendedModels,
-  isValidModelId,
-} from "@repo/ai/models";
+  coreGenerateObject,
+  coreGenerateText,
+  coreStreamText,
+} from "@monsoft/ai";
+import { z } from "zod";
 
-// Get all recommended models
-const recommended = getRecommendedModels();
+// Generate structured output
+const result = await coreGenerateObject({
+  schema: z.object({
+    name: z.string(),
+    age: z.number(),
+  }),
+  system: "You are a helpful assistant",
+  prompt: "Extract the name and age from: John is 25 years old",
+});
 
-// Get models by pricing tier
-const premiumModels = getModelsByTier("premium");
+console.log(result.object); // { name: 'John', age: 25 }
 
-// Validate model ID
-if (isValidModelId(userSelectedModel)) {
-  // Use the model
+// Generate text
+const textResult = await coreGenerateText({
+  system: "You are a helpful assistant",
+  prompt: "Explain what TypeScript is in one sentence",
+});
+
+console.log(textResult.text);
+
+// Stream text (for chat applications)
+const stream = coreStreamText({
+  system: "You are a helpful assistant",
+  messages: [{ role: "user", content: "Hello!" }],
+  smoothStreaming: true,
+});
+
+for await (const chunk of stream.textStream) {
+  process.stdout.write(chunk);
 }
 ```
 
-### Default Models
+### Subpath Imports
 
-| Use Case              | Default Model  | Constant                                 |
-| --------------------- | -------------- | ---------------------------------------- |
-| Chat                  | `gpt-4.1`      | `DEFAULT_CHAT_MODEL_ID`                  |
-| Classification        | `gpt-4.1-nano` | `DEFAULT_CLASSIFICATION_MODEL_ID`        |
-| Conversation Analysis | `gpt-4.1-mini` | `DEFAULT_CONVERSATION_ANALYSIS_MODEL_ID` |
-| Quick Questions       | `gpt-4.1-mini` | `DEFAULT_QUICK_QUESTIONS_MODEL_ID`       |
-| Deep Analysis         | `gpt-4.1`      | `DEFAULT_DEEP_DIVE_ANALYSIS_MODEL_ID`    |
-
-## Telemetry
-
-The package integrates with Langfuse for AI observability. Telemetry is automatically included in all core functions via `experimental_telemetry: telemetryConfig`.
+The package provides subpath exports for more granular imports:
 
 ```typescript
-import { telemetryConfig } from "@repo/ai/telemetry";
+// Core functions only
+import { coreGenerateObject } from "@monsoft/ai/core";
 
-// Telemetry is automatically enabled
-// Traces are sent to Langfuse when LANGFUSE_ENABLED=true
+// Functions
+import { extractOrganizationProfile } from "@monsoft/ai/functions";
+
+// Models
+import { AVAILABLE_MODELS, getModelById } from "@monsoft/ai/models";
+
+// Prompts
+import { organizationExtractionPrompt } from "@monsoft/ai/prompts";
+
+// Telemetry
+import { telemetryConfig } from "@monsoft/ai/telemetry";
 ```
 
-## TypeScript Types
-
-All types are exported and fully typed:
+### Model Selection
 
 ```typescript
-import type {
-  // Core types
-  CoreMessage,
-  CoreBaseOptions,
-  CoreGenerateObjectOptions,
-  CoreStreamTextOptions,
-  GenerateObjectResult,
-  StreamTextResult,
-  // Model types
-  AIModel,
-  ModelCapability,
-  ModelProvider,
-  ModelTier,
-} from "@repo/ai";
+import {
+  AVAILABLE_MODELS,
+  getModelById,
+  getModelsByTier,
+  getRecommendedModels,
+  DEFAULT_CHAT_MODEL_ID,
+} from "@monsoft/ai/models";
+
+// Get all available models
+console.log(AVAILABLE_MODELS);
+
+// Get a specific model
+const model = getModelById("gpt-4o");
+
+// Get models by tier (economy, standard, premium)
+const premiumModels = getModelsByTier("premium");
+
+// Get recommended models for a capability
+const recommendedForChat = getRecommendedModels("chat");
 ```
 
-## Related Documentation
+### Organization Profile Extraction
 
-- [Vercel AI SDK Documentation](https://sdk.vercel.ai/docs)
-- [Langfuse Documentation](https://langfuse.com/docs)
-- [Zod Documentation](https://zod.dev/)
+```typescript
+import { extractOrganizationProfile } from "@monsoft/ai/functions";
+
+const profile = await extractOrganizationProfile(websiteContent, {
+  modelId: "gpt-4o-mini", // Optional: override default model
+});
+
+console.log(profile);
+// {
+//   name: 'Company Name',
+//   description: '...',
+//   industry: '...',
+//   ...
+// }
+```
+
+## API Reference
+
+### Core Functions
+
+#### `coreGenerateObject<T>(options)`
+
+Generate structured JSON output matching a Zod schema.
+
+| Option    | Type           | Description                                      |
+| --------- | -------------- | ------------------------------------------------ |
+| `schema`  | `ZodSchema<T>` | Zod schema for the output structure              |
+| `system`  | `string`       | System prompt                                    |
+| `prompt`  | `string`       | User prompt                                      |
+| `modelId` | `string`       | Optional model ID (uses default if not provided) |
+
+Returns: `Promise<GenerateObjectResult<T>>`
+
+#### `coreGenerateText(options)`
+
+Generate text responses.
+
+| Option                 | Type                        | Description                     |
+| ---------------------- | --------------------------- | ------------------------------- |
+| `system`               | `string`                    | System prompt                   |
+| `prompt` or `messages` | `string` or `CoreMessage[]` | Input prompt or message history |
+| `modelId`              | `string`                    | Optional model ID               |
+
+Returns: `Promise<GenerateTextResult>`
+
+#### `coreStreamText(options)`
+
+Stream text responses (for real-time chat).
+
+| Option            | Type            | Description             |
+| ----------------- | --------------- | ----------------------- |
+| `system`          | `string`        | System prompt           |
+| `messages`        | `CoreMessage[]` | Message history         |
+| `smoothStreaming` | `boolean`       | Enable smooth streaming |
+| `modelId`         | `string`        | Optional model ID       |
+
+Returns: `StreamTextResult`
+
+#### `coreStreamObject<T>(options)`
+
+Stream structured JSON output.
+
+| Option    | Type           | Description               |
+| --------- | -------------- | ------------------------- |
+| `schema`  | `ZodSchema<T>` | Zod schema for the output |
+| `system`  | `string`       | System prompt             |
+| `prompt`  | `string`       | User prompt               |
+| `modelId` | `string`       | Optional model ID         |
+
+Returns: `StreamObjectResult<T>`
+
+### Model Types
+
+```typescript
+type AIModel = {
+  id: string;
+  name: string;
+  provider: "openai" | "anthropic" | "google";
+  tier: "economy" | "standard" | "premium";
+  capabilities: ("chat" | "extraction" | "analysis" | "coding")[];
+  contextWindow: number;
+  maxOutput: number;
+};
+```
+
+## Environment Variables
+
+The package uses the following environment variables:
+
+| Variable              | Description                         |
+| --------------------- | ----------------------------------- |
+| `OPENAI_API_KEY`      | OpenAI API key                      |
+| `LANGFUSE_SECRET_KEY` | Langfuse secret key (for telemetry) |
+| `LANGFUSE_PUBLIC_KEY` | Langfuse public key (for telemetry) |
+
+## License
+
+MIT

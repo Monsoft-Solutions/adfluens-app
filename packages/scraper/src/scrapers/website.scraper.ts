@@ -1,4 +1,4 @@
-import { extractOrganizationProfile } from "@repo/ai/functions";
+import { extractOrganizationProfile } from "@monsoft/ai/functions";
 import type { WebsiteScrapingResult } from "@repo/types/organization/website-scraping-result.type";
 
 import { scrapingDogClient } from "../clients/scrapingdog.client";

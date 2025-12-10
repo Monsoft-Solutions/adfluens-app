@@ -27,7 +27,7 @@ import {
   extractTiktokHandle,
   scrapeInstagramPosts,
   scrapeTiktokPosts,
-} from "@repo/scraper";
+} from "@monsoft/scraper";
 import { mediaStorage } from "@repo/media-storage";
 import type { SocialMediaAccount } from "@repo/types/social-media/social-media-account.type";
 import type { SocialMediaPlatform } from "@repo/types/social-media/social-media-platform.enum";
