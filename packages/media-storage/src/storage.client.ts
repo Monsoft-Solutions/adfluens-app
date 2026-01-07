@@ -82,7 +82,13 @@ export class MediaStorageService {
   private bucketName: string;
 
   constructor() {
-    this.storage = new Storage();
+    this.storage = new Storage({
+      projectId: env.GOOGLE_CLOUD_PROJECT_ID,
+      credentials: {
+        client_email: env.GOOGLE_CLOUD_CLIENT_EMAIL,
+        private_key: env.GOOGLE_CLOUD_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      },
+    });
     this.bucketName = env.GOOGLE_CLOUD_MEDIA_BUCKET_NAME;
   }
 
