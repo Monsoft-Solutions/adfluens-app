@@ -59,7 +59,8 @@ if (!isDev) {
   app.use(express.static(distPath));
 
   // Handle client-side routing
-  app.get("*", (req, res) => {
+  // Note: Express v5 requires named wildcards (*splat) instead of just *
+  app.get("*splat", (req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
 }
