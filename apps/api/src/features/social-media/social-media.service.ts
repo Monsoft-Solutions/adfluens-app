@@ -12,6 +12,7 @@ import {
   eq,
   and,
   desc,
+  count,
   socialMediaAccountTable,
   socialMediaPostTable,
   organizationProfileTable,
@@ -85,32 +86,39 @@ export async function getSocialMediaAccount(
 
 /**
  * Upsert a social media account (insert or update)
+ * Uses atomic onConflictDoUpdate to prevent race conditions
  */
 async function upsertSocialMediaAccount(
   organizationProfileId: string,
   data: SocialMediaAccount,
   scrapedAt: Date
 ): Promise<SocialMediaAccountRow> {
-  // Check if account already exists
-  const existing = await db
-    .select()
-    .from(socialMediaAccountTable)
-    .where(
-      and(
-        eq(
-          socialMediaAccountTable.organizationProfileId,
-          organizationProfileId
-        ),
-        eq(socialMediaAccountTable.platform, data.platform)
-      )
-    )
-    .limit(1);
-
-  if (existing[0]) {
-    // Update existing account
-    const result = await db
-      .update(socialMediaAccountTable)
-      .set({
+  const result = await db
+    .insert(socialMediaAccountTable)
+    .values({
+      id: generateSocialMediaAccountId(),
+      organizationProfileId,
+      platform: data.platform,
+      platformUserId: data.platformUserId,
+      username: data.username,
+      displayName: data.displayName ?? null,
+      bio: data.bio ?? null,
+      profilePicUrl: data.profilePicUrl ?? null,
+      profilePicUrlHd: data.profilePicUrlHd ?? null,
+      externalUrl: data.externalUrl ?? null,
+      followerCount: data.followerCount ?? null,
+      followingCount: data.followingCount ?? null,
+      isVerified: data.isVerified ?? false,
+      isBusinessAccount: data.isBusinessAccount ?? false,
+      platformData: data.platformData ?? null,
+      scrapedAt,
+    })
+    .onConflictDoUpdate({
+      target: [
+        socialMediaAccountTable.organizationProfileId,
+        socialMediaAccountTable.platform,
+      ],
+      set: {
         platformUserId: data.platformUserId,
         username: data.username,
         displayName: data.displayName ?? null,
@@ -124,37 +132,15 @@ async function upsertSocialMediaAccount(
         isBusinessAccount: data.isBusinessAccount ?? false,
         platformData: data.platformData ?? null,
         scrapedAt,
-      })
-      .where(eq(socialMediaAccountTable.id, existing[0].id))
-      .returning();
+      },
+    })
+    .returning();
 
-    return result[0]!;
-  } else {
-    // Insert new account
-    const result = await db
-      .insert(socialMediaAccountTable)
-      .values({
-        id: generateSocialMediaAccountId(),
-        organizationProfileId,
-        platform: data.platform,
-        platformUserId: data.platformUserId,
-        username: data.username,
-        displayName: data.displayName ?? null,
-        bio: data.bio ?? null,
-        profilePicUrl: data.profilePicUrl ?? null,
-        profilePicUrlHd: data.profilePicUrlHd ?? null,
-        externalUrl: data.externalUrl ?? null,
-        followerCount: data.followerCount ?? null,
-        followingCount: data.followingCount ?? null,
-        isVerified: data.isVerified ?? false,
-        isBusinessAccount: data.isBusinessAccount ?? false,
-        platformData: data.platformData ?? null,
-        scrapedAt,
-      })
-      .returning();
-
-    return result[0]!;
+  if (!result[0]) {
+    throw new Error("Failed to upsert social media account");
   }
+
+  return result[0];
 }
 
 /**
@@ -438,6 +424,7 @@ async function processPostMedia(
 
 /**
  * Upsert Instagram posts (insert new, update existing by platformPostId)
+ * Uses atomic onConflictDoUpdate to prevent race conditions
  * @param socialMediaAccountId - The social media account ID
  * @param posts - Array of Instagram posts to upsert
  * @param scrapedAt - Timestamp of when posts were scraped
@@ -448,26 +435,41 @@ async function upsertInstagramPosts(
   posts: InstagramPost[],
   scrapedAt: Date
 ): Promise<SocialMediaPostRow[]> {
+  if (posts.length === 0) {
+    return [];
+  }
+
   const results: SocialMediaPostRow[] = [];
 
+  // Process posts in batches using atomic upserts
   for (const post of posts) {
-    // Check if post already exists
-    const existing = await db
-      .select()
-      .from(socialMediaPostTable)
-      .where(
-        and(
-          eq(socialMediaPostTable.socialMediaAccountId, socialMediaAccountId),
-          eq(socialMediaPostTable.platformPostId, post.platformPostId)
-        )
-      )
-      .limit(1);
-
-    if (existing[0]) {
-      // Update existing post
-      const result = await db
-        .update(socialMediaPostTable)
-        .set({
+    const result = await db
+      .insert(socialMediaPostTable)
+      .values({
+        socialMediaAccountId,
+        platformPostId: post.platformPostId,
+        shortcode: post.shortcode,
+        mediaType: post.mediaType,
+        productType: post.productType,
+        caption: post.caption,
+        postUrl: post.postUrl,
+        thumbnailUrl: post.thumbnailUrl,
+        originalThumbnailUrl: post.originalThumbnailUrl,
+        playCount: post.playCount,
+        likeCount: post.likeCount,
+        commentCount: post.commentCount,
+        videoDuration: post.videoDuration,
+        hasAudio: post.hasAudio,
+        takenAt: post.takenAt,
+        mediaUrls: post.mediaUrls,
+        scrapedAt,
+      })
+      .onConflictDoUpdate({
+        target: [
+          socialMediaPostTable.socialMediaAccountId,
+          socialMediaPostTable.platformPostId,
+        ],
+        set: {
           shortcode: post.shortcode,
           mediaType: post.mediaType,
           productType: post.productType,
@@ -483,41 +485,12 @@ async function upsertInstagramPosts(
           takenAt: post.takenAt,
           mediaUrls: post.mediaUrls,
           scrapedAt,
-        })
-        .where(eq(socialMediaPostTable.id, existing[0].id))
-        .returning();
+        },
+      })
+      .returning();
 
-      if (result[0]) {
-        results.push(result[0]);
-      }
-    } else {
-      // Insert new post
-      const result = await db
-        .insert(socialMediaPostTable)
-        .values({
-          socialMediaAccountId,
-          platformPostId: post.platformPostId,
-          shortcode: post.shortcode,
-          mediaType: post.mediaType,
-          productType: post.productType,
-          caption: post.caption,
-          postUrl: post.postUrl,
-          thumbnailUrl: post.thumbnailUrl,
-          originalThumbnailUrl: post.originalThumbnailUrl,
-          playCount: post.playCount,
-          likeCount: post.likeCount,
-          commentCount: post.commentCount,
-          videoDuration: post.videoDuration,
-          hasAudio: post.hasAudio,
-          takenAt: post.takenAt,
-          mediaUrls: post.mediaUrls,
-          scrapedAt,
-        })
-        .returning();
-
-      if (result[0]) {
-        results.push(result[0]);
-      }
+    if (result[0]) {
+      results.push(result[0]);
     }
   }
 
@@ -601,6 +574,7 @@ export async function getInstagramPosts(
 
 /**
  * Get Instagram posts count for a social media account
+ * Uses efficient SQL count instead of fetching all rows
  * @param socialMediaAccountId - The social media account ID
  * @returns Number of posts stored for the account
  */
@@ -608,16 +582,23 @@ export async function getInstagramPostsCount(
   socialMediaAccountId: string
 ): Promise<number> {
   const result = await db
-    .select()
+    .select({ count: count() })
     .from(socialMediaPostTable)
     .where(eq(socialMediaPostTable.socialMediaAccountId, socialMediaAccountId));
 
-  return result.length;
+  return result[0]?.count ?? 0;
 }
+
+/**
+ * Maximum number of pagination batches to fetch during initial setup
+ * This prevents runaway pagination and excessive API calls
+ */
+const MAX_INITIAL_PAGINATION_BATCHES = 3;
 
 /**
  * Scrape and save an Instagram profile along with initial posts
  * This is used when setting up an Instagram profile for the first time.
+ * Uses pagination safeguards to prevent excessive API calls
  * @param organizationProfileId - The organization profile ID to associate with
  * @param instagramUrl - The Instagram URL or handle
  * @returns void - Fire and forget, logs errors internally
@@ -650,21 +631,24 @@ export async function scrapeInstagramProfileAndInitialPosts(
       return;
     }
 
-    // Step 3: Scrape and save the first batch of posts (typically ~12 posts per API call)
-    // We'll make up to 2 calls to get approximately 20-24 posts
-    const firstBatch = await scrapeAndSaveInstagramPosts(account.id, handle);
+    // Step 3: Scrape posts with pagination safeguards
+    let batchCount = 0;
+    let cursor: string | undefined;
 
-    // If there are more posts and we got posts in the first batch, fetch another batch
-    if (
-      firstBatch.hasMore &&
-      firstBatch.nextCursor &&
-      firstBatch.posts.length > 0
-    ) {
-      await scrapeAndSaveInstagramPosts(
+    while (batchCount < MAX_INITIAL_PAGINATION_BATCHES) {
+      const batch = await scrapeAndSaveInstagramPosts(
         account.id,
         handle,
-        firstBatch.nextCursor
+        cursor
       );
+      batchCount++;
+
+      // Stop if no more posts or pagination ended
+      if (!batch.hasMore || !batch.nextCursor || batch.posts.length === 0) {
+        break;
+      }
+
+      cursor = batch.nextCursor;
     }
   } catch (error) {
     console.error(
@@ -779,6 +763,7 @@ function buildTiktokMediaUrls(post: TiktokPost) {
 
 /**
  * Upsert TikTok posts (insert new, update existing by platformPostId)
+ * Uses atomic onConflictDoUpdate to prevent race conditions
  * @param socialMediaAccountId - The social media account ID
  * @param posts - Array of TikTok posts to upsert
  * @param scrapedAt - Timestamp of when posts were scraped
@@ -789,31 +774,46 @@ async function upsertTiktokPosts(
   posts: TiktokPost[],
   scrapedAt: Date
 ): Promise<SocialMediaPostRow[]> {
+  if (posts.length === 0) {
+    return [];
+  }
+
   const results: SocialMediaPostRow[] = [];
 
+  // Process posts using atomic upserts
   for (const post of posts) {
     // Build media URLs array for this post
     const mediaUrls = buildTiktokMediaUrls(post);
 
-    // Check if post already exists
-    const existing = await db
-      .select()
-      .from(socialMediaPostTable)
-      .where(
-        and(
-          eq(socialMediaPostTable.socialMediaAccountId, socialMediaAccountId),
-          eq(socialMediaPostTable.platformPostId, post.platformPostId)
-        )
-      )
-      .limit(1);
-
-    if (existing[0]) {
-      // Update existing post
-      const result = await db
-        .update(socialMediaPostTable)
-        .set({
+    const result = await db
+      .insert(socialMediaPostTable)
+      .values({
+        socialMediaAccountId,
+        platformPostId: post.platformPostId,
+        shortcode: post.shortcode,
+        mediaType: "video", // All TikTok posts are videos
+        productType: null,
+        caption: post.caption,
+        postUrl: post.postUrl,
+        thumbnailUrl: post.thumbnailUrl,
+        originalThumbnailUrl: post.originalThumbnailUrl,
+        playCount: post.playCount,
+        likeCount: post.likeCount,
+        commentCount: post.commentCount,
+        videoDuration: post.videoDuration,
+        hasAudio: true, // TikTok videos have audio by default
+        takenAt: post.takenAt,
+        mediaUrls,
+        scrapedAt,
+      })
+      .onConflictDoUpdate({
+        target: [
+          socialMediaPostTable.socialMediaAccountId,
+          socialMediaPostTable.platformPostId,
+        ],
+        set: {
           shortcode: post.shortcode,
-          mediaType: "video", // All TikTok posts are videos
+          mediaType: "video",
           productType: null,
           caption: post.caption,
           postUrl: post.postUrl,
@@ -823,45 +823,16 @@ async function upsertTiktokPosts(
           likeCount: post.likeCount,
           commentCount: post.commentCount,
           videoDuration: post.videoDuration,
-          hasAudio: true, // TikTok videos have audio by default
+          hasAudio: true,
           takenAt: post.takenAt,
           mediaUrls,
           scrapedAt,
-        })
-        .where(eq(socialMediaPostTable.id, existing[0].id))
-        .returning();
+        },
+      })
+      .returning();
 
-      if (result[0]) {
-        results.push(result[0]);
-      }
-    } else {
-      // Insert new post
-      const result = await db
-        .insert(socialMediaPostTable)
-        .values({
-          socialMediaAccountId,
-          platformPostId: post.platformPostId,
-          shortcode: post.shortcode,
-          mediaType: "video", // All TikTok posts are videos
-          productType: null,
-          caption: post.caption,
-          postUrl: post.postUrl,
-          thumbnailUrl: post.thumbnailUrl,
-          originalThumbnailUrl: post.originalThumbnailUrl,
-          playCount: post.playCount,
-          likeCount: post.likeCount,
-          commentCount: post.commentCount,
-          videoDuration: post.videoDuration,
-          hasAudio: true, // TikTok videos have audio by default
-          takenAt: post.takenAt,
-          mediaUrls,
-          scrapedAt,
-        })
-        .returning();
-
-      if (result[0]) {
-        results.push(result[0]);
-      }
+    if (result[0]) {
+      results.push(result[0]);
     }
   }
 
@@ -946,6 +917,7 @@ export async function getTiktokPosts(
 /**
  * Scrape and save a TikTok profile along with initial posts
  * This is used when setting up a TikTok profile for the first time.
+ * Uses pagination safeguards to prevent excessive API calls
  * @param organizationProfileId - The organization profile ID to associate with
  * @param tiktokUrl - The TikTok URL or handle
  * @returns void - Fire and forget, logs errors internally
@@ -978,17 +950,20 @@ export async function scrapeTiktokProfileAndInitialPosts(
       return;
     }
 
-    // Step 3: Scrape and save the first batch of posts
-    // TikTok API typically returns ~30 posts per call
-    const firstBatch = await scrapeAndSaveTiktokPosts(account.id, handle);
+    // Step 3: Scrape posts with pagination safeguards
+    let batchCount = 0;
+    let cursor: number | undefined;
 
-    // If there are more posts and we got posts in the first batch, fetch another batch
-    if (
-      firstBatch.hasMore &&
-      firstBatch.nextCursor &&
-      firstBatch.posts.length > 0
-    ) {
-      await scrapeAndSaveTiktokPosts(account.id, handle, firstBatch.nextCursor);
+    while (batchCount < MAX_INITIAL_PAGINATION_BATCHES) {
+      const batch = await scrapeAndSaveTiktokPosts(account.id, handle, cursor);
+      batchCount++;
+
+      // Stop if no more posts or pagination ended
+      if (!batch.hasMore || !batch.nextCursor || batch.posts.length === 0) {
+        break;
+      }
+
+      cursor = batch.nextCursor;
     }
   } catch (error) {
     console.error(

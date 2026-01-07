@@ -149,16 +149,37 @@ export const InstagramView: React.FC = () => {
         </div>
       )}
 
-      {/* Error Message */}
+      {/* Error Message with Retry */}
       {(error || fetchError) && (
         <div
           className={cn(
             "bg-destructive/10 border border-destructive/20 text-destructive",
-            "px-4 py-3 rounded-lg mb-6 flex items-center gap-3"
+            "px-4 py-3 rounded-lg mb-6 flex items-center justify-between"
           )}
         >
-          <AlertCircle className="w-5 h-5 shrink-0" />
-          <p>{error || fetchError?.message}</p>
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <p>{error || fetchError?.message}</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setError(null);
+              if (fetchError) {
+                queryClient.invalidateQueries({
+                  queryKey: trpc.socialMedia.getAccount.queryKey({
+                    platform: "instagram",
+                  }),
+                });
+              } else {
+                handleRefresh();
+              }
+            }}
+            disabled={refreshMutation.isPending}
+          >
+            {refreshMutation.isPending ? "Retrying..." : "Retry"}
+          </Button>
         </div>
       )}
 

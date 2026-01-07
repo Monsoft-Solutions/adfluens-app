@@ -88,6 +88,29 @@ function mapScrapecreatorTiktokResponse(
 }
 
 /**
+ * TikTok handle validation regex
+ * - 2-24 characters
+ * - Letters, numbers, underscores, periods only
+ * - Cannot start or end with period
+ */
+const TIKTOK_HANDLE_REGEX =
+  /^[a-zA-Z0-9_][a-zA-Z0-9_.]{0,22}[a-zA-Z0-9_]$|^[a-zA-Z0-9_]$/;
+
+/**
+ * Validate a TikTok handle format
+ */
+function isValidTiktokHandle(handle: string): boolean {
+  if (!handle || handle.length === 0 || handle.length > 24) {
+    return false;
+  }
+  // Check for consecutive periods
+  if (handle.includes("..")) {
+    return false;
+  }
+  return TIKTOK_HANDLE_REGEX.test(handle);
+}
+
+/**
  * Extract TikTok username/handle from URL or handle string
  * Handles various formats:
  * - https://tiktok.com/@username
@@ -95,47 +118,60 @@ function mapScrapecreatorTiktokResponse(
  * - https://tiktok.com/@username/video/123
  * - @username
  * - username
+ *
+ * Returns null if the extracted handle is invalid
  */
-export function extractTiktokHandle(urlOrHandle: string): string {
+export function extractTiktokHandle(urlOrHandle: string): string | null {
   const trimmed = urlOrHandle.trim();
+
+  let handle: string;
 
   // If it's just a handle (with or without @)
   if (!trimmed.includes("/") && !trimmed.includes(".")) {
-    return trimmed.replace(/^@/, "");
-  }
+    handle = trimmed.replace(/^@/, "");
+  } else {
+    // Try to parse as URL
+    try {
+      const url = new URL(
+        trimmed.startsWith("http") ? trimmed : `https://${trimmed}`
+      );
 
-  // Try to parse as URL
-  try {
-    const url = new URL(
-      trimmed.startsWith("http") ? trimmed : `https://${trimmed}`
-    );
+      // Get path and find the @username part
+      const pathParts = url.pathname.split("/").filter(Boolean);
 
-    // Get path and find the @username part
-    const pathParts = url.pathname.split("/").filter(Boolean);
+      // Find the part that starts with @ or is the first path segment
+      let foundHandle = "";
+      for (const part of pathParts) {
+        if (part.startsWith("@")) {
+          foundHandle = part.substring(1); // Remove the @ prefix
+          break;
+        }
+      }
 
-    // Find the part that starts with @ or is the first path segment
-    for (const part of pathParts) {
-      if (part.startsWith("@")) {
-        return part.substring(1); // Remove the @ prefix
+      // If no @ prefix found, return the first path segment
+      if (!foundHandle && pathParts[0]) {
+        foundHandle = pathParts[0].replace(/^@/, "");
+      }
+
+      handle = foundHandle;
+    } catch {
+      // If URL parsing fails, try to extract from path-like string
+      const match = trimmed.match(/tiktok\.com\/@?([^/?]+)/i);
+      if (match?.[1]) {
+        handle = match[1].replace(/^@/, "");
+      } else {
+        // Return trimmed value as fallback (removing @ if present)
+        handle = trimmed.replace(/^@/, "");
       }
     }
-
-    // If no @ prefix found, return the first path segment
-    if (pathParts[0]) {
-      return pathParts[0].replace(/^@/, "");
-    }
-
-    return "";
-  } catch {
-    // If URL parsing fails, try to extract from path-like string
-    const match = trimmed.match(/tiktok\.com\/@?([^/?]+)/i);
-    if (match?.[1]) {
-      return match[1].replace(/^@/, "");
-    }
-
-    // Return trimmed value as fallback (removing @ if present)
-    return trimmed.replace(/^@/, "");
   }
+
+  // Validate the extracted handle
+  if (!isValidTiktokHandle(handle)) {
+    return null;
+  }
+
+  return handle;
 }
 
 /**

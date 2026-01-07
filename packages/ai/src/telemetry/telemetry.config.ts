@@ -26,5 +26,5 @@
  */
 export const telemetryConfig = {
   /** Enable telemetry when LANGFUSE_ENABLED env var is 'true' */
-  isEnabled: true,
+  isEnabled: process.env.LANGFUSE_ENABLED === "true",
 };

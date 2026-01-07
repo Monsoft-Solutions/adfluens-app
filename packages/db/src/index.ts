@@ -15,7 +15,7 @@ export {
 } from "./schema";
 
 // Re-export drizzle-orm utilities for convenience
-export { eq, and, or, desc, asc, sql } from "drizzle-orm";
+export { eq, and, or, desc, asc, sql, inArray, count } from "drizzle-orm";
 
 // Inferred types from schema
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";

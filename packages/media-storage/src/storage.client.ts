@@ -16,6 +16,67 @@ const HEIC_FORMATS = ["image/heic", "image/heif"];
 /** Other unsupported formats that can be converted directly with sharp */
 const SHARP_CONVERTIBLE_FORMATS = ["image/avif"];
 
+/** Retry configuration */
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY_MS = 1000;
+const FETCH_TIMEOUT_MS = 30000;
+
+/**
+ * Fetch with retry logic and exponential backoff
+ * @param url - URL to fetch
+ * @param maxRetries - Maximum number of retry attempts
+ * @returns Response from fetch
+ */
+async function fetchWithRetry(
+  url: string,
+  maxRetries: number = MAX_RETRIES
+): Promise<Response> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+      try {
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          return response;
+        }
+
+        // Don't retry 4xx errors (client errors)
+        if (response.status >= 400 && response.status < 500) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        lastError = new Error(
+          `HTTP ${response.status}: ${response.statusText}`
+        );
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        lastError = new Error(`Request timeout after ${FETCH_TIMEOUT_MS}ms`);
+      } else {
+        lastError = error instanceof Error ? error : new Error(String(error));
+      }
+    }
+
+    // Don't wait after the last attempt
+    if (attempt < maxRetries - 1) {
+      const delay = INITIAL_RETRY_DELAY_MS * Math.pow(2, attempt);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+
+  throw new Error(
+    `Failed to fetch ${url} after ${maxRetries} attempts: ${lastError?.message}`
+  );
+}
+
 export class MediaStorageService {
   private storage: Storage;
   private bucketName: string;
@@ -73,13 +134,8 @@ export class MediaStorageService {
     filename?: string
   ): Promise<string> {
     try {
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch image from ${url}: ${response.statusText}`
-        );
-      }
+      // Use fetch with retry for better resilience
+      const response = await fetchWithRetry(url);
 
       const arrayBuffer = await response.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);

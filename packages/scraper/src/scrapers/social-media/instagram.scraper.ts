@@ -105,39 +105,74 @@ function mapScrapecreatorInstagramResponse(
 }
 
 /**
+ * Instagram handle validation regex
+ * - 1-30 characters
+ * - Alphanumeric, dots, and underscores only
+ * - Cannot be all dots
+ */
+const INSTAGRAM_HANDLE_REGEX =
+  /^[a-zA-Z0-9][a-zA-Z0-9._]{0,28}[a-zA-Z0-9]$|^[a-zA-Z0-9]$/;
+
+/**
+ * Validate an Instagram handle format
+ */
+function isValidInstagramHandle(handle: string): boolean {
+  if (!handle || handle.length === 0 || handle.length > 30) {
+    return false;
+  }
+  // Check for consecutive dots
+  if (handle.includes("..")) {
+    return false;
+  }
+  return INSTAGRAM_HANDLE_REGEX.test(handle);
+}
+
+/**
  * Extract Instagram handle from URL
  * Handles various URL formats:
  * - https://instagram.com/username
  * - https://www.instagram.com/username/
  * - @username
  * - username
+ *
+ * Returns null if the extracted handle is invalid
  */
-export function extractInstagramHandle(urlOrHandle: string): string {
+export function extractInstagramHandle(urlOrHandle: string): string | null {
   const trimmed = urlOrHandle.trim();
+
+  let handle: string;
 
   // If it's just a handle (with or without @)
   if (!trimmed.includes("/") && !trimmed.includes(".")) {
-    return trimmed.replace(/^@/, "");
+    handle = trimmed.replace(/^@/, "");
+  } else {
+    // Try to parse as URL
+    try {
+      const url = new URL(
+        trimmed.startsWith("http") ? trimmed : `https://${trimmed}`
+      );
+      // Get path and remove leading/trailing slashes
+      const path = url.pathname.replace(/^\/|\/$/g, "");
+      // Get the first path segment (the username)
+      handle = path.split("/")[0] || "";
+    } catch {
+      // If URL parsing fails, try to extract from path-like string
+      const match = trimmed.match(/instagram\.com\/([^/?]+)/i);
+      if (match?.[1]) {
+        handle = match[1];
+      } else {
+        // Return trimmed value as fallback
+        handle = trimmed.replace(/^@/, "");
+      }
+    }
   }
 
-  // Try to parse as URL
-  try {
-    const url = new URL(
-      trimmed.startsWith("http") ? trimmed : `https://${trimmed}`
-    );
-    // Get path and remove leading/trailing slashes
-    const path = url.pathname.replace(/^\/|\/$/g, "");
-    // Return the first path segment (the username)
-    return path.split("/")[0] || "";
-  } catch {
-    // If URL parsing fails, try to extract from path-like string
-    const match = trimmed.match(/instagram\.com\/([^/?]+)/i);
-    if (match?.[1]) {
-      return match[1];
-    }
-    // Return trimmed value as fallback
-    return trimmed.replace(/^@/, "");
+  // Validate the extracted handle
+  if (!isValidInstagramHandle(handle)) {
+    return null;
   }
+
+  return handle;
 }
 
 /**

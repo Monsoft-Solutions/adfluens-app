@@ -6,12 +6,35 @@ import {
   type OrganizationProfileRow,
 } from "@repo/db";
 import { scrapeWebsite } from "@monsoft/scraper";
-import type { ScrapedBusinessInfo } from "@repo/types/organization/organization-profile.type";
+import type { OrganizationProfile } from "@repo/types/organization/organization-profile.type";
 import {
   scrapeInstagramProfileAndInitialPosts,
   scrapeAndSaveFacebookProfile,
   scrapeTiktokProfileAndInitialPosts,
 } from "../social-media/social-media.service";
+
+/**
+ * Rate limiting for scraping operations
+ * Prevents abuse by limiting how often scraping can be triggered per organization
+ */
+const SCRAPE_COOLDOWN_MS = 60000; // 1 minute cooldown between scrapes
+const scrapingLastTriggered = new Map<string, number>();
+
+/**
+ * Check if scraping is allowed for an organization (rate limiting)
+ * @returns true if scraping is allowed, false if rate limited
+ */
+function canTriggerScrape(organizationId: string): boolean {
+  const lastTriggered = scrapingLastTriggered.get(organizationId);
+  const now = Date.now();
+
+  if (lastTriggered && now - lastTriggered < SCRAPE_COOLDOWN_MS) {
+    return false;
+  }
+
+  scrapingLastTriggered.set(organizationId, now);
+  return true;
+}
 
 /**
  * Generate a unique ID for new organization profiles
@@ -62,130 +85,117 @@ export async function getOrganizationProfile(
  * Automatically triggers Instagram scraping if Instagram URL changes
  * Automatically triggers Facebook scraping if Facebook URL changes
  * Automatically triggers TikTok scraping if TikTok URL changes
+ * Uses atomic onConflictDoUpdate to prevent race conditions
  */
 export async function upsertOrganizationProfile(
   organizationId: string,
   input: UpdateProfileInput
 ): Promise<OrganizationProfileRow> {
+  // Get existing profile to detect URL changes for auto-scraping
   const existingProfile = await getOrganizationProfile(organizationId);
 
-  // Check if website URL changed (for auto-scraping)
+  // Determine final values for each field
+  const websiteUrl = input.websiteUrl ?? existingProfile?.websiteUrl ?? null;
+  const instagramUrl =
+    input.instagramUrl ?? existingProfile?.instagramUrl ?? null;
+  const facebookUrl = input.facebookUrl ?? existingProfile?.facebookUrl ?? null;
+  const tiktokUrl = input.tiktokUrl ?? existingProfile?.tiktokUrl ?? null;
+  const twitterUrl = input.twitterUrl ?? existingProfile?.twitterUrl ?? null;
+  const linkedinUrl = input.linkedinUrl ?? existingProfile?.linkedinUrl ?? null;
+
+  // Check if URLs changed (for auto-scraping)
   const websiteChanged =
     input.websiteUrl !== undefined &&
     input.websiteUrl !== existingProfile?.websiteUrl;
-
-  // Check if Instagram URL changed (for auto-scraping)
   const instagramChanged =
     input.instagramUrl !== undefined &&
     input.instagramUrl !== existingProfile?.instagramUrl;
-
-  // Check if Facebook URL changed (for auto-scraping)
   const facebookChanged =
     input.facebookUrl !== undefined &&
     input.facebookUrl !== existingProfile?.facebookUrl;
-
-  // Check if TikTok URL changed (for auto-scraping)
   const tiktokChanged =
     input.tiktokUrl !== undefined &&
     input.tiktokUrl !== existingProfile?.tiktokUrl;
 
-  if (existingProfile) {
-    // Update existing profile
-    const result = await db
-      .update(organizationProfileTable)
-      .set({
-        websiteUrl: input.websiteUrl ?? existingProfile.websiteUrl,
-        instagramUrl: input.instagramUrl ?? existingProfile.instagramUrl,
-        facebookUrl: input.facebookUrl ?? existingProfile.facebookUrl,
-        tiktokUrl: input.tiktokUrl ?? existingProfile.tiktokUrl,
-        twitterUrl: input.twitterUrl ?? existingProfile.twitterUrl,
-        linkedinUrl: input.linkedinUrl ?? existingProfile.linkedinUrl,
-      })
-      .where(eq(organizationProfileTable.id, existingProfile.id))
-      .returning();
+  // Use atomic upsert to prevent race conditions
+  const result = await db
+    .insert(organizationProfileTable)
+    .values({
+      id: generateProfileId(),
+      organizationId,
+      websiteUrl,
+      instagramUrl,
+      facebookUrl,
+      tiktokUrl,
+      twitterUrl,
+      linkedinUrl,
+    })
+    .onConflictDoUpdate({
+      target: organizationProfileTable.organizationId,
+      set: {
+        websiteUrl,
+        instagramUrl,
+        facebookUrl,
+        tiktokUrl,
+        twitterUrl,
+        linkedinUrl,
+      },
+    })
+    .returning();
 
-    const updatedProfile = result[0];
-    if (!updatedProfile) {
-      throw new Error("Failed to update organization profile");
-    }
-
-    // Auto-scrape if website URL changed and is not empty
-    if (websiteChanged && input.websiteUrl) {
-      // Fire and forget scraping - don't block the response
-      void scrapeAndUpdateProfile(updatedProfile.id, input.websiteUrl);
-    }
-
-    // Auto-scrape Instagram profile and initial posts if URL changed and is not empty
-    if (instagramChanged && input.instagramUrl) {
-      // Fire and forget scraping - don't block the response
-      void scrapeInstagramProfileAndInitialPosts(
-        updatedProfile.id,
-        input.instagramUrl
-      );
-    }
-
-    // Auto-scrape Facebook if URL changed and is not empty
-    if (facebookChanged && input.facebookUrl) {
-      // Fire and forget scraping - don't block the response
-      void scrapeAndSaveFacebookProfile(updatedProfile.id, input.facebookUrl);
-    }
-
-    // Auto-scrape TikTok profile and initial posts if URL changed and is not empty
-    if (tiktokChanged && input.tiktokUrl) {
-      // Fire and forget scraping - don't block the response
-      void scrapeTiktokProfileAndInitialPosts(
-        updatedProfile.id,
-        input.tiktokUrl
-      );
-    }
-
-    return updatedProfile;
-  } else {
-    // Create new profile
-    const result = await db
-      .insert(organizationProfileTable)
-      .values({
-        id: generateProfileId(),
-        organizationId,
-        websiteUrl: input.websiteUrl ?? null,
-        instagramUrl: input.instagramUrl ?? null,
-        facebookUrl: input.facebookUrl ?? null,
-        tiktokUrl: input.tiktokUrl ?? null,
-        twitterUrl: input.twitterUrl ?? null,
-        linkedinUrl: input.linkedinUrl ?? null,
-      })
-      .returning();
-
-    const newProfile = result[0];
-    if (!newProfile) {
-      throw new Error("Failed to create organization profile");
-    }
-
-    // Auto-scrape if website URL is provided
-    if (input.websiteUrl) {
-      void scrapeAndUpdateProfile(newProfile.id, input.websiteUrl);
-    }
-
-    // Auto-scrape Instagram profile and initial posts if URL is provided
-    if (input.instagramUrl) {
-      void scrapeInstagramProfileAndInitialPosts(
-        newProfile.id,
-        input.instagramUrl
-      );
-    }
-
-    // Auto-scrape Facebook if URL is provided
-    if (input.facebookUrl) {
-      void scrapeAndSaveFacebookProfile(newProfile.id, input.facebookUrl);
-    }
-
-    // Auto-scrape TikTok profile and initial posts if URL is provided
-    if (input.tiktokUrl) {
-      void scrapeTiktokProfileAndInitialPosts(newProfile.id, input.tiktokUrl);
-    }
-
-    return newProfile;
+  const profile = result[0];
+  if (!profile) {
+    throw new Error("Failed to upsert organization profile");
   }
+
+  // Trigger auto-scraping for changed URLs
+  // Fire and forget - don't block the response
+  if (websiteChanged && input.websiteUrl) {
+    void scrapeAndUpdateProfile(profile.id, input.websiteUrl).catch((error) => {
+      console.error(
+        `[organization] Background website scrape failed for org ${organizationId}:`,
+        error
+      );
+    });
+  }
+
+  if (instagramChanged && input.instagramUrl) {
+    void scrapeInstagramProfileAndInitialPosts(
+      profile.id,
+      input.instagramUrl
+    ).catch((error) => {
+      console.error(
+        `[organization] Background Instagram scrape failed for org ${organizationId}:`,
+        error
+      );
+    });
+  }
+
+  // TODO: Facebook posts scraping not implemented
+  // Currently only profile data is scraped, posts functionality is incomplete
+  if (facebookChanged && input.facebookUrl) {
+    void scrapeAndSaveFacebookProfile(profile.id, input.facebookUrl).catch(
+      (error) => {
+        console.error(
+          `[organization] Background Facebook scrape failed for org ${organizationId}:`,
+          error
+        );
+      }
+    );
+  }
+
+  if (tiktokChanged && input.tiktokUrl) {
+    void scrapeTiktokProfileAndInitialPosts(profile.id, input.tiktokUrl).catch(
+      (error) => {
+        console.error(
+          `[organization] Background TikTok scrape failed for org ${organizationId}:`,
+          error
+        );
+      }
+    );
+  }
+
+  return profile;
 }
 
 /**
@@ -238,10 +248,18 @@ async function scrapeAndUpdateProfile(
  * Manually trigger website scraping for an organization profile
  * Returns the scraped data or throws an error
  * Saves raw content to scraped_page table and parsed data to organization_profile
+ * Rate limited to prevent abuse
  */
 export async function rescrapeOrganizationWebsite(
   organizationId: string
-): Promise<ScrapedBusinessInfo | null> {
+): Promise<OrganizationProfile | null> {
+  // Check rate limiting
+  if (!canTriggerScrape(organizationId)) {
+    throw new Error(
+      "Rate limited: Please wait before triggering another scrape"
+    );
+  }
+
   const profile = await getOrganizationProfile(organizationId);
 
   if (!profile) {
