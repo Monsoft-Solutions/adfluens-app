@@ -9,6 +9,8 @@ import { createContext } from "./trpc/init";
 import { auth } from "@repo/auth";
 import { env } from "@repo/env";
 import { mediaStorage } from "@repo/media-storage";
+import { db } from "@repo/db/client";
+import { sql } from "drizzle-orm";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,6 +50,30 @@ app.all("/api/auth/*splat", toNodeHandler(auth));
 
 // JSON parsing middleware - after auth handler
 app.use(express.json());
+
+/**
+ * Health check endpoint
+ * Verifies database connectivity for container orchestration
+ */
+app.get("/api/health", async (_req, res) => {
+  try {
+    // Test database connection with simple query
+    await db.execute(sql`SELECT 1`);
+
+    res.json({
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      database: "connected",
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: "unhealthy",
+      timestamp: new Date().toISOString(),
+      database: "disconnected",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
 
 // tRPC API with authentication context
 app.use(
