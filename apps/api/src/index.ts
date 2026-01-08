@@ -17,6 +17,11 @@ const app = express();
 const PORT = env.PORT;
 const isDev = env.NODE_ENV !== "production";
 
+// Trust proxy is required when running behind a load balancer (Dokploy/Traefik)
+// This ensures req.protocol matches the external protocol (https)
+// and prevents redirect loops or secure cookie issues
+app.set("trust proxy", true);
+
 // Configure GCS CORS on startup in development
 if (isDev) {
   mediaStorage
