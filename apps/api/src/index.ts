@@ -63,9 +63,12 @@ if (!isDev) {
   const distPath = path.join(__dirname, "..", "..", "web", "dist");
   app.use(express.static(distPath));
 
+  console.info(`Serving static files from ${distPath}`);
+
   // Handle client-side routing
   // Note: Express v5 requires named wildcards (*splat) instead of just *
   app.get("*splat", (req, res) => {
+    console.info(`Serving index.html for ${req.url}`);
     res.sendFile(path.join(distPath, "index.html"));
   });
 }
