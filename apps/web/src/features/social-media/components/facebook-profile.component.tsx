@@ -394,11 +394,11 @@ export const FacebookProfile: React.FC<FacebookProfileProps> = ({
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {platformData.links.map((link, index) => {
+              {platformData.links.map((link) => {
                 const platformInfo = getSocialPlatformInfo(link);
                 return (
                   <a
-                    key={index}
+                    key={link}
                     href={link}
                     target="_blank"
                     rel="noopener noreferrer"

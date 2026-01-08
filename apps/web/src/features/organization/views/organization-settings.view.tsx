@@ -222,6 +222,7 @@ export const OrganizationSettingsView: React.FC = () => {
                   }}
                   onSubmit={handleSubmit}
                   isLoading={updateProfileMutation.isPending}
+                  error={error}
                 />
               )}
             </CardContent>

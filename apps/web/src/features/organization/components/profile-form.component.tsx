@@ -7,6 +7,7 @@ import {
   Linkedin,
   Loader2,
   Save,
+  AlertCircle,
 } from "lucide-react";
 import { Button, Input, Label, cn } from "@repo/ui";
 
@@ -38,6 +39,10 @@ type ProfileFormProps = {
   initialData?: Partial<ProfileFormData>;
   onSubmit: (data: ProfileFormData) => Promise<void>;
   isLoading?: boolean;
+  /** Optional error message to display */
+  error?: string | null;
+  /** Optional callback for handling submission errors */
+  onError?: (error: Error) => void;
 };
 
 /**
@@ -47,6 +52,8 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
   initialData,
   onSubmit,
   isLoading = false,
+  error = null,
+  onError,
 }) => {
   const [formData, setFormData] = useState<ProfileFormData>({
     websiteUrl: initialData?.websiteUrl ?? "",
@@ -77,11 +84,32 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
+    try {
+      await onSubmit(formData);
+    } catch (err) {
+      const error =
+        err instanceof Error ? err : new Error("Failed to save profile");
+      console.error("Profile form submission error:", error);
+      // Call onError callback if provided
+      onError?.(error);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Error Message */}
+      {error && (
+        <div
+          className={cn(
+            "bg-destructive/10 border border-destructive/20 text-destructive",
+            "px-4 py-3 rounded-lg flex items-center gap-3"
+          )}
+        >
+          <AlertCircle className="w-5 h-5 shrink-0" />
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
+
       {/* Website URL */}
       <div className="space-y-2">
         <Label htmlFor="websiteUrl" className="flex items-center gap-2">
