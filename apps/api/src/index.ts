@@ -65,12 +65,12 @@ app.get("/api/health", async (_req, res) => {
       timestamp: new Date().toISOString(),
       database: "connected",
     });
-  } catch (error) {
+  } catch {
     res.status(503).json({
       status: "unhealthy",
       timestamp: new Date().toISOString(),
       database: "disconnected",
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: "Database connection failed",
     });
   }
 });

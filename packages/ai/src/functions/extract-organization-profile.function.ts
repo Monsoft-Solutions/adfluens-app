@@ -75,18 +75,13 @@ export async function extractOrganizationProfile(
         "\n\n[Content truncated for processing...]"
       : websiteContent;
 
-  try {
-    const result = await coreGenerateObject({
-      schema: organizationProfileSchema,
-      system: ORGANIZATION_EXTRACTION_SYSTEM_PROMPT,
-      prompt: getOrganizationExtractionPrompt(truncatedContent),
-      modelId,
-      temperature,
-    });
+  const result = await coreGenerateObject({
+    schema: organizationProfileSchema,
+    system: ORGANIZATION_EXTRACTION_SYSTEM_PROMPT,
+    prompt: getOrganizationExtractionPrompt(truncatedContent),
+    modelId,
+    temperature,
+  });
 
-    return result.object;
-  } catch (error) {
-    console.error("[ExtractOrganizationProfile] Error:", error);
-    return DEFAULT_RESULT;
-  }
+  return result.object;
 }

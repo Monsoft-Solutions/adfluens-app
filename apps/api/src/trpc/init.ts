@@ -91,8 +91,9 @@ export const createContext = async ({
       if (orgData) {
         organization = orgData as unknown as Organization;
       }
-    } catch {
-      // Organization fetch failed, continue without organization
+    } catch (error) {
+      console.error("Failed to fetch organization:", error);
+      // Continue without organization
     }
   }
 
