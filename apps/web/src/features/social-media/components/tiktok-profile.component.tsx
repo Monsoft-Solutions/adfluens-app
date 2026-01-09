@@ -305,9 +305,10 @@ export const TiktokProfile: React.FC<TiktokProfileProps> = ({
 
       {/* Content Settings Card */}
       {platformData &&
-        (platformData.duetSetting !== null ||
-          platformData.stitchSetting !== null ||
-          platformData.downloadSetting !== null) && (
+        (platformData.duetSetting === 0 ||
+          platformData.stitchSetting === 0 ||
+          platformData.downloadSetting === 0 ||
+          platformData.ttSeller) && (
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Content Settings</CardTitle>

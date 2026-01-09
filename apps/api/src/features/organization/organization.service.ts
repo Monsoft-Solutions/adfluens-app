@@ -18,6 +18,7 @@ import {
  * Prevents abuse by limiting how often scraping can be triggered per organization
  */
 const SCRAPE_COOLDOWN_MS = 60000; // 1 minute cooldown between scrapes
+// Improe this implemenation. Let's use a redis cache and clean it up after a certain time.
 const scrapingLastTriggered = new Map<string, number>();
 
 /**

@@ -67,7 +67,7 @@
   },
   "homepage": "https://github.com/monsoft/ai#readme",
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "sideEffects": false,
   "publishConfig": {
