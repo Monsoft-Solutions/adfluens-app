@@ -8,6 +8,7 @@ import {
   boolean,
   jsonb,
   uniqueIndex,
+  uuid,
 } from "drizzle-orm/pg-core";
 import type { PlatformData } from "@repo/types/social-media/platform-data.type";
 import { organizationProfileTable } from "./organization-profile.table";
@@ -22,10 +23,10 @@ export const socialMediaAccountTable = pgTable(
   "social_media_account",
   {
     /** Unique identifier */
-    id: text("id").primaryKey(),
+    id: uuid("id").primaryKey().defaultRandom(),
 
     /** Reference to the organization profile */
-    organizationProfileId: text("organization_profile_id")
+    organizationProfileId: uuid("organization_profile_id")
       .notNull()
       .references(() => organizationProfileTable.id, { onDelete: "cascade" }),
 

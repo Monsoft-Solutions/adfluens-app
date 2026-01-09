@@ -37,20 +37,6 @@ function canTriggerScrape(organizationId: string): boolean {
 }
 
 /**
- * Generate a unique ID for new organization profiles
- */
-function generateProfileId(): string {
-  return `org_profile_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-}
-
-/**
- * Generate a unique ID for scraped pages
- */
-function generateScrapedPageId(): string {
-  return `scraped_page_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-}
-
-/**
  * Input type for updating an organization profile
  */
 export type UpdateProfileInput = {
@@ -121,7 +107,6 @@ export async function upsertOrganizationProfile(
   const result = await db
     .insert(organizationProfileTable)
     .values({
-      id: generateProfileId(),
       organizationId,
       websiteUrl,
       instagramUrl,
@@ -223,7 +208,6 @@ async function scrapeAndUpdateProfile(
       // Save raw content to scraped_page table
       if (result.rawContent) {
         await db.insert(scrapedPageTable).values({
-          id: generateScrapedPageId(),
           organizationProfileId: profileId,
           pageUrl: result.url,
           content: result.rawContent,
@@ -288,7 +272,6 @@ export async function rescrapeOrganizationWebsite(
   // Save raw content to scraped_page table
   if (result.rawContent) {
     await db.insert(scrapedPageTable).values({
-      id: generateScrapedPageId(),
       organizationProfileId: profile.id,
       pageUrl: result.url,
       content: result.rawContent,

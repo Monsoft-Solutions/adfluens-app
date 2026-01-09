@@ -5,36 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1764978342649,
-      "tag": "0000_rapid_lady_ursula",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1765028204461,
-      "tag": "0001_slow_korvac",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1765121090006,
-      "tag": "0002_rapid_texas_twister",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1765180042684,
-      "tag": "0003_black_switch",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1765184272634,
-      "tag": "0004_damp_proteus",
+      "when": 1767917546591,
+      "tag": "0000_amused_the_twelve",
       "breakpoints": true
     }
   ]

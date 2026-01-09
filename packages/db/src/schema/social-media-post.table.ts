@@ -27,7 +27,7 @@ export const socialMediaPostTable = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
 
     /** Reference to the social media account */
-    socialMediaAccountId: text("social_media_account_id")
+    socialMediaAccountId: uuid("social_media_account_id")
       .notNull()
       .references(() => socialMediaAccountTable.id, { onDelete: "cascade" }),
 

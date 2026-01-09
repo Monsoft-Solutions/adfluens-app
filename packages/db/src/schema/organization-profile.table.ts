@@ -1,5 +1,12 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, jsonb, index } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  jsonb,
+  index,
+  uuid,
+} from "drizzle-orm/pg-core";
 import type { ScrapedBusinessInfo } from "@repo/types/organization/organization-profile.type";
 
 /**
@@ -10,7 +17,7 @@ export const organizationProfileTable = pgTable(
   "organization_profile",
   {
     /** Unique identifier */
-    id: text("id").primaryKey(),
+    id: uuid("id").primaryKey().defaultRandom(),
 
     /** Reference to the organization (unique - one profile per organization) */
     organizationId: text("organization_id").notNull().unique(),

@@ -1,1 +1,0 @@
-ALTER TABLE "social_media_post" ADD COLUMN "original_thumbnail_url" text;

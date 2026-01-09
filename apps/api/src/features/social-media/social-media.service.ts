@@ -36,13 +36,6 @@ import type { InstagramPost } from "@repo/types/social-media/instagram-post.type
 import type { TiktokPost } from "@repo/types/social-media/tiktok-post.type";
 
 /**
- * Generate a unique ID for social media accounts
- */
-function generateSocialMediaAccountId(): string {
-  return `sma_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-}
-
-/**
  * Get the organization profile ID for an organization
  */
 async function getOrganizationProfileId(
@@ -96,7 +89,6 @@ async function upsertSocialMediaAccount(
   const result = await db
     .insert(socialMediaAccountTable)
     .values({
-      id: generateSocialMediaAccountId(),
       organizationProfileId,
       platform: data.platform,
       platformUserId: data.platformUserId,

@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, index, uuid } from "drizzle-orm/pg-core";
 import { organizationProfileTable } from "./organization-profile.table";
 
 /**
@@ -10,10 +10,10 @@ export const scrapedPageTable = pgTable(
   "scraped_page",
   {
     /** Unique identifier */
-    id: text("id").primaryKey(),
+    id: uuid("id").primaryKey().defaultRandom(),
 
     /** Reference to the organization profile */
-    organizationProfileId: text("organization_profile_id")
+    organizationProfileId: uuid("organization_profile_id")
       .notNull()
       .references(() => organizationProfileTable.id, { onDelete: "cascade" }),
 
