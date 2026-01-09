@@ -111,7 +111,7 @@ const model = getModelById("gpt-4o");
 const premiumModels = getModelsByTier("premium");
 
 // Get recommended models for a capability
-const recommendedForChat = getRecommendedModels("chat");
+const recommendedModels = getRecommendedModels();
 ```
 
 ### Organization Profile Extraction
