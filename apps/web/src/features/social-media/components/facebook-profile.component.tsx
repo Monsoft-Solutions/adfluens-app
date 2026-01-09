@@ -99,6 +99,21 @@ function getSocialPlatformInfo(url: string): { name: string; color: string } {
 }
 
 /**
+ * Get object-position class from focus coordinates
+ * Maps 0..1 coordinates to Tailwind object-position classes
+ */
+function getObjectPositionClass(x: number = 0.5, y: number = 0.5): string {
+  const horizontal = x < 0.33 ? "left" : x > 0.66 ? "right" : "center";
+  const vertical = y < 0.33 ? "top" : y > 0.66 ? "bottom" : "center";
+
+  if (horizontal === "center" && vertical === "center") return "object-center";
+  if (horizontal === "center") return `object-${vertical}`;
+  if (vertical === "center") return `object-${horizontal}`;
+
+  return `object-${horizontal}-${vertical}`;
+}
+
+/**
  * Stat card component for displaying profile metrics
  */
 const StatCard: React.FC<{
@@ -161,11 +176,14 @@ export const FacebookProfile: React.FC<FacebookProfileProps> = ({
           <img
             src={platformData.coverPhoto.imageUri}
             alt="Cover photo"
-            className="w-full h-full object-cover"
+            className={cn(
+              "w-full h-full object-cover",
+              getObjectPositionClass(
+                platformData.coverPhoto.focusX ?? 0.5,
+                platformData.coverPhoto.focusY ?? 0.5
+              )
+            )}
             referrerPolicy="no-referrer"
-            style={{
-              objectPosition: `${(platformData.coverPhoto.focusX ?? 0.5) * 100}% ${(platformData.coverPhoto.focusY ?? 0.5) * 100}%`,
-            }}
           />
         </div>
       )}
