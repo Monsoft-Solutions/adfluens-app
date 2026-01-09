@@ -47,6 +47,98 @@
     "./ai/chat-message.type": {
       "import": "./src/ai/chat-message.type.ts",
       "types": "./src/ai/chat-message.type.ts"
+    },
+    "./organization/organization-profile.type": {
+      "import": "./src/organization/organization-profile.type.ts",
+      "types": "./src/organization/organization-profile.type.ts"
+    },
+    "./organization/brand-voice.type": {
+      "import": "./src/organization/brand-voice.type.ts",
+      "types": "./src/organization/brand-voice.type.ts"
+    },
+    "./organization/target-audience.type": {
+      "import": "./src/organization/target-audience.type.ts",
+      "types": "./src/organization/target-audience.type.ts"
+    },
+    "./organization/competitive-positioning.type": {
+      "import": "./src/organization/competitive-positioning.type.ts",
+      "types": "./src/organization/competitive-positioning.type.ts"
+    },
+    "./organization/content-themes.type": {
+      "import": "./src/organization/content-themes.type.ts",
+      "types": "./src/organization/content-themes.type.ts"
+    },
+    "./organization/business-model.type": {
+      "import": "./src/organization/business-model.type.ts",
+      "types": "./src/organization/business-model.type.ts"
+    },
+    "./organization/social-proof.type": {
+      "import": "./src/organization/social-proof.type.ts",
+      "types": "./src/organization/social-proof.type.ts"
+    },
+    "./organization/website-scraping-result.type": {
+      "import": "./src/organization/website-scraping-result.type.ts",
+      "types": "./src/organization/website-scraping-result.type.ts"
+    },
+    "./social-media/social-media-platform.enum": {
+      "import": "./src/social-media/social-media-platform.enum.ts",
+      "types": "./src/social-media/social-media-platform.enum.ts"
+    },
+    "./social-media/social-media-account.type": {
+      "import": "./src/social-media/social-media-account.type.ts",
+      "types": "./src/social-media/social-media-account.type.ts"
+    },
+    "./social-media/platform-data.type": {
+      "import": "./src/social-media/platform-data.type.ts",
+      "types": "./src/social-media/platform-data.type.ts"
+    },
+    "./social-media/instagram-platform-data.type": {
+      "import": "./src/social-media/instagram-platform-data.type.ts",
+      "types": "./src/social-media/instagram-platform-data.type.ts"
+    },
+    "./social-media/tiktok-platform-data.type": {
+      "import": "./src/social-media/tiktok-platform-data.type.ts",
+      "types": "./src/social-media/tiktok-platform-data.type.ts"
+    },
+    "./social-media/facebook-platform-data.type": {
+      "import": "./src/social-media/facebook-platform-data.type.ts",
+      "types": "./src/social-media/facebook-platform-data.type.ts"
+    },
+    "./social-media/youtube-platform-data.type": {
+      "import": "./src/social-media/youtube-platform-data.type.ts",
+      "types": "./src/social-media/youtube-platform-data.type.ts"
+    },
+    "./scrapecreator/scrapecreator-instagram-profile.type": {
+      "import": "./src/scrapecreator/scrapecreator-instagram-profile.type.ts",
+      "types": "./src/scrapecreator/scrapecreator-instagram-profile.type.ts"
+    },
+    "./scrapecreator/scrapecreator-facebook-page.type": {
+      "import": "./src/scrapecreator/scrapecreator-facebook-page.type.ts",
+      "types": "./src/scrapecreator/scrapecreator-facebook-page.type.ts"
+    },
+    "./scrapecreator/scrapecreator-tiktok-profile.type": {
+      "import": "./src/scrapecreator/scrapecreator-tiktok-profile.type.ts",
+      "types": "./src/scrapecreator/scrapecreator-tiktok-profile.type.ts"
+    },
+    "./scrapecreator/scrapecreator-instagram-posts.type": {
+      "import": "./src/scrapecreator/scrapecreator-instagram-posts.type.ts",
+      "types": "./src/scrapecreator/scrapecreator-instagram-posts.type.ts"
+    },
+    "./scrapecreator/scrapecreator-tiktok-posts.type": {
+      "import": "./src/scrapecreator/scrapecreator-tiktok-posts.type.ts",
+      "types": "./src/scrapecreator/scrapecreator-tiktok-posts.type.ts"
+    },
+    "./social-media/social-media-account-data.type": {
+      "import": "./src/social-media/social-media-account-data.type.ts",
+      "types": "./src/social-media/social-media-account-data.type.ts"
+    },
+    "./social-media/instagram-post.type": {
+      "import": "./src/social-media/instagram-post.type.ts",
+      "types": "./src/social-media/instagram-post.type.ts"
+    },
+    "./social-media/tiktok-post.type": {
+      "import": "./src/social-media/tiktok-post.type.ts",
+      "types": "./src/social-media/tiktok-post.type.ts"
     }
   },
   "scripts": {

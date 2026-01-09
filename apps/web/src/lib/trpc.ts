@@ -1,6 +1,6 @@
 import { createTRPCContext } from "@trpc/tanstack-react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
-import type { AppRouter } from "../../../api/src/trpc/router";
+import type { AppRouter } from "@repo/api/router";
 
 /**
  * Get the API base URL

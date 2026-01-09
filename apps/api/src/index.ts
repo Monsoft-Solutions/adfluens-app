@@ -8,6 +8,9 @@ import { appRouter } from "./trpc/router";
 import { createContext } from "./trpc/init";
 import { auth } from "@repo/auth";
 import { env } from "@repo/env";
+import { mediaStorage } from "@repo/media-storage";
+import { db } from "@repo/db/client";
+import { sql } from "drizzle-orm";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,6 +18,19 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = env.PORT;
 const isDev = env.NODE_ENV !== "production";
+
+// Trust proxy is required when running behind a load balancer (Dokploy/Traefik)
+// This ensures req.protocol matches the external protocol (https)
+// and prevents redirect loops or secure cookie issues
+app.set("trust proxy", true);
+
+// Configure GCS CORS on startup in development
+if (isDev) {
+  mediaStorage
+    .configureBucketCors()
+    // .then(() => console.log("✅ GCS Bucket CORS configured"))
+    .catch((err) => console.error("❌ Failed to configure GCS CORS:", err));
+}
 
 // CORS Middleware - must be before auth handler
 app.use(
@@ -35,6 +51,30 @@ app.all("/api/auth/*splat", toNodeHandler(auth));
 // JSON parsing middleware - after auth handler
 app.use(express.json());
 
+/**
+ * Health check endpoint
+ * Verifies database connectivity for container orchestration
+ */
+app.get("/api/health", async (_req, res) => {
+  try {
+    // Test database connection with simple query
+    await db.execute(sql`SELECT 1`);
+
+    res.json({
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      database: "connected",
+    });
+  } catch {
+    res.status(503).json({
+      status: "unhealthy",
+      timestamp: new Date().toISOString(),
+      database: "disconnected",
+      error: "Database connection failed",
+    });
+  }
+});
+
 // tRPC API with authentication context
 app.use(
   "/trpc",
@@ -49,8 +89,11 @@ if (!isDev) {
   const distPath = path.join(__dirname, "..", "..", "web", "dist");
   app.use(express.static(distPath));
 
+  console.info(`Serving static files from ${distPath}`);
+
   // Handle client-side routing
-  app.get("*", (req, res) => {
+  // Note: Express v5 requires named wildcards (*splat) instead of just *
+  app.get("*splat", (req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
 }

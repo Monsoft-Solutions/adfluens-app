@@ -39,6 +39,28 @@ export const env = createEnv({
       .string()
       .min(1, "Facebook Client Secret is required"),
 
+    /** ScrapingDog API key for web scraping */
+    SCRAPINGDOG_API_KEY: z.string().min(1, "ScrapingDog API key is required"),
+
+    /** ScrapeCreator API key for social media scraping */
+    SCRAPECREATOR_API_KEY: z
+      .string()
+      .min(1, "ScrapeCreator API key is required"),
+
+    /** Google Cloud Storage credentials */
+    GOOGLE_CLOUD_PROJECT_ID: z
+      .string()
+      .min(1, "Google Cloud Project ID is required"),
+    GOOGLE_CLOUD_CLIENT_EMAIL: z
+      .string()
+      .email("Google Cloud Client Email is invalid"),
+    GOOGLE_CLOUD_PRIVATE_KEY: z
+      .string()
+      .min(1, "Google Cloud Private Key is required"),
+    GOOGLE_CLOUD_MEDIA_BUCKET_NAME: z
+      .string()
+      .min(1, "Google Cloud Media Bucket Name is required"),
+
     /** Server port (optional, defaults to 3001) */
     PORT: z.coerce.number().default(3001),
 

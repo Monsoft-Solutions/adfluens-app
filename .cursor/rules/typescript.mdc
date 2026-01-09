@@ -26,6 +26,23 @@ Follow the pattern: `<file-name>.<file-type>.ts`
 - `*.query.ts` - Database query functions
 - `*.migration.ts` - Database migrations
 
+#### Drizzle Table Export Naming
+
+To avoid naming collisions with domain types, use the following suffixes for Drizzle table exports:
+
+| Export Type    | Convention                   | Example                             |
+| -------------- | ---------------------------- | ----------------------------------- |
+| Table variable | `${name}Table` (camelCase)   | `organizationProfileTable`          |
+| Relations      | `${name}TableRelations`      | `organizationProfileTableRelations` |
+| Insert type    | `${Name}Insert` (PascalCase) | `OrganizationProfileInsert`         |
+| Select type    | `${Name}Row` (PascalCase)    | `OrganizationProfileRow`            |
+
+This creates clear distinction between:
+
+- `OrganizationProfile` - domain type from `@repo/types`
+- `OrganizationProfileRow` - database row type (inferred from table)
+- `organizationProfileTable` - Drizzle table schema object
+
 ### Type Definitions
 
 - `*.type.ts` - Type definitions and interfaces

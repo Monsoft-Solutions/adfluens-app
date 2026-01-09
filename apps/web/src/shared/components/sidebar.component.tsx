@@ -1,13 +1,32 @@
-import React from "react";
+import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   Youtube,
   Search,
   LayoutDashboard,
+  Settings,
   LogOut,
   LogIn,
   User,
+  ChevronDown,
+  Building2,
+  Instagram,
+  Facebook,
 } from "lucide-react";
+
+/**
+ * TikTok icon component (not available in lucide-react)
+ */
+const TiktokIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
+  </svg>
+);
 import { Button, cn, Skeleton, Separator, ThemeToggleIcon } from "@repo/ui";
 import { useSession, signOut } from "@repo/auth/client";
 import { useTheme } from "@/lib/theme.provider";
@@ -45,6 +64,7 @@ export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const { data: session, isPending } = useSession();
   const { theme, setTheme } = useTheme();
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -75,7 +95,7 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         <NavItem
           to="/"
           icon={<LayoutDashboard className="w-5 h-5" />}
@@ -86,6 +106,33 @@ export const Sidebar: React.FC = () => {
           icon={<Search className="w-5 h-5" />}
           label="Video Search"
         />
+        <NavItem
+          to="/settings"
+          icon={<Settings className="w-5 h-5" />}
+          label="Settings"
+        />
+
+        {/* Social Media Section */}
+        <div className="pt-4">
+          <p className="px-4 pb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Social Media
+          </p>
+          <NavItem
+            to="/social/instagram"
+            icon={<Instagram className="w-5 h-5" />}
+            label="Instagram"
+          />
+          <NavItem
+            to="/social/facebook"
+            icon={<Facebook className="w-5 h-5" />}
+            label="Facebook"
+          />
+          <NavItem
+            to="/social/tiktok"
+            icon={<TiktokIcon className="w-5 h-5" />}
+            label="TikTok"
+          />
+        </div>
       </nav>
 
       {/* User Section */}
@@ -99,8 +146,15 @@ export const Sidebar: React.FC = () => {
             </div>
           </div>
         ) : session?.user ? (
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 px-2">
+          <div className="space-y-2">
+            {/* User Info Button (toggles dropdown) */}
+            <button
+              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              className={cn(
+                "w-full flex items-center gap-3 px-2 py-2 rounded-lg transition-colors",
+                "hover:bg-accent text-left"
+              )}
+            >
               {session.user.image ? (
                 <img
                   src={session.user.image}
@@ -120,16 +174,40 @@ export const Sidebar: React.FC = () => {
                   {session.user.email}
                 </p>
               </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start text-muted-foreground hover:text-foreground"
-              onClick={handleSignOut}
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign out
-            </Button>
+              <ChevronDown
+                className={cn(
+                  "w-4 h-4 text-muted-foreground transition-transform",
+                  isUserMenuOpen && "rotate-180"
+                )}
+              />
+            </button>
+
+            {/* Dropdown Menu */}
+            {isUserMenuOpen && (
+              <div className="space-y-1 pt-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    navigate("/settings");
+                    setIsUserMenuOpen(false);
+                  }}
+                >
+                  <Building2 className="w-4 h-4 mr-2" />
+                  Organization Settings
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start text-muted-foreground hover:text-foreground"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign out
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           <Button

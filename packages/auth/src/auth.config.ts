@@ -74,7 +74,7 @@ export const auth = betterAuth({
               type: "string",
               required: true,
               input: true,
-              fieldName: "created_by",
+              fieldName: "createdBy",
             },
           },
         },

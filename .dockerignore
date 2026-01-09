@@ -1,0 +1,62 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs (rebuilt in Docker)
+dist
+**/dist
+.turbo
+**/.turbo
+.next
+**/.next
+
+# Git
+.git
+.gitignore
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE and editor configs
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test files
+coverage
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Documentation (not needed in production)
+*.md
+!README.md
+docs
+
+# Development configs
+.eslintcache
+.prettierignore
+.husky
+
+# Temporary files
+tmp
+temp
+*.tmp
+
+# Changeset (not needed in production)
+.changeset
