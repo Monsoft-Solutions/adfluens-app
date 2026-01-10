@@ -435,6 +435,10 @@ export async function fetchLeadForm(
 
 /**
  * Send a message via Messenger or Instagram
+ *
+ * Uses HUMAN_AGENT message tag to extend the messaging window from 24 hours to 7 days.
+ * This is required for human agent responses outside the standard 24-hour window.
+ * @see https://developers.facebook.com/docs/messenger-platform/send-messages/message-tags
  */
 export async function sendMessage(
   pageId: string,
@@ -449,7 +453,8 @@ export async function sendMessage(
     body: JSON.stringify({
       recipient: { id: recipientId },
       message: { text: messageText },
-      messaging_type: "RESPONSE",
+      messaging_type: "MESSAGE_TAG",
+      tag: "HUMAN_AGENT",
     }),
   });
 }
