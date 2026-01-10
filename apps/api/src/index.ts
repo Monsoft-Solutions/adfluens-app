@@ -11,7 +11,10 @@ import { env } from "@repo/env";
 import { mediaStorage } from "@repo/media-storage";
 import { db } from "@repo/db/client";
 import { sql } from "drizzle-orm";
-import { handleOAuthCallback } from "./features/gmb/gmb.service";
+import {
+  handleOAuthCallback,
+  createPendingGMBConnection,
+} from "./features/gmb/gmb.service";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,7 +47,8 @@ app.use(
 /**
  * Google Business Profile OAuth callback
  * Handles the redirect from Google after user grants GMB access
- * Exchanges the code for tokens and redirects to frontend with tokens
+ * Exchanges the code for tokens and stores them in a secure setup session.
+ * Only a setup code is passed to the frontend - NOT the actual tokens.
  */
 app.get("/api/auth/gmb/callback", async (req, res) => {
   const { code, state, error: oauthError } = req.query;
@@ -66,36 +70,32 @@ app.get("/api/auth/gmb/callback", async (req, res) => {
   }
 
   try {
-    // Decode state to get organization ID and redirect path
+    // Decode state to get organization ID, user ID, and redirect path
     const stateData = JSON.parse(Buffer.from(state, "base64").toString("utf8"));
-    const { organizationId, redirectPath = "/settings" } = stateData;
+    const { organizationId, userId, redirectPath = "/settings" } = stateData;
 
-    if (!organizationId) {
-      throw new Error("Organization ID not found in state");
+    if (!organizationId || !userId) {
+      throw new Error("Organization ID or User ID not found in state");
     }
 
     // Exchange code for tokens
     const tokens = await handleOAuthCallback(code);
 
-    // Redirect to frontend with tokens in URL params
-    // Frontend will use these to list accounts/locations and complete setup
-    const params = new URLSearchParams({
-      gmb_setup: "true",
-      access_token: tokens.accessToken,
-      organization_id: organizationId,
+    // Create a pending connection to store tokens server-side
+    // This prevents tokens from being exposed in URL parameters
+    const pendingConnection = await createPendingGMBConnection({
+      organizationId,
+      userId,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      accessTokenExpiresAt: tokens.expiresAt,
+      scope: tokens.scope,
     });
 
-    if (tokens.refreshToken) {
-      params.set("refresh_token", tokens.refreshToken);
-    }
-
-    if (tokens.expiresAt) {
-      params.set("expires_at", tokens.expiresAt.toISOString());
-    }
-
-    if (tokens.scope) {
-      params.set("scope", tokens.scope);
-    }
+    // Redirect to frontend with ONLY the connection ID - NOT tokens
+    const params = new URLSearchParams({
+      gmb_setup_code: pendingConnection.id,
+    });
 
     return res.redirect(`${appUrl}${redirectPath}?${params.toString()}`);
   } catch (err) {

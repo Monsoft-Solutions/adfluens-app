@@ -23,12 +23,7 @@ import { useTRPC } from "@/lib/trpc";
 type GMBLocationSelectorProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  tokens: {
-    accessToken: string;
-    refreshToken?: string;
-    expiresAt?: string;
-    scope?: string;
-  };
+  setupCode: string;
   onSuccess: () => void;
   onError: (error: string) => void;
 };
@@ -37,11 +32,12 @@ type GMBLocationSelectorProps = {
  * Location Selector Modal
  *
  * After OAuth, allows user to select which GMB account and location to connect.
+ * Uses setupCode to securely retrieve tokens from the server.
  */
 export const GMBLocationSelector: React.FC<GMBLocationSelectorProps> = ({
   open,
   onOpenChange,
-  tokens,
+  setupCode,
   onSuccess,
   onError,
 }) => {
@@ -62,7 +58,7 @@ export const GMBLocationSelector: React.FC<GMBLocationSelectorProps> = ({
     isLoading: isLoadingAccounts,
     error: accountsError,
   } = useQuery({
-    ...trpc.gmb.listAccounts.queryOptions({ accessToken: tokens.accessToken }),
+    ...trpc.gmb.listAccounts.queryOptions({ setupCode }),
     enabled: open,
   });
 
@@ -73,7 +69,7 @@ export const GMBLocationSelector: React.FC<GMBLocationSelectorProps> = ({
     error: locationsError,
   } = useQuery({
     ...trpc.gmb.listLocations.queryOptions({
-      accessToken: tokens.accessToken,
+      setupCode,
       accountName: selectedAccountName || "",
     }),
     enabled: open && !!selectedAccountName,
@@ -117,10 +113,7 @@ export const GMBLocationSelector: React.FC<GMBLocationSelectorProps> = ({
     const gmbAccountId = selectedAccountName.replace("accounts/", "");
 
     selectLocationMutation.mutate({
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      accessTokenExpiresAt: tokens.expiresAt,
-      scope: tokens.scope,
+      setupCode,
       gmbAccountId,
       gmbLocationId: selectedLocation.locationId,
       gmbLocationName: selectedLocation.title,

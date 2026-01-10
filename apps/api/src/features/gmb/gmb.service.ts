@@ -76,13 +76,14 @@ const LOCATION_CACHE_DURATION_MS = 24 * 60 * 60 * 1000;
  */
 export function getGMBOAuthUrl(
   organizationId: string,
+  userId: string,
   redirectPath: string = "/settings"
 ): string {
   const redirectUri = `${env.BETTER_AUTH_URL}/api/auth/gmb/callback`;
 
-  // Encode state with organization ID and redirect path
+  // Encode state with organization ID, user ID, and redirect path
   const state = Buffer.from(
-    JSON.stringify({ organizationId, redirectPath })
+    JSON.stringify({ organizationId, userId, redirectPath })
   ).toString("base64");
 
   return getGMBAuthUrl(
@@ -107,6 +108,121 @@ export async function handleOAuthCallback(
     env.GOOGLE_CLIENT_SECRET,
     redirectUri
   );
+}
+
+// ============================================================================
+// Pending Connection Management (Secure OAuth Flow)
+// ============================================================================
+
+/**
+ * Create a pending GMB connection to store OAuth tokens securely.
+ * This prevents tokens from being exposed in URL parameters.
+ * The connection remains "pending" until the user selects a location.
+ */
+export async function createPendingGMBConnection(input: {
+  organizationId: string;
+  userId: string;
+  accessToken: string;
+  refreshToken?: string;
+  accessTokenExpiresAt?: Date;
+  scope?: string;
+}): Promise<GmbConnectionRow> {
+  // Delete any existing connection for this organization (will be replaced)
+  await db
+    .delete(gmbConnectionTable)
+    .where(eq(gmbConnectionTable.organizationId, input.organizationId));
+
+  const result = await db
+    .insert(gmbConnectionTable)
+    .values({
+      organizationId: input.organizationId,
+      connectedByUserId: input.userId,
+      // Placeholder values for required fields - will be set when location is selected
+      gmbAccountId: "pending",
+      gmbLocationId: "pending",
+      accessToken: input.accessToken,
+      refreshToken: input.refreshToken,
+      accessTokenExpiresAt: input.accessTokenExpiresAt,
+      scope: input.scope || GMB_SCOPE,
+      status: "pending",
+    })
+    .returning();
+
+  const connection = result[0];
+  if (!connection) {
+    throw new Error("Failed to create pending GMB connection");
+  }
+
+  return connection;
+}
+
+/**
+ * Get a pending connection by ID, validating it belongs to the user.
+ */
+export async function getPendingGMBConnection(
+  connectionId: string,
+  userId: string
+): Promise<GmbConnectionRow | null> {
+  const connection = await db.query.gmbConnectionTable.findFirst({
+    where: eq(gmbConnectionTable.id, connectionId),
+  });
+
+  if (!connection) {
+    return null;
+  }
+
+  // Validate the connection belongs to this user
+  if (connection.connectedByUserId !== userId) {
+    return null;
+  }
+
+  // Only return if it's in pending status
+  if (connection.status !== "pending") {
+    return null;
+  }
+
+  return connection;
+}
+
+/**
+ * Complete a pending connection by setting the account/location details.
+ */
+export async function completePendingGMBConnection(input: {
+  connectionId: string;
+  userId: string;
+  gmbAccountId: string;
+  gmbLocationId: string;
+  gmbLocationName?: string;
+  locationData?: GMBLocationData;
+}): Promise<GMBConnection> {
+  // Verify the pending connection exists and belongs to user
+  const pending = await getPendingGMBConnection(
+    input.connectionId,
+    input.userId
+  );
+  if (!pending) {
+    throw new Error("Pending connection not found or expired");
+  }
+
+  const result = await db
+    .update(gmbConnectionTable)
+    .set({
+      gmbAccountId: input.gmbAccountId,
+      gmbLocationId: input.gmbLocationId,
+      gmbLocationName: input.gmbLocationName,
+      locationData: input.locationData,
+      status: "active",
+      lastSyncedAt: new Date(),
+    })
+    .where(eq(gmbConnectionTable.id, input.connectionId))
+    .returning();
+
+  const connection = result[0];
+  if (!connection) {
+    throw new Error("Failed to complete GMB connection");
+  }
+
+  return mapConnectionToType(connection);
 }
 
 /**

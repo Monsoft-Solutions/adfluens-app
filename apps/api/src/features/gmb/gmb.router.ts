@@ -4,10 +4,10 @@ import {
   organizationProcedure,
   protectedProcedure,
 } from "../../trpc/init";
+import { TRPCError } from "@trpc/server";
 import {
   getGMBOAuthUrl,
   getGMBConnection,
-  createGMBConnection,
   disconnectGMB,
   listGMBAccounts,
   listGMBLocations,
@@ -25,6 +25,8 @@ import {
   listMedia,
   uploadMedia,
   deleteMediaItem,
+  getPendingGMBConnection,
+  completePendingGMBConnection,
 } from "./gmb.service";
 
 /**
@@ -37,12 +39,10 @@ const paginationSchema = z.object({
 
 /**
  * Schema for selecting account and location after OAuth
+ * Uses setupCode to retrieve tokens securely from the server
  */
 const selectLocationSchema = z.object({
-  accessToken: z.string(),
-  refreshToken: z.string().optional(),
-  accessTokenExpiresAt: z.string().datetime().optional(),
-  scope: z.string().optional(),
+  setupCode: z.string().uuid(),
   gmbAccountId: z.string(),
   gmbLocationId: z.string(),
   gmbLocationName: z.string().optional(),
@@ -99,52 +99,70 @@ export const gmbRouter = router({
   getOAuthUrl: organizationProcedure
     .input(z.object({ redirectPath: z.string().optional() }).optional())
     .query(({ ctx, input }) => {
-      const url = getGMBOAuthUrl(ctx.organization.id, input?.redirectPath);
+      const url = getGMBOAuthUrl(
+        ctx.organization.id,
+        ctx.user.id,
+        input?.redirectPath
+      );
       return { url };
     }),
 
   /**
-   * List GMB accounts for a user (using temporary access token from OAuth)
-   * Called after OAuth callback with the tokens
+   * List GMB accounts for a user (using pending connection ID)
+   * Called after OAuth callback with the setup code (connection ID)
    */
   listAccounts: protectedProcedure
-    .input(z.object({ accessToken: z.string() }))
-    .query(async ({ input }) => {
-      const accounts = await listGMBAccounts(input.accessToken);
+    .input(z.object({ setupCode: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const connection = await getPendingGMBConnection(
+        input.setupCode,
+        ctx.user.id
+      );
+      if (!connection) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Pending connection not found",
+        });
+      }
+      const accounts = await listGMBAccounts(connection.accessToken);
       return { accounts };
     }),
 
   /**
-   * List locations for a GMB account (using temporary access token)
+   * List locations for a GMB account (using pending connection ID)
    */
   listLocations: protectedProcedure
-    .input(z.object({ accessToken: z.string(), accountName: z.string() }))
-    .query(async ({ input }) => {
+    .input(z.object({ setupCode: z.string().uuid(), accountName: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const connection = await getPendingGMBConnection(
+        input.setupCode,
+        ctx.user.id
+      );
+      if (!connection) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Pending connection not found",
+        });
+      }
       const locations = await listGMBLocations(
-        input.accessToken,
+        connection.accessToken,
         input.accountName
       );
       return { locations };
     }),
 
   /**
-   * Save selected account and location after OAuth flow
+   * Complete the pending connection by setting account/location details
    */
   selectLocation: organizationProcedure
     .input(selectLocationSchema)
     .mutation(async ({ ctx, input }) => {
-      const connection = await createGMBConnection({
-        organizationId: ctx.organization.id,
-        connectedByUserId: ctx.user.id,
+      const connection = await completePendingGMBConnection({
+        connectionId: input.setupCode,
+        userId: ctx.user.id,
         gmbAccountId: input.gmbAccountId,
         gmbLocationId: input.gmbLocationId,
         gmbLocationName: input.gmbLocationName,
-        accessToken: input.accessToken,
-        refreshToken: input.refreshToken,
-        accessTokenExpiresAt: input.accessTokenExpiresAt
-          ? new Date(input.accessTokenExpiresAt)
-          : undefined,
-        scope: input.scope,
       });
 
       return { connection };

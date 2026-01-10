@@ -30,41 +30,25 @@ export const GMBConnectionSettings: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLocationSelectorOpen, setIsLocationSelectorOpen] = useState(false);
-  const [oauthTokens, setOauthTokens] = useState<{
-    accessToken: string;
-    refreshToken?: string;
-    expiresAt?: string;
-    scope?: string;
-  } | null>(null);
+  const [setupCode, setSetupCode] = useState<string | null>(null);
 
   // Check for OAuth callback parameters
   useEffect(() => {
-    const gmbSetup = searchParams.get("gmb_setup");
+    const gmbSetupCode = searchParams.get("gmb_setup_code");
     const gmbError = searchParams.get("gmb_error");
-    const accessToken = searchParams.get("access_token");
 
     if (gmbError) {
       setError(decodeURIComponent(gmbError));
       // Clean up URL params
       searchParams.delete("gmb_error");
       setSearchParams(searchParams, { replace: true });
-    } else if (gmbSetup === "true" && accessToken) {
-      // Store tokens and open location selector
-      setOauthTokens({
-        accessToken,
-        refreshToken: searchParams.get("refresh_token") || undefined,
-        expiresAt: searchParams.get("expires_at") || undefined,
-        scope: searchParams.get("scope") || undefined,
-      });
+    } else if (gmbSetupCode) {
+      // Store setup code and open location selector
+      setSetupCode(gmbSetupCode);
       setIsLocationSelectorOpen(true);
 
-      // Clean up URL params
-      searchParams.delete("gmb_setup");
-      searchParams.delete("access_token");
-      searchParams.delete("refresh_token");
-      searchParams.delete("expires_at");
-      searchParams.delete("scope");
-      searchParams.delete("organization_id");
+      // Clean up URL params immediately
+      searchParams.delete("gmb_setup_code");
       setSearchParams(searchParams, { replace: true });
     }
   }, [searchParams, setSearchParams]);
@@ -118,7 +102,7 @@ export const GMBConnectionSettings: React.FC = () => {
 
   const handleLocationSelected = () => {
     setIsLocationSelectorOpen(false);
-    setOauthTokens(null);
+    setSetupCode(null);
     setSuccessMessage("Google Business Profile connected successfully!");
     queryClient.invalidateQueries({
       queryKey: trpc.gmb.getConnection.queryKey(),
@@ -273,16 +257,16 @@ export const GMBConnectionSettings: React.FC = () => {
       )}
 
       {/* Location Selector Modal */}
-      {oauthTokens && (
+      {setupCode && (
         <GMBLocationSelector
           open={isLocationSelectorOpen}
           onOpenChange={setIsLocationSelectorOpen}
-          tokens={oauthTokens}
+          setupCode={setupCode}
           onSuccess={handleLocationSelected}
           onError={(err) => {
             setError(err);
             setIsLocationSelectorOpen(false);
-            setOauthTokens(null);
+            setSetupCode(null);
           }}
         />
       )}
