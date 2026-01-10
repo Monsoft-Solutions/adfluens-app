@@ -512,7 +512,7 @@ export async function fetchConversationMessages(
 }
 
 /**
- * Get page conversations
+ * Get page conversations (Messenger)
  */
 export async function fetchPageConversations(
   pageId: string,
@@ -530,14 +530,49 @@ export async function fetchPageConversations(
   }>;
   paging?: { next?: string };
 }> {
-  const endpoint = platform === "instagram" ? "conversations" : "conversations";
   const fields = [
     "id",
     "updated_time",
     "participants",
     "messages.limit(1){id,message,created_time}",
   ].join(",");
-  const url = `${GRAPH_API_URL}/${pageId}/${endpoint}?fields=${fields}&limit=${limit}&platform=${platform === "instagram" ? "instagram" : ""}`;
+
+  // For Instagram, use the Instagram-specific endpoint
+  // For Messenger, use the page conversations endpoint
+  const url =
+    platform === "instagram"
+      ? `${GRAPH_API_URL}/${pageId}/conversations?fields=${fields}&limit=${limit}&platform=instagram`
+      : `${GRAPH_API_URL}/${pageId}/conversations?fields=${fields}&limit=${limit}`;
+
+  return metaFetch(url, pageAccessToken);
+}
+
+/**
+ * Get Instagram conversations using Instagram Account ID
+ */
+export async function fetchInstagramConversations(
+  instagramAccountId: string,
+  pageAccessToken: string,
+  limit = 20
+): Promise<{
+  data: Array<{
+    id: string;
+    updated_time: string;
+    participants: { data: Array<{ id: string; username?: string }> };
+    messages?: {
+      data: Array<{ id: string; message?: string; created_time: string }>;
+    };
+  }>;
+  paging?: { next?: string };
+}> {
+  const fields = [
+    "id",
+    "updated_time",
+    "participants",
+    "messages.limit(1){id,message,created_time}",
+  ].join(",");
+
+  const url = `${GRAPH_API_URL}/${instagramAccountId}/conversations?fields=${fields}&limit=${limit}&platform=instagram`;
 
   return metaFetch(url, pageAccessToken);
 }

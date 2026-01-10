@@ -53,7 +53,10 @@ export const MetaPagesList: React.FC<MetaPagesListProps> = ({ pages }) => {
 
   // Track sync status per page
   const [syncStatus, setSyncStatus] = useState<
-    Record<string, { leads?: string; conversations?: string }>
+    Record<
+      string,
+      { leads?: string; conversations?: string; instagramError?: string }
+    >
   >({});
 
   // Update page mutation
@@ -94,11 +97,19 @@ export const MetaPagesList: React.FC<MetaPagesListProps> = ({ pages }) => {
   const syncConversationsMutation = useMutation(
     trpc.meta.syncConversations.mutationOptions({
       onSuccess: (data, variables) => {
+        const details = [];
+        if (data.messenger > 0) details.push(`${data.messenger} Messenger`);
+        if (data.instagram > 0) details.push(`${data.instagram} Instagram`);
+        const message =
+          details.length > 0
+            ? `Synced ${details.join(", ")}`
+            : "No new conversations found";
         setSyncStatus((prev) => ({
           ...prev,
           [variables.pageId]: {
             ...prev[variables.pageId],
-            conversations: `Synced ${data.synced} conversations`,
+            conversations: message,
+            instagramError: data.instagramError,
           },
         }));
         queryClient.invalidateQueries({
@@ -297,7 +308,9 @@ export const MetaPagesList: React.FC<MetaPagesListProps> = ({ pages }) => {
                     </div>
 
                     {/* Sync Status Messages */}
-                    {(pageStatus?.leads || pageStatus?.conversations) && (
+                    {(pageStatus?.leads ||
+                      pageStatus?.conversations ||
+                      pageStatus?.instagramError) && (
                       <div className="text-xs text-muted-foreground space-y-1">
                         {pageStatus.leads && (
                           <p
@@ -319,6 +332,11 @@ export const MetaPagesList: React.FC<MetaPagesListProps> = ({ pages }) => {
                             )}
                           >
                             {pageStatus.conversations}
+                          </p>
+                        )}
+                        {pageStatus.instagramError && (
+                          <p className="text-amber-600">
+                            ⚠️ {pageStatus.instagramError}
                           </p>
                         )}
                       </div>

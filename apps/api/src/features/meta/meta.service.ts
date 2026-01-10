@@ -42,6 +42,7 @@ import {
   fetchPageLeadForms,
   fetchFormLeads,
   fetchPageConversations,
+  fetchInstagramConversations,
   fetchConversationMessages,
 } from "./meta-api.utils";
 
@@ -517,61 +518,84 @@ export async function syncPageLeads(
 }
 
 /**
- * Sync conversations from Meta for a page
+ * Sync conversations from Meta for a page (both Messenger and Instagram)
  */
 export async function syncPageConversations(
   pageId: string,
   organizationId: string,
-  platform: "messenger" | "instagram" = "messenger"
-): Promise<{ synced: number; errors: number }> {
+  platform?: "messenger" | "instagram"
+): Promise<{
+  synced: number;
+  errors: number;
+  messenger: number;
+  instagram: number;
+  instagramError?: string;
+}> {
   const page = await getPage(pageId, organizationId);
   if (!page) {
     throw new Error("Page not found");
   }
 
+  // Store validated page reference for TypeScript narrowing across async boundaries
+  const validatedPage = page;
+
   let synced = 0;
   let errors = 0;
+  let messengerSynced = 0;
+  let instagramSynced = 0;
+  let instagramErrorMsg: string | undefined;
 
-  try {
-    // Fetch conversations from Meta
-    const conversationsResponse = await fetchPageConversations(
-      page.pageId,
-      page.pageAccessToken,
-      platform,
-      50
-    );
+  // Helper function to sync conversations for a platform
+  async function syncPlatformConversations(
+    conversations: Array<{
+      id: string;
+      updated_time: string;
+      participants: {
+        data: Array<{ id: string; name?: string; username?: string }>;
+      };
+      messages?: {
+        data: Array<{ id: string; message?: string; created_time: string }>;
+      };
+    }>,
+    targetPlatform: "messenger" | "instagram",
+    accountId: string,
+    pageData: NonNullable<typeof page>
+  ): Promise<{ synced: number; errors: number }> {
+    let platformSynced = 0;
+    let platformErrors = 0;
 
-    for (const conv of conversationsResponse.data) {
+    console.log("Syncing conversations for platform:", targetPlatform);
+
+    for (const conv of conversations) {
       try {
         // Check if conversation already exists
         const existingConv = await db.query.metaConversationTable.findFirst({
           where: and(
-            eq(metaConversationTable.metaPageId, page.id),
+            eq(metaConversationTable.metaPageId, pageData.id),
             eq(metaConversationTable.threadId, conv.id)
           ),
         });
 
         if (existingConv) {
-          // Conversation exists, optionally update messages
           continue;
         }
 
         // Get participant info (first non-page participant)
         const participant = conv.participants?.data?.find(
-          (p) => p.id !== page.pageId
+          (p) => p.id !== accountId && p.id !== pageData.pageId
         );
         if (!participant) {
           continue;
         }
 
         // Try to get participant profile
-        let participantName = participant.name;
+        let participantName = participant.name || participant.username;
         let participantProfilePic: string | undefined;
 
         try {
           const profile = await fetchUserProfile(
             participant.id,
-            page.pageAccessToken
+            pageData.pageAccessToken
           );
           participantName = profile.name || participantName;
           participantProfilePic = profile.profile_pic;
@@ -583,9 +607,9 @@ export async function syncPageConversations(
         const lastMessage = conv.messages?.data?.[0];
 
         const conversationInsert: MetaConversationInsert = {
-          metaPageId: page.id,
-          organizationId: page.organizationId,
-          platform,
+          metaPageId: pageData.id,
+          organizationId: pageData.organizationId,
+          platform: targetPlatform,
           threadId: conv.id,
           participantId: participant.id,
           participantName,
@@ -602,7 +626,7 @@ export async function syncPageConversations(
         try {
           const messagesResponse = await fetchConversationMessages(
             conv.id,
-            page.pageAccessToken,
+            pageData.pageAccessToken,
             10
           );
 
@@ -610,7 +634,8 @@ export async function syncPageConversations(
             id: msg.id,
             timestamp: msg.created_time,
             senderId: msg.from.id,
-            isFromPage: msg.from.id === page.pageId,
+            isFromPage:
+              msg.from.id === pageData.pageId || msg.from.id === accountId,
             text: msg.message,
           }));
 
@@ -621,10 +646,84 @@ export async function syncPageConversations(
         }
 
         await db.insert(metaConversationTable).values(conversationInsert);
-        synced++;
+        platformSynced++;
       } catch (convError) {
-        console.error(`Failed to sync conversation ${conv.id}:`, convError);
-        errors++;
+        console.error(
+          `Failed to sync ${targetPlatform} conversation ${conv.id}:`,
+          convError
+        );
+        platformErrors++;
+      }
+    }
+
+    return { synced: platformSynced, errors: platformErrors };
+  }
+
+  try {
+    // Sync Messenger conversations (if not specifically requesting Instagram only)
+    if (!platform || platform === "messenger") {
+      try {
+        const messengerResponse = await fetchPageConversations(
+          validatedPage.pageId,
+          validatedPage.pageAccessToken,
+          "messenger",
+          50
+        );
+
+        const result = await syncPlatformConversations(
+          messengerResponse.data,
+          "messenger",
+          validatedPage.pageId,
+          validatedPage
+        );
+        messengerSynced = result.synced;
+        synced += result.synced;
+        errors += result.errors;
+      } catch (messengerError) {
+        console.error(
+          `Failed to fetch Messenger conversations:`,
+          messengerError
+        );
+      }
+    }
+
+    // Sync Instagram conversations (if page has Instagram account connected)
+    if (
+      (!platform || platform === "instagram") &&
+      validatedPage.instagramAccountId
+    ) {
+      try {
+        const instagramResponse = await fetchInstagramConversations(
+          validatedPage.instagramAccountId,
+          validatedPage.pageAccessToken,
+          50
+        );
+
+        const result = await syncPlatformConversations(
+          instagramResponse.data,
+          "instagram",
+          validatedPage.instagramAccountId,
+          validatedPage
+        );
+        instagramSynced = result.synced;
+        synced += result.synced;
+        errors += result.errors;
+      } catch (instagramError) {
+        console.error(
+          `Failed to fetch Instagram conversations:`,
+          instagramError
+        );
+        // Capture user-friendly error message
+        const errorMsg =
+          instagramError instanceof Error
+            ? instagramError.message
+            : String(instagramError);
+        if (errorMsg.includes("Application does not have the capability")) {
+          instagramErrorMsg =
+            "Instagram Messaging API not enabled. Enable it in Meta Developer Console → Your App → Add Products → Instagram Messaging.";
+        } else {
+          instagramErrorMsg = `Instagram sync failed: ${errorMsg}`;
+        }
       }
     }
 
@@ -638,7 +737,13 @@ export async function syncPageConversations(
     throw error;
   }
 
-  return { synced, errors };
+  return {
+    synced,
+    errors,
+    messenger: messengerSynced,
+    instagram: instagramSynced,
+    instagramError: instagramErrorMsg,
+  };
 }
 
 // ============================================================================
