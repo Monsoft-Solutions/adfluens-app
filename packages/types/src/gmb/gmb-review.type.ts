@@ -6,89 +6,109 @@
  * @module @repo/types/gmb/gmb-review
  */
 
-/**
- * Star rating values from GMB API
- */
-export type GMBStarRating = "ONE" | "TWO" | "THREE" | "FOUR" | "FIVE";
+import { z } from "zod";
 
 /**
- * Reviewer information
+ * Star rating schema
  */
-export type GMBReviewer = {
+export const gmbStarRatingSchema = z.enum([
+  "ONE",
+  "TWO",
+  "THREE",
+  "FOUR",
+  "FIVE",
+]);
+
+export type GMBStarRating = z.infer<typeof gmbStarRatingSchema>;
+
+/**
+ * Reviewer schema
+ */
+export const gmbReviewerSchema = z.object({
   /** Display name of the reviewer */
-  displayName: string;
+  displayName: z.string(),
 
   /** Profile photo URL */
-  profilePhotoUrl?: string;
+  profilePhotoUrl: z.string().optional(),
 
   /** Whether the reviewer is anonymous */
-  isAnonymous: boolean;
-};
+  isAnonymous: z.boolean(),
+});
+
+export type GMBReviewer = z.infer<typeof gmbReviewerSchema>;
 
 /**
- * Reply to a review
+ * Review reply schema
  */
-export type GMBReviewReply = {
+export const gmbReviewReplySchema = z.object({
   /** Reply comment text */
-  comment: string;
+  comment: z.string(),
 
   /** When the reply was last updated */
-  updateTime: string;
-};
+  updateTime: z.string(),
+});
+
+export type GMBReviewReply = z.infer<typeof gmbReviewReplySchema>;
 
 /**
- * Complete review data from GMB API
+ * Complete review schema
  */
-export type GMBReview = {
+export const gmbReviewSchema = z.object({
   /** Full resource name of the review */
-  name: string;
+  name: z.string(),
 
   /** Review ID extracted from the name */
-  reviewId: string;
+  reviewId: z.string(),
 
   /** Reviewer information */
-  reviewer: GMBReviewer;
+  reviewer: gmbReviewerSchema,
 
   /** Star rating (ONE through FIVE) */
-  starRating: GMBStarRating;
+  starRating: gmbStarRatingSchema,
 
   /** Review comment text */
-  comment?: string;
+  comment: z.string().optional(),
 
   /** When the review was created */
-  createTime: string;
+  createTime: z.string(),
 
   /** When the review was last updated */
-  updateTime: string;
+  updateTime: z.string(),
 
   /** Owner's reply to the review, if any */
-  reviewReply?: GMBReviewReply;
-};
+  reviewReply: gmbReviewReplySchema.optional(),
+});
+
+export type GMBReview = z.infer<typeof gmbReviewSchema>;
 
 /**
- * Paginated list of reviews response
+ * Paginated list of reviews response schema
  */
-export type GMBReviewsResponse = {
+export const gmbReviewsResponseSchema = z.object({
   /** List of reviews */
-  reviews: GMBReview[];
+  reviews: z.array(gmbReviewSchema),
 
   /** Token for fetching the next page */
-  nextPageToken?: string;
+  nextPageToken: z.string().optional(),
 
   /** Average star rating across all reviews */
-  averageRating?: number;
+  averageRating: z.number().optional(),
 
   /** Total number of reviews */
-  totalReviewCount?: number;
-};
+  totalReviewCount: z.number().optional(),
+});
+
+export type GMBReviewsResponse = z.infer<typeof gmbReviewsResponseSchema>;
 
 /**
- * Input for replying to a review
+ * Reply input schema
  */
-export type GMBReplyInput = {
+export const gmbReplyInputSchema = z.object({
   /** Review ID to reply to */
-  reviewId: string;
+  reviewId: z.string(),
 
   /** Reply comment text */
-  comment: string;
-};
+  comment: z.string(),
+});
+
+export type GMBReplyInput = z.infer<typeof gmbReplyInputSchema>;

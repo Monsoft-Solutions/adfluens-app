@@ -4,19 +4,11 @@ import { MapPin, MessageSquare, FileText } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger, Skeleton } from "@repo/ui";
 import { useTRPC } from "@/lib/trpc";
 import { useAuth } from "@/lib/auth.provider";
+import { GoogleBusinessIcon } from "@/shared/components/icons/google-business.icon";
 import { GMBNotConnected } from "../components/gmb-not-connected.component";
 import { GMBOverview } from "../components/gmb-overview.component";
 import { GMBReviewsList } from "../components/gmb-reviews-list.component";
 import { GMBPostsList } from "../components/gmb-posts-list.component";
-
-/** Google Business Icon */
-const GoogleBusinessIcon: React.FC<{ className?: string }> = ({
-  className,
-}) => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
-  </svg>
-);
 
 /**
  * Google Business Profile Management View

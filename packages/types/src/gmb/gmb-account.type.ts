@@ -6,107 +6,125 @@
  * @module @repo/types/gmb/gmb-account
  */
 
-/**
- * Account type
- */
-export type GMBAccountType =
-  | "PERSONAL"
-  | "LOCATION_GROUP"
-  | "USER_GROUP"
-  | "ORGANIZATION";
+import { z } from "zod";
 
 /**
- * Verification state for a location
+ * Account type schema
  */
-export type GMBVerificationState =
-  | "VERIFIED"
-  | "UNVERIFIED"
-  | "VERIFICATION_REQUESTED";
+export const gmbAccountTypeSchema = z.enum([
+  "PERSONAL",
+  "LOCATION_GROUP",
+  "USER_GROUP",
+  "ORGANIZATION",
+]);
+
+export type GMBAccountType = z.infer<typeof gmbAccountTypeSchema>;
 
 /**
- * GMB Account from Account Management API
+ * Verification state schema
  */
-export type GMBAccount = {
+export const gmbVerificationStateSchema = z.enum([
+  "VERIFIED",
+  "UNVERIFIED",
+  "VERIFICATION_REQUESTED",
+]);
+
+export type GMBVerificationState = z.infer<typeof gmbVerificationStateSchema>;
+
+/**
+ * GMB Account schema
+ */
+export const gmbAccountSchema = z.object({
   /** Full resource name (e.g., "accounts/123456789") */
-  name: string;
+  name: z.string(),
 
   /** Account name/display name */
-  accountName: string;
+  accountName: z.string(),
 
   /** Account type */
-  type: GMBAccountType;
+  type: gmbAccountTypeSchema,
 
   /** Primary owner email */
-  primaryOwner?: string;
+  primaryOwner: z.string().optional(),
 
   /** Account number (numeric ID) */
-  accountNumber?: string;
-};
+  accountNumber: z.string().optional(),
+});
+
+export type GMBAccount = z.infer<typeof gmbAccountSchema>;
 
 /**
- * GMB Account list response
+ * GMB Account list response schema
  */
-export type GMBAccountsResponse = {
+export const gmbAccountsResponseSchema = z.object({
   /** List of accounts */
-  accounts: GMBAccount[];
+  accounts: z.array(gmbAccountSchema),
 
   /** Token for fetching the next page */
-  nextPageToken?: string;
-};
+  nextPageToken: z.string().optional(),
+});
+
+export type GMBAccountsResponse = z.infer<typeof gmbAccountsResponseSchema>;
 
 /**
- * GMB Location summary for selection
+ * GMB Location summary schema
  */
-export type GMBLocationSummary = {
+export const gmbLocationSummarySchema = z.object({
   /** Full resource name */
-  name: string;
+  name: z.string(),
 
   /** Location ID extracted from name */
-  locationId: string;
+  locationId: z.string(),
 
   /** Business title/name */
-  title: string;
+  title: z.string(),
 
   /** Store code */
-  storeCode?: string;
+  storeCode: z.string().optional(),
 
   /** Primary phone */
-  primaryPhone?: string;
+  primaryPhone: z.string().optional(),
 
   /** Formatted address */
-  formattedAddress?: string;
+  formattedAddress: z.string().optional(),
 
   /** Verification state */
-  verificationState?: GMBVerificationState;
+  verificationState: gmbVerificationStateSchema.optional(),
 
   /** Whether the location has voice of merchant enabled */
-  hasVoiceOfMerchant?: boolean;
-};
+  hasVoiceOfMerchant: z.boolean().optional(),
+});
+
+export type GMBLocationSummary = z.infer<typeof gmbLocationSummarySchema>;
 
 /**
- * GMB Locations list response
+ * GMB Locations list response schema
  */
-export type GMBLocationsResponse = {
+export const gmbLocationsResponseSchema = z.object({
   /** List of locations */
-  locations: GMBLocationSummary[];
+  locations: z.array(gmbLocationSummarySchema),
 
   /** Token for fetching the next page */
-  nextPageToken?: string;
-};
+  nextPageToken: z.string().optional(),
+});
+
+export type GMBLocationsResponse = z.infer<typeof gmbLocationsResponseSchema>;
 
 /**
- * OAuth tokens received after code exchange
+ * OAuth tokens schema
  */
-export type GMBOAuthTokens = {
+export const gmbOAuthTokensSchema = z.object({
   /** Access token for API calls */
-  accessToken: string;
+  accessToken: z.string(),
 
   /** Refresh token for getting new access tokens */
-  refreshToken?: string;
+  refreshToken: z.string().optional(),
 
   /** When the access token expires */
-  expiresAt?: Date;
+  expiresAt: z.date().optional(),
 
   /** OAuth scope */
-  scope?: string;
-};
+  scope: z.string().optional(),
+});
+
+export type GMBOAuthTokens = z.infer<typeof gmbOAuthTokensSchema>;

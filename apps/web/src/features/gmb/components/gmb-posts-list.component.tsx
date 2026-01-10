@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { FileText, Loader2, RefreshCw } from "lucide-react";
 import { Button, Skeleton } from "@repo/ui";
 import { useTRPC } from "@/lib/trpc";
+import { ErrorAlert } from "@/shared/components/error-alert.component";
+import { LoadMoreButton } from "@/shared/components/load-more-button.component";
 import { GMBPostCard } from "./gmb-post-card.component";
 import { GMBCreatePostForm } from "./gmb-create-post-form.component";
 
@@ -30,17 +32,10 @@ export const GMBPostsList: React.FC = () => {
 
   if (error) {
     return (
-      <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive">
-        <p>Failed to load posts: {error.message}</p>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => refetch()}
-          className="mt-2"
-        >
-          Try Again
-        </Button>
-      </div>
+      <ErrorAlert
+        message={`Failed to load posts: ${error.message}`}
+        onRetry={() => refetch()}
+      />
     );
   }
 
@@ -87,22 +82,11 @@ export const GMBPostsList: React.FC = () => {
 
       {/* Load More */}
       {hasMore && (
-        <div className="flex justify-center pt-4">
-          <Button
-            variant="outline"
-            onClick={() => setPageToken(data?.nextPageToken)}
-            disabled={isFetching}
-          >
-            {isFetching ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Loading...
-              </>
-            ) : (
-              "Load More Posts"
-            )}
-          </Button>
-        </div>
+        <LoadMoreButton
+          onClick={() => setPageToken(data?.nextPageToken)}
+          isLoading={isFetching}
+          label="Load More Posts"
+        />
       )}
     </div>
   );

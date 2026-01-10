@@ -288,17 +288,13 @@ export async function listGMBLocations(
 export async function refreshLocationData(
   organizationId: string
 ): Promise<GMBLocationData> {
-  const accessToken = await getValidAccessToken(organizationId);
-  const connection = await db.query.gmbConnectionTable.findFirst({
-    where: eq(gmbConnectionTable.organizationId, organizationId),
-  });
+  const { connection, accessToken } =
+    await getValidConnectionWithToken(organizationId);
 
-  if (!connection) {
-    throw new Error("GMB not connected");
-  }
-
-  const locationName = `accounts/${connection.gmbAccountId}/locations/${connection.gmbLocationId}`;
-  const locationData = await fetchLocationDetails(accessToken, locationName);
+  const locationData = await fetchLocationDetails(
+    accessToken,
+    buildLocationName(connection)
+  );
 
   // Update cached data
   await db
@@ -358,18 +354,12 @@ export async function listReviews(
   organizationId: string,
   options?: { pageSize?: number; pageToken?: string }
 ): Promise<GMBReviewsResponse> {
-  const accessToken = await getValidAccessToken(organizationId);
-  const connection = await db.query.gmbConnectionTable.findFirst({
-    where: eq(gmbConnectionTable.organizationId, organizationId),
-  });
-
-  if (!connection) {
-    throw new Error("GMB not connected");
-  }
+  const { connection, accessToken } =
+    await getValidConnectionWithToken(organizationId);
 
   return fetchReviews(
     accessToken,
-    `accounts/${connection.gmbAccountId}`,
+    buildAccountName(connection),
     connection.gmbLocationId,
     options
   );
@@ -383,17 +373,14 @@ export async function replyToReview(
   reviewId: string,
   comment: string
 ): Promise<void> {
-  const accessToken = await getValidAccessToken(organizationId);
-  const connection = await db.query.gmbConnectionTable.findFirst({
-    where: eq(gmbConnectionTable.organizationId, organizationId),
-  });
+  const { connection, accessToken } =
+    await getValidConnectionWithToken(organizationId);
 
-  if (!connection) {
-    throw new Error("GMB not connected");
-  }
-
-  const reviewName = `accounts/${connection.gmbAccountId}/locations/${connection.gmbLocationId}/reviews/${reviewId}`;
-  await createReviewReply(accessToken, reviewName, comment);
+  await createReviewReply(
+    accessToken,
+    buildReviewName(connection, reviewId),
+    comment
+  );
 }
 
 /**
@@ -403,17 +390,10 @@ export async function deleteReply(
   organizationId: string,
   reviewId: string
 ): Promise<void> {
-  const accessToken = await getValidAccessToken(organizationId);
-  const connection = await db.query.gmbConnectionTable.findFirst({
-    where: eq(gmbConnectionTable.organizationId, organizationId),
-  });
+  const { connection, accessToken } =
+    await getValidConnectionWithToken(organizationId);
 
-  if (!connection) {
-    throw new Error("GMB not connected");
-  }
-
-  const reviewName = `accounts/${connection.gmbAccountId}/locations/${connection.gmbLocationId}/reviews/${reviewId}`;
-  await deleteReviewReply(accessToken, reviewName);
+  await deleteReviewReply(accessToken, buildReviewName(connection, reviewId));
 }
 
 // ============================================================================
@@ -427,18 +407,12 @@ export async function listPosts(
   organizationId: string,
   options?: { pageSize?: number; pageToken?: string }
 ): Promise<GMBPostsResponse> {
-  const accessToken = await getValidAccessToken(organizationId);
-  const connection = await db.query.gmbConnectionTable.findFirst({
-    where: eq(gmbConnectionTable.organizationId, organizationId),
-  });
-
-  if (!connection) {
-    throw new Error("GMB not connected");
-  }
+  const { connection, accessToken } =
+    await getValidConnectionWithToken(organizationId);
 
   return fetchPosts(
     accessToken,
-    `accounts/${connection.gmbAccountId}`,
+    buildAccountName(connection),
     connection.gmbLocationId,
     options
   );
@@ -451,18 +425,12 @@ export async function createPost(
   organizationId: string,
   input: GMBCreatePostInput
 ): Promise<GMBPost> {
-  const accessToken = await getValidAccessToken(organizationId);
-  const connection = await db.query.gmbConnectionTable.findFirst({
-    where: eq(gmbConnectionTable.organizationId, organizationId),
-  });
-
-  if (!connection) {
-    throw new Error("GMB not connected");
-  }
+  const { connection, accessToken } =
+    await getValidConnectionWithToken(organizationId);
 
   return createLocalPost(
     accessToken,
-    `accounts/${connection.gmbAccountId}`,
+    buildAccountName(connection),
     connection.gmbLocationId,
     {
       summary: input.summary,
@@ -492,6 +460,50 @@ export async function deletePost(
 // ============================================================================
 // Helpers
 // ============================================================================
+
+/**
+ * Get a valid connection with access token for an organization.
+ * Consolidates the common pattern of validating token and fetching connection.
+ */
+async function getValidConnectionWithToken(organizationId: string): Promise<{
+  connection: GmbConnectionRow;
+  accessToken: string;
+}> {
+  const accessToken = await getValidAccessToken(organizationId);
+  const connection = await db.query.gmbConnectionTable.findFirst({
+    where: eq(gmbConnectionTable.organizationId, organizationId),
+  });
+
+  if (!connection) {
+    throw new Error("GMB not connected");
+  }
+
+  return { connection, accessToken };
+}
+
+/**
+ * Build the full location resource name for GMB API calls.
+ */
+function buildLocationName(connection: GmbConnectionRow): string {
+  return `accounts/${connection.gmbAccountId}/locations/${connection.gmbLocationId}`;
+}
+
+/**
+ * Build the full account resource name for GMB API calls.
+ */
+function buildAccountName(connection: GmbConnectionRow): string {
+  return `accounts/${connection.gmbAccountId}`;
+}
+
+/**
+ * Build the full review resource name for GMB API calls.
+ */
+function buildReviewName(
+  connection: GmbConnectionRow,
+  reviewId: string
+): string {
+  return `${buildLocationName(connection)}/reviews/${reviewId}`;
+}
 
 /**
  * Map database row to GMBConnection type

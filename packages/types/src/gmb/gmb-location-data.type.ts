@@ -7,94 +7,112 @@
  * @module @repo/types/gmb/gmb-location-data
  */
 
-/**
- * Phone numbers for a GMB location
- */
-export type GMBPhoneNumbers = {
-  primaryPhone?: string;
-  additionalPhones?: string[];
-};
+import { z } from "zod";
 
 /**
- * Category information for a GMB location
+ * Phone numbers schema
  */
-export type GMBCategory = {
-  name: string;
-  displayName: string;
-};
+export const gmbPhoneNumbersSchema = z.object({
+  primaryPhone: z.string().optional(),
+  additionalPhones: z.array(z.string()).optional(),
+});
+
+export type GMBPhoneNumbers = z.infer<typeof gmbPhoneNumbersSchema>;
 
 /**
- * Categories for a GMB location
+ * Category schema
  */
-export type GMBCategories = {
-  primaryCategory?: GMBCategory;
-  additionalCategories?: GMBCategory[];
-};
+export const gmbCategorySchema = z.object({
+  name: z.string(),
+  displayName: z.string(),
+});
+
+export type GMBCategory = z.infer<typeof gmbCategorySchema>;
 
 /**
- * Storefront address for a GMB location
+ * Categories schema
  */
-export type GMBStorefrontAddress = {
-  addressLines?: string[];
-  locality?: string;
-  administrativeArea?: string;
-  postalCode?: string;
-  regionCode?: string;
-};
+export const gmbCategoriesSchema = z.object({
+  primaryCategory: gmbCategorySchema.optional(),
+  additionalCategories: z.array(gmbCategorySchema).optional(),
+});
+
+export type GMBCategories = z.infer<typeof gmbCategoriesSchema>;
 
 /**
- * Business hours period
+ * Storefront address schema
  */
-export type GMBHoursPeriod = {
-  openDay: string;
-  openTime: string;
-  closeDay: string;
-  closeTime: string;
-};
+export const gmbStorefrontAddressSchema = z.object({
+  addressLines: z.array(z.string()).optional(),
+  locality: z.string().optional(),
+  administrativeArea: z.string().optional(),
+  postalCode: z.string().optional(),
+  regionCode: z.string().optional(),
+});
+
+export type GMBStorefrontAddress = z.infer<typeof gmbStorefrontAddressSchema>;
 
 /**
- * Regular business hours
+ * Hours period schema
  */
-export type GMBRegularHours = {
-  periods: GMBHoursPeriod[];
-};
+export const gmbHoursPeriodSchema = z.object({
+  openDay: z.string(),
+  openTime: z.string(),
+  closeDay: z.string(),
+  closeTime: z.string(),
+});
+
+export type GMBHoursPeriod = z.infer<typeof gmbHoursPeriodSchema>;
 
 /**
- * Location metadata with links
+ * Regular hours schema
  */
-export type GMBLocationMetadata = {
-  mapsUri?: string;
-  newReviewUri?: string;
-};
+export const gmbRegularHoursSchema = z.object({
+  periods: z.array(gmbHoursPeriodSchema),
+});
+
+export type GMBRegularHours = z.infer<typeof gmbRegularHoursSchema>;
 
 /**
- * Complete location data cached from GMB API
+ * Location metadata schema
  */
-export type GMBLocationData = {
+export const gmbLocationMetadataSchema = z.object({
+  mapsUri: z.string().optional(),
+  newReviewUri: z.string().optional(),
+});
+
+export type GMBLocationMetadata = z.infer<typeof gmbLocationMetadataSchema>;
+
+/**
+ * Complete location data schema
+ */
+export const gmbLocationDataSchema = z.object({
   /** Full resource name (e.g., "locations/123456789") */
-  name: string;
+  name: z.string(),
 
   /** Store code for the location */
-  storeCode?: string;
+  storeCode: z.string().optional(),
 
   /** Display title of the location */
-  title: string;
+  title: z.string(),
 
   /** Website URL */
-  websiteUri?: string;
+  websiteUri: z.string().optional(),
 
   /** Phone numbers */
-  phoneNumbers?: GMBPhoneNumbers;
+  phoneNumbers: gmbPhoneNumbersSchema.optional(),
 
   /** Business categories */
-  categories?: GMBCategories;
+  categories: gmbCategoriesSchema.optional(),
 
   /** Storefront address */
-  storefrontAddress?: GMBStorefrontAddress;
+  storefrontAddress: gmbStorefrontAddressSchema.optional(),
 
   /** Regular business hours */
-  regularHours?: GMBRegularHours;
+  regularHours: gmbRegularHoursSchema.optional(),
 
   /** Metadata including Maps and review URLs */
-  metadata?: GMBLocationMetadata;
-};
+  metadata: gmbLocationMetadataSchema.optional(),
+});
+
+export type GMBLocationData = z.infer<typeof gmbLocationDataSchema>;

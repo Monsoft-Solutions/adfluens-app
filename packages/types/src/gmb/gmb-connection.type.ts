@@ -6,63 +6,74 @@
  * @module @repo/types/gmb/gmb-connection
  */
 
-import type { GMBLocationData } from "./gmb-location-data.type";
+import { z } from "zod";
+import { gmbLocationDataSchema } from "./gmb-location-data.type";
 
 /**
- * GMB connection status
+ * GMB connection status schema
  */
-export type GMBConnectionStatus = "active" | "disconnected" | "error";
+export const gmbConnectionStatusSchema = z.enum([
+  "active",
+  "disconnected",
+  "error",
+]);
+
+export type GMBConnectionStatus = z.infer<typeof gmbConnectionStatusSchema>;
 
 /**
- * GMB connection data returned to clients
+ * GMB connection schema
  */
-export type GMBConnection = {
+export const gmbConnectionSchema = z.object({
   /** Unique identifier */
-  id: string;
+  id: z.string(),
 
   /** Organization ID this connection belongs to */
-  organizationId: string;
+  organizationId: z.string(),
 
   /** Google Business Profile account ID */
-  gmbAccountId: string;
+  gmbAccountId: z.string(),
 
   /** Google Business Profile location ID */
-  gmbLocationId: string;
+  gmbLocationId: z.string(),
 
   /** Display name of the location */
-  gmbLocationName: string | null;
+  gmbLocationName: z.string().nullable(),
 
   /** Cached location data from GMB API */
-  locationData: GMBLocationData | null;
+  locationData: gmbLocationDataSchema.nullable(),
 
   /** Connection status */
-  status: GMBConnectionStatus;
+  status: gmbConnectionStatusSchema,
 
   /** When the connection data was last synced */
-  lastSyncedAt: Date | null;
+  lastSyncedAt: z.date().nullable(),
 
   /** Last error message if status is error */
-  lastError: string | null;
+  lastError: z.string().nullable(),
 
   /** User ID who connected this account */
-  connectedByUserId: string;
+  connectedByUserId: z.string(),
 
   /** When the connection was created */
-  createdAt: Date;
-};
+  createdAt: z.date(),
+});
+
+export type GMBConnection = z.infer<typeof gmbConnectionSchema>;
 
 /**
- * Input for creating/updating a GMB connection
+ * Input schema for creating/updating a GMB connection
  */
-export type GMBConnectionInput = {
-  organizationId: string;
-  connectedByUserId: string;
-  gmbAccountId: string;
-  gmbLocationId: string;
-  gmbLocationName?: string;
-  accessToken: string;
-  refreshToken?: string;
-  accessTokenExpiresAt?: Date;
-  scope?: string;
-  locationData?: GMBLocationData;
-};
+export const gmbConnectionInputSchema = z.object({
+  organizationId: z.string(),
+  connectedByUserId: z.string(),
+  gmbAccountId: z.string(),
+  gmbLocationId: z.string(),
+  gmbLocationName: z.string().optional(),
+  accessToken: z.string(),
+  refreshToken: z.string().optional(),
+  accessTokenExpiresAt: z.date().optional(),
+  scope: z.string().optional(),
+  locationData: gmbLocationDataSchema.optional(),
+});
+
+export type GMBConnectionInput = z.infer<typeof gmbConnectionInputSchema>;

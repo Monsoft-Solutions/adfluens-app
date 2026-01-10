@@ -6,168 +6,201 @@
  * @module @repo/types/gmb/gmb-post
  */
 
-/**
- * Post topic type
- */
-export type GMBPostTopicType = "STANDARD" | "EVENT" | "OFFER" | "PRODUCT";
+import { z } from "zod";
 
 /**
- * Post state
+ * Post topic type schema
  */
-export type GMBPostState = "LIVE" | "REJECTED" | "PROCESSING";
+export const gmbPostTopicTypeSchema = z.enum([
+  "STANDARD",
+  "EVENT",
+  "OFFER",
+  "PRODUCT",
+]);
+
+export type GMBPostTopicType = z.infer<typeof gmbPostTopicTypeSchema>;
 
 /**
- * Media format
+ * Post state schema
  */
-export type GMBMediaFormat = "PHOTO" | "VIDEO";
+export const gmbPostStateSchema = z.enum(["LIVE", "REJECTED", "PROCESSING"]);
+
+export type GMBPostState = z.infer<typeof gmbPostStateSchema>;
 
 /**
- * Call to action types
+ * Media format schema
  */
-export type GMBCallToActionType =
-  | "BOOK"
-  | "ORDER"
-  | "SHOP"
-  | "LEARN_MORE"
-  | "SIGN_UP"
-  | "GET_OFFER"
-  | "CALL";
+export const gmbMediaFormatSchema = z.enum(["PHOTO", "VIDEO"]);
+
+export type GMBMediaFormat = z.infer<typeof gmbMediaFormatSchema>;
 
 /**
- * Media item in a post
+ * Call to action type schema
  */
-export type GMBPostMedia = {
+export const gmbCallToActionTypeSchema = z.enum([
+  "BOOK",
+  "ORDER",
+  "SHOP",
+  "LEARN_MORE",
+  "SIGN_UP",
+  "GET_OFFER",
+  "CALL",
+]);
+
+export type GMBCallToActionType = z.infer<typeof gmbCallToActionTypeSchema>;
+
+/**
+ * Media item schema
+ */
+export const gmbPostMediaSchema = z.object({
   /** Media format (PHOTO or VIDEO) */
-  mediaFormat: GMBMediaFormat;
+  mediaFormat: gmbMediaFormatSchema,
 
   /** Source URL of the media */
-  sourceUrl: string;
-};
+  sourceUrl: z.string(),
+});
+
+export type GMBPostMedia = z.infer<typeof gmbPostMediaSchema>;
 
 /**
- * Call to action for a post
+ * Call to action schema
  */
-export type GMBCallToAction = {
+export const gmbCallToActionSchema = z.object({
   /** Action type */
-  actionType: GMBCallToActionType;
+  actionType: gmbCallToActionTypeSchema,
 
   /** URL for the action */
-  url?: string;
-};
+  url: z.string().optional(),
+});
+
+export type GMBCallToAction = z.infer<typeof gmbCallToActionSchema>;
 
 /**
- * Event information for EVENT type posts
+ * Date part schema
  */
-export type GMBEventInfo = {
+export const gmbDatePartSchema = z.object({
+  year: z.number(),
+  month: z.number(),
+  day: z.number(),
+});
+
+/**
+ * Time part schema
+ */
+export const gmbTimePartSchema = z.object({
+  hours: z.number(),
+  minutes: z.number(),
+});
+
+/**
+ * Event information schema
+ */
+export const gmbEventInfoSchema = z.object({
   /** Event title */
-  title?: string;
+  title: z.string().optional(),
 
-  /** Event start date/time */
-  startDate?: {
-    year: number;
-    month: number;
-    day: number;
-  };
+  /** Event start date */
+  startDate: gmbDatePartSchema.optional(),
 
-  /** Event end date/time */
-  endDate?: {
-    year: number;
-    month: number;
-    day: number;
-  };
+  /** Event end date */
+  endDate: gmbDatePartSchema.optional(),
 
   /** Event start time */
-  startTime?: {
-    hours: number;
-    minutes: number;
-  };
+  startTime: gmbTimePartSchema.optional(),
 
   /** Event end time */
-  endTime?: {
-    hours: number;
-    minutes: number;
-  };
-};
+  endTime: gmbTimePartSchema.optional(),
+});
+
+export type GMBEventInfo = z.infer<typeof gmbEventInfoSchema>;
 
 /**
- * Offer information for OFFER type posts
+ * Offer information schema
  */
-export type GMBOfferInfo = {
+export const gmbOfferInfoSchema = z.object({
   /** Coupon code */
-  couponCode?: string;
+  couponCode: z.string().optional(),
 
   /** Redemption URL */
-  redeemOnlineUrl?: string;
+  redeemOnlineUrl: z.string().optional(),
 
   /** Terms and conditions */
-  termsConditions?: string;
-};
+  termsConditions: z.string().optional(),
+});
+
+export type GMBOfferInfo = z.infer<typeof gmbOfferInfoSchema>;
 
 /**
- * Complete post data from GMB API
+ * Complete post schema
  */
-export type GMBPost = {
+export const gmbPostSchema = z.object({
   /** Full resource name of the post */
-  name: string;
+  name: z.string(),
 
   /** Language code */
-  languageCode: string;
+  languageCode: z.string(),
 
   /** Post summary/body text */
-  summary: string;
+  summary: z.string(),
 
   /** Call to action */
-  callToAction?: GMBCallToAction;
+  callToAction: gmbCallToActionSchema.optional(),
 
   /** Media attachments */
-  media?: GMBPostMedia[];
+  media: z.array(gmbPostMediaSchema).optional(),
 
   /** Post topic type */
-  topicType: GMBPostTopicType;
+  topicType: gmbPostTopicTypeSchema,
 
   /** When the post was created */
-  createTime: string;
+  createTime: z.string(),
 
   /** When the post was last updated */
-  updateTime: string;
+  updateTime: z.string(),
 
   /** Post state */
-  state: GMBPostState;
+  state: gmbPostStateSchema,
 
   /** Event information (for EVENT type posts) */
-  event?: GMBEventInfo;
+  event: gmbEventInfoSchema.optional(),
 
   /** Offer information (for OFFER type posts) */
-  offer?: GMBOfferInfo;
-};
+  offer: gmbOfferInfoSchema.optional(),
+});
+
+export type GMBPost = z.infer<typeof gmbPostSchema>;
 
 /**
- * Paginated list of posts response
+ * Paginated list of posts response schema
  */
-export type GMBPostsResponse = {
+export const gmbPostsResponseSchema = z.object({
   /** List of posts */
-  posts: GMBPost[];
+  posts: z.array(gmbPostSchema),
 
   /** Token for fetching the next page */
-  nextPageToken?: string;
-};
+  nextPageToken: z.string().optional(),
+});
+
+export type GMBPostsResponse = z.infer<typeof gmbPostsResponseSchema>;
 
 /**
- * Input for creating a new post
+ * Create post input schema
  */
-export type GMBCreatePostInput = {
+export const gmbCreatePostInputSchema = z.object({
   /** Post summary/body text */
-  summary: string;
+  summary: z.string(),
 
   /** Post topic type (defaults to STANDARD) */
-  topicType?: GMBPostTopicType;
+  topicType: gmbPostTopicTypeSchema.optional(),
 
   /** Call to action */
-  callToAction?: GMBCallToAction;
+  callToAction: gmbCallToActionSchema.optional(),
 
   /** Media URLs to attach */
-  mediaUrls?: string[];
+  mediaUrls: z.array(z.string()).optional(),
 
   /** Language code (defaults to "en") */
-  languageCode?: string;
-};
+  languageCode: z.string().optional(),
+});
+
+export type GMBCreatePostInput = z.infer<typeof gmbCreatePostInputSchema>;
