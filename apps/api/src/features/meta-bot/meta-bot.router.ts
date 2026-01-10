@@ -440,6 +440,30 @@ export const metaBotRouter = router({
     }),
 
   /**
+   * Update inbox priority
+   */
+  updateInboxPriority: organizationProcedure
+    .input(
+      z.object({
+        inboxId: z.string().uuid(),
+        priority: z.enum(["low", "normal", "high", "urgent"]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await db
+        .update(metaTeamInboxTable)
+        .set({ priority: input.priority })
+        .where(
+          and(
+            eq(metaTeamInboxTable.id, input.inboxId),
+            eq(metaTeamInboxTable.organizationId, ctx.organization.id)
+          )
+        );
+
+      return { success: true };
+    }),
+
+  /**
    * Return conversation to bot
    */
   returnToBot: organizationProcedure
@@ -473,6 +497,9 @@ export const metaBotRouter = router({
       where: eq(metaTeamInboxTable.organizationId, ctx.organization.id),
     });
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const stats = {
       total: allItems.length,
       open: allItems.filter((i) => i.status === "open").length,
@@ -481,6 +508,12 @@ export const metaBotRouter = router({
       resolved: allItems.filter((i) => i.status === "resolved").length,
       unassigned: allItems.filter((i) => !i.assignedToUserId).length,
       urgent: allItems.filter((i) => i.priority === "urgent").length,
+      resolvedToday: allItems.filter(
+        (i) =>
+          i.status === "resolved" &&
+          i.resolvedAt &&
+          new Date(i.resolvedAt) >= today
+      ).length,
     };
 
     return stats;
