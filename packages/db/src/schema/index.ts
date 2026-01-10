@@ -14,3 +14,13 @@ export * from "./social-media-post.table";
 
 // GMB (Google Business Profile) tables
 export * from "./gmb-connection.table";
+
+// Meta (Facebook/Instagram) tables
+export * from "./meta-connection.table";
+export * from "./meta-page.table";
+export * from "./meta-lead.table";
+export * from "./meta-conversation.table";
+export * from "./meta-conversation-config.table";
+
+// Notification tables
+export * from "./notification.table";

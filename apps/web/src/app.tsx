@@ -15,6 +15,7 @@ import { InstagramView } from "./features/social-media/views/instagram.view";
 import { FacebookView } from "./features/social-media/views/facebook.view";
 import { TiktokView } from "./features/social-media/views/tiktok.view";
 import { GMBView } from "./features/gmb/views/gmb.view";
+import { MetaView } from "./features/meta/views/meta.view";
 import { SignInView } from "./features/auth/views/sign-in.view";
 import { SignUpView } from "./features/auth/views/sign-up.view";
 
@@ -74,6 +75,7 @@ const App: React.FC = () => {
                       />
                       <Route path="/social/tiktok" element={<TiktokView />} />
                       <Route path="/gmb" element={<GMBView />} />
+                      <Route path="/meta" element={<MetaView />} />
                     </Route>
                   </Route>
                 </Routes>

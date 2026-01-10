@@ -74,3 +74,6 @@ export {
   TableCell,
   TableCaption,
 } from "./components/table";
+export { Avatar, AvatarImage, AvatarFallback } from "./components/avatar";
+export { Checkbox } from "./components/checkbox";
+export { Switch } from "./components/switch";

@@ -15,6 +15,13 @@
       "when": 1767985170954,
       "tag": "0001_careful_the_hand",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1768058217577,
+      "tag": "0002_bumpy_silver_samurai",
+      "breakpoints": true
     }
   ]
 }

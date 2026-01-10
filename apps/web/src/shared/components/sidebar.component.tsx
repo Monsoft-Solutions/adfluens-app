@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button, cn, Skeleton, Separator, ThemeToggleIcon } from "@repo/ui";
 import { GoogleBusinessIcon } from "@/shared/components/icons/google-business.icon";
+import { MetaBusinessIcon } from "@/shared/components/icons/meta-business.icon";
 
 /**
  * TikTok icon component (not available in lucide-react)
@@ -144,6 +145,11 @@ export const Sidebar: React.FC = () => {
             to="/gmb"
             icon={<GoogleBusinessIcon className="w-5 h-5" />}
             label="Google Business"
+          />
+          <NavItem
+            to="/meta"
+            icon={<MetaBusinessIcon className="w-5 h-5" />}
+            label="Meta Business"
           />
         </div>
       </nav>

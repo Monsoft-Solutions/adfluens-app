@@ -14,6 +14,19 @@ export {
   socialMediaPostTableRelations,
   gmbConnectionTable,
   gmbConnectionTableRelations,
+  // Meta tables
+  metaConnectionTable,
+  metaConnectionTableRelations,
+  metaPageTable,
+  metaPageTableRelations,
+  metaLeadTable,
+  metaLeadTableRelations,
+  metaConversationTable,
+  metaConversationTableRelations,
+  metaConversationConfigTable,
+  metaConversationConfigTableRelations,
+  // Notification table
+  notificationTable,
 } from "./schema";
 
 // Re-export drizzle-orm utilities for convenience
@@ -58,3 +71,46 @@ export type {
   GmbConnectionInsert,
   GmbConnectionRow,
 } from "./schema/gmb-connection.table";
+
+// Re-export Meta connection types
+export type {
+  MetaConnectionInsert,
+  MetaConnectionRow,
+} from "./schema/meta-connection.table";
+
+// Re-export Meta page types
+export type {
+  MetaPageInsert,
+  MetaPageRow,
+  MetaPageData,
+} from "./schema/meta-page.table";
+
+// Re-export Meta lead types
+export type {
+  MetaLeadInsert,
+  MetaLeadRow,
+  MetaLeadFieldData,
+} from "./schema/meta-lead.table";
+
+// Re-export Meta conversation types
+export type {
+  MetaConversationInsert,
+  MetaConversationRow,
+  MetaMessage,
+} from "./schema/meta-conversation.table";
+
+// Re-export Meta conversation config types
+export type {
+  MetaConversationConfigInsert,
+  MetaConversationConfigRow,
+  MetaResponseRule,
+  MetaAiPersonality,
+  MetaBusinessHours,
+} from "./schema/meta-conversation-config.table";
+
+// Re-export Notification types
+export type {
+  NotificationInsert,
+  NotificationRow,
+  NotificationPayload,
+} from "./schema/notification.table";

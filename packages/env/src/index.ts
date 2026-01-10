@@ -33,11 +33,14 @@ export const env = createEnv({
     GOOGLE_CLIENT_ID: z.string().min(1, "Google Client ID is required"),
     GOOGLE_CLIENT_SECRET: z.string().min(1, "Google Client Secret is required"),
 
-    /** Facebook OAuth credentials */
+    /** Facebook/Meta OAuth credentials (used for both social login and Meta Business APIs) */
     FACEBOOK_CLIENT_ID: z.string().min(1, "Facebook Client ID is required"),
     FACEBOOK_CLIENT_SECRET: z
       .string()
       .min(1, "Facebook Client Secret is required"),
+
+    /** Meta webhook verification token (for lead and message webhooks) */
+    META_WEBHOOK_VERIFY_TOKEN: z.string().min(1).optional(),
 
     /** ScrapingDog API key for web scraping */
     SCRAPINGDOG_API_KEY: z.string().min(1, "ScrapingDog API key is required"),
