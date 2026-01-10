@@ -70,7 +70,7 @@ export const gmbCallToActionSchema = z.object({
   actionType: gmbCallToActionTypeSchema,
 
   /** URL for the action */
-  url: z.string().optional(),
+  url: z.url().optional(),
 });
 
 export type GMBCallToAction = z.infer<typeof gmbCallToActionSchema>;
@@ -197,7 +197,7 @@ export const gmbCreatePostInputSchema = z.object({
   callToAction: gmbCallToActionSchema.optional(),
 
   /** Media URLs to attach */
-  mediaUrls: z.array(z.string()).optional(),
+  mediaUrls: z.array(z.url()).optional(),
 
   /** Language code (defaults to "en") */
   languageCode: z.string().optional(),

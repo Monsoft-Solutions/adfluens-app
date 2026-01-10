@@ -71,7 +71,7 @@ export const gmbConnectionInputSchema = z.object({
   gmbLocationName: z.string().optional(),
   accessToken: z.string(),
   refreshToken: z.string().optional(),
-  accessTokenExpiresAt: z.date().optional(),
+  accessTokenExpiresAt: z.coerce.date().optional(),
   scope: z.string().optional(),
   locationData: gmbLocationDataSchema.optional(),
 });
