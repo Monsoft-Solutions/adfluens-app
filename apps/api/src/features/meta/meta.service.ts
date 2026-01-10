@@ -39,6 +39,10 @@ import {
   fetchLeadForm,
   sendMessage as sendMetaMessage,
   fetchUserProfile,
+  fetchPageLeadForms,
+  fetchFormLeads,
+  fetchPageConversations,
+  fetchConversationMessages,
 } from "./meta-api.utils";
 
 // Token refresh buffer - refresh 10 days before expiration
@@ -381,6 +385,260 @@ export async function disconnect(organizationId: string): Promise<void> {
   await db
     .delete(metaConnectionTable)
     .where(eq(metaConnectionTable.id, connection.id));
+}
+
+/**
+ * Update page settings
+ */
+export async function updatePage(
+  pageId: string,
+  organizationId: string,
+  updates: { messengerEnabled?: boolean; instagramDmEnabled?: boolean }
+): Promise<void> {
+  await db
+    .update(metaPageTable)
+    .set({ ...updates, updatedAt: new Date() })
+    .where(
+      and(
+        eq(metaPageTable.id, pageId),
+        eq(metaPageTable.organizationId, organizationId)
+      )
+    );
+}
+
+// ============================================================================
+// Sync Functions
+// ============================================================================
+
+/**
+ * Sync leads from Meta for a page
+ */
+export async function syncPageLeads(
+  pageId: string,
+  organizationId: string
+): Promise<{ synced: number; errors: number }> {
+  const page = await getPage(pageId, organizationId);
+  if (!page) {
+    throw new Error("Page not found");
+  }
+
+  let synced = 0;
+  let errors = 0;
+
+  try {
+    // Fetch all lead forms for the page
+    const formsResponse = await fetchPageLeadForms(
+      page.pageId,
+      page.pageAccessToken
+    );
+
+    // For each form, fetch leads
+    for (const form of formsResponse.data) {
+      try {
+        const leadsResponse = await fetchFormLeads(
+          form.id,
+          page.pageAccessToken,
+          100
+        );
+
+        for (const leadData of leadsResponse.data) {
+          // Check if lead already exists
+          const existingLead = await db.query.metaLeadTable.findFirst({
+            where: eq(metaLeadTable.leadId, leadData.id),
+          });
+
+          if (existingLead) {
+            continue; // Skip already synced leads
+          }
+
+          // Extract common fields from field_data
+          let fullName: string | undefined;
+          let email: string | undefined;
+          let phone: string | undefined;
+
+          const fieldData = leadData.field_data || [];
+          for (const field of fieldData) {
+            const value = field.values?.[0];
+            if (!value) continue;
+
+            switch (field.name?.toLowerCase()) {
+              case "full_name":
+              case "name":
+                fullName = value;
+                break;
+              case "email":
+                email = value;
+                break;
+              case "phone_number":
+              case "phone":
+                phone = value;
+                break;
+            }
+          }
+
+          const leadInsert: MetaLeadInsert = {
+            metaPageId: page.id,
+            organizationId: page.organizationId,
+            leadId: leadData.id,
+            formId: leadData.form_id,
+            formName: form.name,
+            adId: leadData.ad_id,
+            adName: leadData.ad_name,
+            campaignId: leadData.campaign_id,
+            campaignName: leadData.campaign_name,
+            leadCreatedAt: new Date(leadData.created_time),
+            fullName,
+            email,
+            phone,
+            fieldData: fieldData.length > 0 ? fieldData : undefined,
+            status: "new",
+          };
+
+          await db.insert(metaLeadTable).values(leadInsert);
+          synced++;
+        }
+      } catch (formError) {
+        console.error(`Failed to sync leads from form ${form.id}:`, formError);
+        errors++;
+      }
+    }
+
+    // Update page last synced timestamp
+    await db
+      .update(metaPageTable)
+      .set({ lastSyncedAt: new Date() })
+      .where(eq(metaPageTable.id, pageId));
+  } catch (error) {
+    console.error(`Failed to sync leads for page ${pageId}:`, error);
+    throw error;
+  }
+
+  return { synced, errors };
+}
+
+/**
+ * Sync conversations from Meta for a page
+ */
+export async function syncPageConversations(
+  pageId: string,
+  organizationId: string,
+  platform: "messenger" | "instagram" = "messenger"
+): Promise<{ synced: number; errors: number }> {
+  const page = await getPage(pageId, organizationId);
+  if (!page) {
+    throw new Error("Page not found");
+  }
+
+  let synced = 0;
+  let errors = 0;
+
+  try {
+    // Fetch conversations from Meta
+    const conversationsResponse = await fetchPageConversations(
+      page.pageId,
+      page.pageAccessToken,
+      platform,
+      50
+    );
+
+    for (const conv of conversationsResponse.data) {
+      try {
+        // Check if conversation already exists
+        const existingConv = await db.query.metaConversationTable.findFirst({
+          where: and(
+            eq(metaConversationTable.metaPageId, page.id),
+            eq(metaConversationTable.threadId, conv.id)
+          ),
+        });
+
+        if (existingConv) {
+          // Conversation exists, optionally update messages
+          continue;
+        }
+
+        // Get participant info (first non-page participant)
+        const participant = conv.participants?.data?.find(
+          (p) => p.id !== page.pageId
+        );
+        if (!participant) {
+          continue;
+        }
+
+        // Try to get participant profile
+        let participantName = participant.name;
+        let participantProfilePic: string | undefined;
+
+        try {
+          const profile = await fetchUserProfile(
+            participant.id,
+            page.pageAccessToken
+          );
+          participantName = profile.name || participantName;
+          participantProfilePic = profile.profile_pic;
+        } catch {
+          // Profile may not be available
+        }
+
+        // Get last message preview
+        const lastMessage = conv.messages?.data?.[0];
+
+        const conversationInsert: MetaConversationInsert = {
+          metaPageId: page.id,
+          organizationId: page.organizationId,
+          platform,
+          threadId: conv.id,
+          participantId: participant.id,
+          participantName,
+          participantProfilePic,
+          lastMessagePreview: lastMessage?.message?.substring(0, 100),
+          lastMessageAt: lastMessage
+            ? new Date(lastMessage.created_time)
+            : new Date(conv.updated_time),
+          aiEnabled: true,
+          messageCount: 0,
+        };
+
+        // Fetch full message history for this conversation
+        try {
+          const messagesResponse = await fetchConversationMessages(
+            conv.id,
+            page.pageAccessToken,
+            10
+          );
+
+          const recentMessages = messagesResponse.data.map((msg) => ({
+            id: msg.id,
+            timestamp: msg.created_time,
+            senderId: msg.from.id,
+            isFromPage: msg.from.id === page.pageId,
+            text: msg.message,
+          }));
+
+          conversationInsert.recentMessages = recentMessages.reverse();
+          conversationInsert.messageCount = recentMessages.length;
+        } catch {
+          // Messages fetch failed, continue without history
+        }
+
+        await db.insert(metaConversationTable).values(conversationInsert);
+        synced++;
+      } catch (convError) {
+        console.error(`Failed to sync conversation ${conv.id}:`, convError);
+        errors++;
+      }
+    }
+
+    // Update page last synced timestamp
+    await db
+      .update(metaPageTable)
+      .set({ lastSyncedAt: new Date() })
+      .where(eq(metaPageTable.id, pageId));
+  } catch (error) {
+    console.error(`Failed to sync conversations for page ${pageId}:`, error);
+    throw error;
+  }
+
+  return { synced, errors };
 }
 
 // ============================================================================

@@ -577,3 +577,94 @@ export async function getAppAccessToken(
   const data = (await response.json()) as { access_token: string };
   return data.access_token;
 }
+
+// ============================================================================
+// Lead Sync Functions
+// ============================================================================
+
+/**
+ * Fetch all lead forms for a page
+ */
+export async function fetchPageLeadForms(
+  pageId: string,
+  pageAccessToken: string
+): Promise<{
+  data: Array<{
+    id: string;
+    name: string;
+    status?: string;
+    leads_count?: number;
+  }>;
+  paging?: { next?: string };
+}> {
+  const url = `${GRAPH_API_URL}/${pageId}/leadgen_forms?fields=id,name,status,leads_count`;
+  return metaFetch(url, pageAccessToken);
+}
+
+/**
+ * Fetch leads from a specific form
+ */
+export async function fetchFormLeads(
+  formId: string,
+  pageAccessToken: string,
+  limit = 50
+): Promise<{
+  data: MetaLeadData[];
+  paging?: { next?: string; cursors?: { after?: string } };
+}> {
+  const fields = [
+    "id",
+    "created_time",
+    "form_id",
+    "ad_id",
+    "ad_name",
+    "campaign_id",
+    "campaign_name",
+    "field_data",
+  ].join(",");
+  const url = `${GRAPH_API_URL}/${formId}/leads?fields=${fields}&limit=${limit}`;
+  return metaFetch(url, pageAccessToken);
+}
+
+/**
+ * Fetch leads from a page directly (alternative method)
+ */
+export async function fetchPageLeads(
+  pageId: string,
+  pageAccessToken: string,
+  limit = 50
+): Promise<{
+  data: MetaLeadData[];
+  paging?: { next?: string };
+}> {
+  const fields = [
+    "id",
+    "created_time",
+    "form_id",
+    "ad_id",
+    "ad_name",
+    "campaign_id",
+    "campaign_name",
+    "field_data",
+  ].join(",");
+  const url = `${GRAPH_API_URL}/${pageId}/leadgen_forms?fields=leads.limit(${limit}){${fields}}`;
+
+  try {
+    const result = await metaFetch<{
+      data: Array<{
+        leads?: { data: MetaLeadData[] };
+      }>;
+    }>(url, pageAccessToken);
+
+    // Flatten leads from all forms
+    const allLeads: MetaLeadData[] = [];
+    for (const form of result.data) {
+      if (form.leads?.data) {
+        allLeads.push(...form.leads.data);
+      }
+    }
+    return { data: allLeads };
+  } catch {
+    return { data: [] };
+  }
+}

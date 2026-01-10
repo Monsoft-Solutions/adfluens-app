@@ -19,6 +19,9 @@ import {
   getPages,
   getPage,
   disconnect,
+  updatePage,
+  syncPageLeads,
+  syncPageConversations,
   getLeads,
   updateLeadStatus,
   getConversations,
@@ -182,8 +185,51 @@ export const metaRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Page not found" });
       }
 
-      // Update would go here - implement in service
+      await updatePage(input.pageId, ctx.organization.id, {
+        messengerEnabled: input.messengerEnabled,
+        instagramDmEnabled: input.instagramDmEnabled,
+      });
+
       return { success: true };
+    }),
+
+  /**
+   * Sync historical leads from Meta for a page
+   */
+  syncLeads: organizationProcedure
+    .input(z.object({ pageId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const page = await getPage(input.pageId, ctx.organization.id);
+      if (!page) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Page not found" });
+      }
+
+      const result = await syncPageLeads(input.pageId, ctx.organization.id);
+      return result;
+    }),
+
+  /**
+   * Sync historical conversations from Meta for a page
+   */
+  syncConversations: organizationProcedure
+    .input(
+      z.object({
+        pageId: z.string().uuid(),
+        platform: metaPlatformSchema.optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const page = await getPage(input.pageId, ctx.organization.id);
+      if (!page) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Page not found" });
+      }
+
+      const result = await syncPageConversations(
+        input.pageId,
+        ctx.organization.id,
+        input.platform || "messenger"
+      );
+      return result;
     }),
 
   // =========================================================================
