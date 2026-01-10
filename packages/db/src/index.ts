@@ -25,6 +25,17 @@ export {
   metaConversationTableRelations,
   metaConversationConfigTable,
   metaConversationConfigTableRelations,
+  // Meta bot tables
+  metaBotFlowTable,
+  metaBotFlowTableRelations,
+  metaConversationStateTable,
+  metaConversationStateTableRelations,
+  metaTeamInboxTable,
+  metaTeamInboxTableRelations,
+  metaAppointmentConfigTable,
+  metaAppointmentConfigTableRelations,
+  metaAppointmentTable,
+  metaAppointmentTableRelations,
   // Notification table
   notificationTable,
 } from "./schema";
@@ -106,7 +117,47 @@ export type {
   MetaResponseRule,
   MetaAiPersonality,
   MetaBusinessHours,
+  MetaSalesConfig,
+  MetaSupportConfig,
 } from "./schema/meta-conversation-config.table";
+
+// Re-export Meta bot flow types
+export type {
+  MetaBotFlowInsert,
+  MetaBotFlowRow,
+  MetaBotFlowTrigger,
+  MetaBotFlowAction,
+  MetaBotFlowNode,
+} from "./schema/meta-bot-flow.table";
+
+// Re-export Meta conversation state types
+export type {
+  MetaConversationStateInsert,
+  MetaConversationStateRow,
+  MetaConversationContext,
+  MetaSalesContext,
+  MetaAppointmentContext,
+} from "./schema/meta-conversation-state.table";
+
+// Re-export Meta team inbox types
+export type {
+  MetaTeamInboxInsert,
+  MetaTeamInboxRow,
+} from "./schema/meta-team-inbox.table";
+
+// Re-export Meta appointment config types
+export type {
+  MetaAppointmentConfigInsert,
+  MetaAppointmentConfigRow,
+  MetaAppointmentSlot,
+  MetaAppointmentService,
+} from "./schema/meta-appointment-config.table";
+
+// Re-export Meta appointment types
+export type {
+  MetaAppointmentInsert,
+  MetaAppointmentRow,
+} from "./schema/meta-appointment.table";
 
 // Re-export Notification types
 export type {

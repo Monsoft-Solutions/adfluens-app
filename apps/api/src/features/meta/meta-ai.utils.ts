@@ -318,6 +318,13 @@ export async function testAiResponse(
     useOrganizationContext: config.useOrganizationContext ?? true,
     useWebsiteContext: config.useWebsiteContext ?? true,
     additionalContext: config.additionalContext || null,
+    salesAssistantEnabled: config.salesAssistantEnabled ?? false,
+    customerSupportEnabled: config.customerSupportEnabled ?? true,
+    appointmentSchedulingEnabled: config.appointmentSchedulingEnabled ?? false,
+    flowsEnabled: config.flowsEnabled ?? false,
+    fallbackToAi: config.fallbackToAi ?? true,
+    salesConfig: config.salesConfig || null,
+    supportConfig: config.supportConfig || null,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

@@ -34,6 +34,23 @@ export type MetaAiPersonality = {
 };
 
 /**
+ * Sales assistant configuration
+ */
+export type MetaSalesConfig = {
+  qualificationQuestions?: string[];
+  autoHandoffOnQualified?: boolean;
+  leadScoreThreshold?: number;
+};
+
+/**
+ * Customer support configuration
+ */
+export type MetaSupportConfig = {
+  maxAutoReplies?: number;
+  escalationSentiment?: number;
+};
+
+/**
  * Business hours schedule
  */
 export type MetaBusinessHours = {
@@ -105,6 +122,37 @@ export const metaConversationConfigTable = pgTable(
 
     /** Additional context/instructions for the AI */
     additionalContext: text("additional_context"),
+
+    // =====================================================================
+    // Bot Capabilities
+    // =====================================================================
+
+    /** Whether sales assistant mode is enabled */
+    salesAssistantEnabled: boolean("sales_assistant_enabled")
+      .default(false)
+      .notNull(),
+
+    /** Whether customer support mode is enabled */
+    customerSupportEnabled: boolean("customer_support_enabled")
+      .default(true)
+      .notNull(),
+
+    /** Whether appointment scheduling is enabled */
+    appointmentSchedulingEnabled: boolean("appointment_scheduling_enabled")
+      .default(false)
+      .notNull(),
+
+    /** Whether bot flows are enabled */
+    flowsEnabled: boolean("flows_enabled").default(false).notNull(),
+
+    /** Whether to fall back to AI when flows don't match */
+    fallbackToAi: boolean("fallback_to_ai").default(true).notNull(),
+
+    /** Sales assistant configuration */
+    salesConfig: jsonb("sales_config").$type<MetaSalesConfig>(),
+
+    /** Customer support configuration */
+    supportConfig: jsonb("support_config").$type<MetaSupportConfig>(),
 
     /** Record timestamps */
     createdAt: timestamp("created_at").defaultNow().notNull(),

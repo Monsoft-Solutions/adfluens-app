@@ -7,19 +7,15 @@
 import crypto from "crypto";
 import type { Request, Response } from "express";
 import { env } from "@repo/env";
-import { db, eq, metaPageTable } from "@repo/db";
+import { db, eq, metaPageTable, metaConversationTable } from "@repo/db";
 import {
   processLeadWebhook,
   getOrCreateConversation,
   updateConversationWithMessage,
-  getConversationConfig,
   sendConversationMessage,
 } from "./meta.service";
-import { generateAiResponse, shouldTriggerHandoff } from "./meta-ai.utils";
-import {
-  notifyNewLead,
-  notifyHandoffRequest,
-} from "./meta-notification.service";
+import { notifyNewLead } from "./meta-notification.service";
+import { processIncomingMessage } from "../meta-bot/meta-bot.service";
 
 /**
  * Verify webhook signature from Meta
@@ -186,46 +182,32 @@ async function processMessengerEvent(
     timestamp,
   });
 
-  // Check if AI should respond
-  const config = await getConversationConfig(page.id, page.organizationId);
-
-  if (!config?.aiEnabled) return;
-
-  // Check for handoff keywords
-  if (
-    messageText &&
-    (await shouldTriggerHandoff(messageText, config.handoffKeywords || []))
-  ) {
-    await notifyHandoffRequest({
-      organizationId: page.organizationId,
-      conversationId,
-      pageId: page.id,
-      pageName: page.pageName,
-      platform: "messenger",
-      reason: `Handoff keyword detected: "${messageText.substring(0, 50)}"`,
-    });
-    return;
-  }
-
-  // Generate and send AI response
+  // Process through bot service
   if (messageText) {
     try {
-      const aiResponse = await generateAiResponse(
-        page.organizationId,
-        config,
-        messageText,
-        "messenger"
-      );
+      // Get participant name if available
+      const conversation = await db.query.metaConversationTable.findFirst({
+        where: eq(metaConversationTable.id, conversationId),
+      });
 
-      if (aiResponse) {
+      const botResult = await processIncomingMessage({
+        conversationId,
+        pageId: page.id,
+        organizationId: page.organizationId,
+        message: messageText,
+        platform: "messenger",
+        participantName: conversation?.participantName || undefined,
+      });
+
+      if (botResult.handled && botResult.response) {
         await sendConversationMessage(
           conversationId,
           page.organizationId,
-          aiResponse
+          botResult.response
         );
       }
     } catch (error) {
-      console.error("[meta-webhook] AI response generation failed:", error);
+      console.error("[meta-webhook] Bot processing failed:", error);
     }
   }
 }
@@ -282,46 +264,32 @@ async function processInstagramEvent(
     timestamp,
   });
 
-  // Check if AI should respond
-  const config = await getConversationConfig(page.id, page.organizationId);
-
-  if (!config?.aiEnabled) return;
-
-  // Check for handoff keywords
-  if (
-    messageText &&
-    (await shouldTriggerHandoff(messageText, config.handoffKeywords || []))
-  ) {
-    await notifyHandoffRequest({
-      organizationId: page.organizationId,
-      conversationId,
-      pageId: page.id,
-      pageName: page.pageName,
-      platform: "instagram",
-      reason: `Handoff keyword detected: "${messageText.substring(0, 50)}"`,
-    });
-    return;
-  }
-
-  // Generate and send AI response
+  // Process through bot service
   if (messageText) {
     try {
-      const aiResponse = await generateAiResponse(
-        page.organizationId,
-        config,
-        messageText,
-        "instagram"
-      );
+      // Get participant name if available
+      const conversation = await db.query.metaConversationTable.findFirst({
+        where: eq(metaConversationTable.id, conversationId),
+      });
 
-      if (aiResponse) {
+      const botResult = await processIncomingMessage({
+        conversationId,
+        pageId: page.id,
+        organizationId: page.organizationId,
+        message: messageText,
+        platform: "instagram",
+        participantName: conversation?.participantName || undefined,
+      });
+
+      if (botResult.handled && botResult.response) {
         await sendConversationMessage(
           conversationId,
           page.organizationId,
-          aiResponse
+          botResult.response
         );
       }
     } catch (error) {
-      console.error("[meta-webhook] AI response generation failed:", error);
+      console.error("[meta-webhook] Bot processing failed:", error);
     }
   }
 }

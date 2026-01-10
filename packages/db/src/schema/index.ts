@@ -21,6 +21,11 @@ export * from "./meta-page.table";
 export * from "./meta-lead.table";
 export * from "./meta-conversation.table";
 export * from "./meta-conversation-config.table";
+export * from "./meta-bot-flow.table";
+export * from "./meta-conversation-state.table";
+export * from "./meta-team-inbox.table";
+export * from "./meta-appointment-config.table";
+export * from "./meta-appointment.table";
 
 // Notification tables
 export * from "./notification.table";
