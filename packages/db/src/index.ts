@@ -12,6 +12,8 @@ export {
   socialMediaAccountTableRelations,
   socialMediaPostTable,
   socialMediaPostTableRelations,
+  gmbConnectionTable,
+  gmbConnectionTableRelations,
 } from "./schema";
 
 // Re-export drizzle-orm utilities for convenience
@@ -50,3 +52,9 @@ export type {
   SocialMediaPostInsert,
   SocialMediaPostRow,
 } from "./schema/social-media-post.table";
+
+// Re-export GMB connection types
+export type {
+  GmbConnectionInsert,
+  GmbConnectionRow,
+} from "./schema/gmb-connection.table";

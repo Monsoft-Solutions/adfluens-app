@@ -139,6 +139,34 @@
     "./social-media/tiktok-post.type": {
       "import": "./src/social-media/tiktok-post.type.ts",
       "types": "./src/social-media/tiktok-post.type.ts"
+    },
+    "./gmb/gmb-location-data.type": {
+      "import": "./src/gmb/gmb-location-data.type.ts",
+      "types": "./src/gmb/gmb-location-data.type.ts"
+    },
+    "./gmb/gmb-connection.type": {
+      "import": "./src/gmb/gmb-connection.type.ts",
+      "types": "./src/gmb/gmb-connection.type.ts"
+    },
+    "./gmb/gmb-review.type": {
+      "import": "./src/gmb/gmb-review.type.ts",
+      "types": "./src/gmb/gmb-review.type.ts"
+    },
+    "./gmb/gmb-post.type": {
+      "import": "./src/gmb/gmb-post.type.ts",
+      "types": "./src/gmb/gmb-post.type.ts"
+    },
+    "./gmb/gmb-account.type": {
+      "import": "./src/gmb/gmb-account.type.ts",
+      "types": "./src/gmb/gmb-account.type.ts"
+    },
+    "./gmb/gmb-performance.type": {
+      "import": "./src/gmb/gmb-performance.type.ts",
+      "types": "./src/gmb/gmb-performance.type.ts"
+    },
+    "./gmb/gmb-media.type": {
+      "import": "./src/gmb/gmb-media.type.ts",
+      "types": "./src/gmb/gmb-media.type.ts"
     }
   },
   "scripts": {

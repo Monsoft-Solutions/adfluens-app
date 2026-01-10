@@ -21,6 +21,7 @@ export {
   CardContent,
 } from "./components/card";
 export { Input, type InputProps } from "./components/input";
+export { Textarea, type TextareaProps } from "./components/textarea";
 export { Label } from "./components/label";
 export { Badge, badgeVariants, type BadgeProps } from "./components/badge";
 export { Skeleton } from "./components/skeleton";
@@ -63,3 +64,13 @@ export {
   ThemeSwitcher,
   ThemeDropdown,
 } from "./components/theme-toggle";
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
+} from "./components/table";

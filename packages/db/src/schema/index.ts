@@ -11,3 +11,6 @@ export * from "./organization-profile.table";
 export * from "./scraped-page.table";
 export * from "./social-media-account.table";
 export * from "./social-media-post.table";
+
+// GMB (Google Business Profile) tables
+export * from "./gmb-connection.table";

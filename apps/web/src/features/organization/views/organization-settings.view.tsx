@@ -21,6 +21,7 @@ import {
   type ProfileFormData,
 } from "../components/profile-form.component";
 import { BusinessInfoDisplay } from "../components/business-info-display.component";
+import { GMBConnectionSettings } from "../components/gmb-connection-settings.component";
 
 /**
  * Organization Settings view
@@ -178,9 +179,10 @@ export const OrganizationSettingsView: React.FC = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-lg grid-cols-3">
           <TabsTrigger value="profile">Profile & Links</TabsTrigger>
           <TabsTrigger value="business-info">Business Info</TabsTrigger>
+          <TabsTrigger value="google-business">Google Business</TabsTrigger>
         </TabsList>
 
         {/* Profile Tab */}
@@ -248,6 +250,22 @@ export const OrganizationSettingsView: React.FC = () => {
                 isRescraping={rescrapeMutation.isPending}
                 error={rescrapeMutation.error?.message}
               />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Google Business Tab */}
+        <TabsContent value="google-business" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Google Business Profile</CardTitle>
+              <CardDescription>
+                Connect your Google Business Profile to manage posts and respond
+                to reviews directly from this app.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <GMBConnectionSettings />
             </CardContent>
           </Card>
         </TabsContent>
