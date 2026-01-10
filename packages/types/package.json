@@ -159,6 +159,14 @@
     "./gmb/gmb-account.type": {
       "import": "./src/gmb/gmb-account.type.ts",
       "types": "./src/gmb/gmb-account.type.ts"
+    },
+    "./gmb/gmb-performance.type": {
+      "import": "./src/gmb/gmb-performance.type.ts",
+      "types": "./src/gmb/gmb-performance.type.ts"
+    },
+    "./gmb/gmb-media.type": {
+      "import": "./src/gmb/gmb-media.type.ts",
+      "types": "./src/gmb/gmb-media.type.ts"
     }
   },
   "scripts": {

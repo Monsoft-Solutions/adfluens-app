@@ -19,6 +19,12 @@ import {
   listPosts,
   createPost,
   deletePost,
+  getPerformanceMetrics,
+  generateReplySuggestion,
+  analyzeReviewSentiment,
+  listMedia,
+  uploadMedia,
+  deleteMediaItem,
 } from "./gmb.service";
 
 /**
@@ -237,6 +243,119 @@ export const gmbRouter = router({
     .input(z.object({ postName: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await deletePost(ctx.organization.id, input.postName);
+      return { success: true };
+    }),
+
+  // ============================================================================
+  // Performance Analytics
+  // ============================================================================
+
+  /**
+   * Get performance metrics for the connected location
+   */
+  getPerformanceMetrics: organizationProcedure
+    .input(
+      z
+        .object({
+          days: z.number().min(7).max(90).default(30),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const data = await getPerformanceMetrics(
+        ctx.organization.id,
+        input?.days ?? 30
+      );
+      return data;
+    }),
+
+  // ============================================================================
+  // AI Review Responses
+  // ============================================================================
+
+  /**
+   * Generate an AI-suggested reply for a review
+   */
+  generateReplySuggestion: organizationProcedure
+    .input(
+      z.object({
+        reviewId: z.string(),
+        tone: z.enum(["professional", "friendly", "empathetic"]).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const suggestion = await generateReplySuggestion(
+        ctx.organization.id,
+        input.reviewId,
+        input.tone
+      );
+      return { suggestion };
+    }),
+
+  /**
+   * Analyze a review for sentiment and get a suggested reply
+   */
+  analyzeReview: organizationProcedure
+    .input(z.object({ reviewId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const analysis = await analyzeReviewSentiment(
+        ctx.organization.id,
+        input.reviewId
+      );
+      return analysis;
+    }),
+
+  // ============================================================================
+  // Media Management
+  // ============================================================================
+
+  /**
+   * List media items for the connected location
+   */
+  listMedia: organizationProcedure
+    .input(z.object({ pageToken: z.string().optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      return listMedia(ctx.organization.id, input?.pageToken);
+    }),
+
+  /**
+   * Upload media from a URL
+   */
+  uploadMedia: organizationProcedure
+    .input(
+      z.object({
+        sourceUrl: z.string().url(),
+        category: z.enum([
+          "COVER",
+          "PROFILE",
+          "INTERIOR",
+          "EXTERIOR",
+          "FOOD_AND_DRINK",
+          "MENU",
+          "PRODUCT",
+          "TEAM",
+          "ADDITIONAL",
+        ]),
+        description: z.string().max(500).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const media = await uploadMedia(
+        ctx.organization.id,
+        input.sourceUrl,
+        input.category,
+        input.description
+      );
+      return { media };
+    }),
+
+  /**
+   * Delete a media item
+   */
+  deleteMedia: organizationProcedure
+    .input(z.object({ mediaName: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await deleteMediaItem(ctx.organization.id, input.mediaName);
       return { success: true };
     }),
 });

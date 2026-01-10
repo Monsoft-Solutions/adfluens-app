@@ -1,9 +1,27 @@
 import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Star, MessageSquare, Trash2, Loader2, User } from "lucide-react";
-import { Button, cn, Textarea } from "@repo/ui";
+import {
+  Star,
+  MessageSquare,
+  Trash2,
+  Loader2,
+  User,
+  Sparkles,
+} from "lucide-react";
+import {
+  Button,
+  cn,
+  Textarea,
+  Badge,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@repo/ui";
 import { useTRPC } from "@/lib/trpc";
-import type { GMBReview } from "@repo/types/gmb/gmb-review.type";
+import type { GMBReview, GMBReplyTone } from "@repo/types/gmb/gmb-review.type";
+import { starRatingToNumber, formatGMBDate } from "../utils/gmb.utils";
 
 type GMBReviewCardProps = {
   review: GMBReview;
@@ -12,13 +30,7 @@ type GMBReviewCardProps = {
 const StarRating: React.FC<{ rating: GMBReview["starRating"] }> = ({
   rating,
 }) => {
-  const numStars = {
-    ONE: 1,
-    TWO: 2,
-    THREE: 3,
-    FOUR: 4,
-    FIVE: 5,
-  }[rating];
+  const numStars = starRatingToNumber(rating);
 
   return (
     <div className="flex gap-0.5">
@@ -38,7 +50,45 @@ const StarRating: React.FC<{ rating: GMBReview["starRating"] }> = ({
 };
 
 /**
- * Individual review card component
+ * Sentiment badge based on star rating
+ */
+const SentimentBadge: React.FC<{ rating: GMBReview["starRating"] }> = ({
+  rating,
+}) => {
+  const numStars = starRatingToNumber(rating);
+
+  if (numStars >= 4) {
+    return (
+      <Badge
+        variant="default"
+        className="bg-success/10 text-success border-success/20 text-xs"
+      >
+        Positive
+      </Badge>
+    );
+  }
+  if (numStars <= 2) {
+    return (
+      <Badge
+        variant="default"
+        className="bg-destructive/10 text-destructive border-destructive/20 text-xs"
+      >
+        Negative
+      </Badge>
+    );
+  }
+  return (
+    <Badge
+      variant="default"
+      className="bg-warning/10 text-warning border-warning/20 text-xs"
+    >
+      Neutral
+    </Badge>
+  );
+};
+
+/**
+ * Individual review card component with AI suggestions
  */
 export const GMBReviewCard: React.FC<GMBReviewCardProps> = ({ review }) => {
   const trpc = useTRPC();
@@ -46,6 +96,8 @@ export const GMBReviewCard: React.FC<GMBReviewCardProps> = ({ review }) => {
 
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState("");
+  const [selectedTone, setSelectedTone] =
+    useState<GMBReplyTone>("professional");
 
   // Reply mutation
   const replyMutation = useMutation({
@@ -69,6 +121,14 @@ export const GMBReviewCard: React.FC<GMBReviewCardProps> = ({ review }) => {
     },
   });
 
+  // AI suggestion mutation
+  const suggestReplyMutation = useMutation({
+    ...trpc.gmb.generateReplySuggestion.mutationOptions(),
+    onSuccess: (data) => {
+      setReplyText(data.suggestion);
+    },
+  });
+
   const handleSubmitReply = () => {
     if (!replyText.trim()) return;
 
@@ -84,11 +144,10 @@ export const GMBReviewCard: React.FC<GMBReviewCardProps> = ({ review }) => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+  const handleSuggestReply = () => {
+    suggestReplyMutation.mutate({
+      reviewId: review.reviewId,
+      tone: selectedTone,
     });
   };
 
@@ -115,9 +174,10 @@ export const GMBReviewCard: React.FC<GMBReviewCardProps> = ({ review }) => {
                 : review.reviewer.displayName}
             </span>
             <StarRating rating={review.starRating} />
+            <SentimentBadge rating={review.starRating} />
           </div>
           <p className="text-xs text-muted-foreground">
-            {formatDate(review.createTime)}
+            {formatGMBDate(review.createTime)}
           </p>
         </div>
       </div>
@@ -136,7 +196,7 @@ export const GMBReviewCard: React.FC<GMBReviewCardProps> = ({ review }) => {
             <span className="text-xs font-medium text-primary">Your Reply</span>
             <div className="flex items-center gap-1">
               <span className="text-xs text-muted-foreground">
-                {formatDate(review.reviewReply.updateTime)}
+                {formatGMBDate(review.reviewReply.updateTime)}
               </span>
               <Button
                 variant="ghost"
@@ -164,8 +224,51 @@ export const GMBReviewCard: React.FC<GMBReviewCardProps> = ({ review }) => {
         <div className="pt-2 border-t border-border">
           {isReplying ? (
             <div className="space-y-3">
+              {/* AI Suggestion Controls */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <Select
+                  value={selectedTone}
+                  onValueChange={(value) =>
+                    setSelectedTone(value as GMBReplyTone)
+                  }
+                >
+                  <SelectTrigger className="w-[140px] h-8 text-xs">
+                    <SelectValue placeholder="Tone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="professional">Professional</SelectItem>
+                    <SelectItem value="friendly">Friendly</SelectItem>
+                    <SelectItem value="empathetic">Empathetic</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSuggestReply}
+                  disabled={suggestReplyMutation.isPending}
+                  className="h-8 text-xs"
+                >
+                  {suggestReplyMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      AI Suggest
+                    </>
+                  )}
+                </Button>
+                {suggestReplyMutation.error && (
+                  <span className="text-xs text-destructive">
+                    Failed to generate suggestion
+                  </span>
+                )}
+              </div>
+
               <Textarea
-                placeholder="Write your reply..."
+                placeholder="Write your reply or use AI to suggest one..."
                 value={replyText}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
                   setReplyText(e.target.value)

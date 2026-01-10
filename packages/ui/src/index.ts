@@ -64,3 +64,13 @@ export {
   ThemeSwitcher,
   ThemeDropdown,
 } from "./components/theme-toggle";
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
+} from "./components/table";

@@ -1,6 +1,12 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, MessageSquare, FileText } from "lucide-react";
+import {
+  MapPin,
+  MessageSquare,
+  FileText,
+  BarChart3,
+  Image,
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger, Skeleton } from "@repo/ui";
 import { useTRPC } from "@/lib/trpc";
 import { useAuth } from "@/lib/auth.provider";
@@ -9,6 +15,8 @@ import { GMBNotConnected } from "../components/gmb-not-connected.component";
 import { GMBOverview } from "../components/gmb-overview.component";
 import { GMBReviewsList } from "../components/gmb-reviews-list.component";
 import { GMBPostsList } from "../components/gmb-posts-list.component";
+import { GMBAnalyticsOverview } from "../components/gmb-analytics-overview.component";
+import { GMBMediaGallery } from "../components/gmb-media-gallery.component";
 
 /**
  * Google Business Profile Management View
@@ -87,10 +95,14 @@ export const GMBView: React.FC = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full max-w-md grid-cols-3">
+        <TabsList className="grid w-full max-w-2xl grid-cols-5">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <MapPin className="w-4 h-4" />
             <span className="hidden sm:inline">Overview</span>
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            <span className="hidden sm:inline">Analytics</span>
           </TabsTrigger>
           <TabsTrigger value="reviews" className="flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
@@ -100,10 +112,18 @@ export const GMBView: React.FC = () => {
             <FileText className="w-4 h-4" />
             <span className="hidden sm:inline">Posts</span>
           </TabsTrigger>
+          <TabsTrigger value="photos" className="flex items-center gap-2">
+            <Image className="w-4 h-4" />
+            <span className="hidden sm:inline">Photos</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
           <GMBOverview />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <GMBAnalyticsOverview />
         </TabsContent>
 
         <TabsContent value="reviews" className="space-y-6">
@@ -112,6 +132,10 @@ export const GMBView: React.FC = () => {
 
         <TabsContent value="posts" className="space-y-6">
           <GMBPostsList />
+        </TabsContent>
+
+        <TabsContent value="photos" className="space-y-6">
+          <GMBMediaGallery />
         </TabsContent>
       </Tabs>
     </div>

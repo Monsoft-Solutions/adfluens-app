@@ -112,3 +112,63 @@ export const gmbReplyInputSchema = z.object({
 });
 
 export type GMBReplyInput = z.infer<typeof gmbReplyInputSchema>;
+
+// ============================================================================
+// AI-Enhanced Review Types
+// ============================================================================
+
+/**
+ * Review sentiment schema
+ */
+export const gmbReviewSentimentSchema = z.enum([
+  "positive",
+  "negative",
+  "neutral",
+]);
+
+export type GMBReviewSentiment = z.infer<typeof gmbReviewSentimentSchema>;
+
+/**
+ * Tone options for AI-generated replies
+ */
+export const gmbReplyToneSchema = z.enum([
+  "professional",
+  "friendly",
+  "empathetic",
+]);
+
+export type GMBReplyTone = z.infer<typeof gmbReplyToneSchema>;
+
+/**
+ * AI review analysis schema
+ */
+export const gmbReviewAnalysisSchema = z.object({
+  /** Overall sentiment of the review */
+  sentiment: gmbReviewSentimentSchema,
+
+  /** Confidence score (0-1) */
+  score: z.number().min(0).max(1),
+
+  /** Key themes/topics mentioned in the review */
+  keyThemes: z.array(z.string()),
+
+  /** AI-suggested reply */
+  suggestedReply: z.string(),
+});
+
+export type GMBReviewAnalysis = z.infer<typeof gmbReviewAnalysisSchema>;
+
+/**
+ * AI reply suggestion input schema
+ */
+export const gmbReplySuggestionInputSchema = z.object({
+  /** Review ID */
+  reviewId: z.string(),
+
+  /** Optional tone for the reply */
+  tone: gmbReplyToneSchema.optional(),
+});
+
+export type GMBReplySuggestionInput = z.infer<
+  typeof gmbReplySuggestionInputSchema
+>;

@@ -20,12 +20,27 @@ import type {
   GMBReviewsResponse,
 } from "@repo/types/gmb/gmb-review.type";
 import type { GMBPost, GMBPostsResponse } from "@repo/types/gmb/gmb-post.type";
+import type {
+  GMBPerformanceMetrics,
+  GMBSearchKeyword,
+  GMBDailyMetric,
+  GMBDailyMetricType,
+} from "@repo/types/gmb/gmb-performance.type";
+import type {
+  GMBMediaItem,
+  GMBMediaResponse,
+  GMBMediaCategory,
+} from "@repo/types/gmb/gmb-media.type";
 
 // Required scope for GMB API access
 export const GMB_SCOPE = "https://www.googleapis.com/auth/business.manage";
 
 // My Business v4 API base URL (for reviews and posts)
 const MYBUSINESS_V4_URL = "https://mybusiness.googleapis.com/v4";
+
+// Business Profile Performance API base URL
+const PERFORMANCE_API_URL =
+  "https://businessprofileperformance.googleapis.com/v1";
 
 // ============================================================================
 // OAuth2 Client Factory
@@ -574,6 +589,324 @@ export async function deleteLocalPost(
   postName: string
 ): Promise<void> {
   const url = `${MYBUSINESS_V4_URL}/${postName}`;
+
+  await gmbFetch(url, accessToken, {
+    method: "DELETE",
+  });
+}
+
+// ============================================================================
+// Performance API (using direct fetch - Performance API v1)
+// ============================================================================
+
+/**
+ * Raw daily metrics response from Performance API
+ */
+type PerformanceMetricsApiResponse = {
+  multiDailyMetricTimeSeries?: Array<{
+    dailyMetricTimeSeries?: {
+      dailyMetric?: string;
+      timeSeries?: {
+        datedValues?: Array<{
+          date?: { year?: number; month?: number; day?: number };
+          value?: string;
+        }>;
+      };
+    };
+  }>;
+};
+
+/**
+ * Raw search keywords response from Performance API
+ */
+type SearchKeywordsApiResponse = {
+  searchKeywordsCounts?: Array<{
+    searchKeyword?: string;
+    insightsValue?: {
+      value?: string;
+      threshold?: string;
+    };
+  }>;
+};
+
+/**
+ * Fetch daily performance metrics for a location
+ */
+export async function fetchPerformanceMetrics(
+  accessToken: string,
+  locationName: string,
+  startDate: string,
+  endDate: string
+): Promise<GMBPerformanceMetrics> {
+  // Request all daily metrics we want to track
+  const dailyMetrics: GMBDailyMetricType[] = [
+    "BUSINESS_IMPRESSIONS_DESKTOP_MAPS",
+    "BUSINESS_IMPRESSIONS_DESKTOP_SEARCH",
+    "BUSINESS_IMPRESSIONS_MOBILE_MAPS",
+    "BUSINESS_IMPRESSIONS_MOBILE_SEARCH",
+    "WEBSITE_CLICKS",
+    "CALL_CLICKS",
+    "BUSINESS_DIRECTION_REQUESTS",
+  ];
+
+  const params = new URLSearchParams();
+  dailyMetrics.forEach((metric) => params.append("dailyMetrics", metric));
+
+  // Parse dates for the API format
+  const [startYear, startMonth, startDay] = startDate.split("-").map(Number);
+  const [endYear, endMonth, endDay] = endDate.split("-").map(Number);
+
+  params.set("dailyRange.startDate.year", String(startYear));
+  params.set("dailyRange.startDate.month", String(startMonth));
+  params.set("dailyRange.startDate.day", String(startDay));
+  params.set("dailyRange.endDate.year", String(endYear));
+  params.set("dailyRange.endDate.month", String(endMonth));
+  params.set("dailyRange.endDate.day", String(endDay));
+
+  const url = `${PERFORMANCE_API_URL}/${locationName}:getDailyMetricsTimeSeries?${params.toString()}`;
+
+  const response = await gmbFetch<PerformanceMetricsApiResponse>(
+    url,
+    accessToken
+  );
+
+  // Initialize empty metric arrays
+  const metrics: GMBPerformanceMetrics = {
+    searchImpressionsMaps: [],
+    searchImpressionsSearch: [],
+    websiteClicks: [],
+    phoneClicks: [],
+    directionRequests: [],
+  };
+
+  // Map for combining desktop + mobile impressions
+  const mapsImpressionsMap = new Map<string, number>();
+  const searchImpressionsMap = new Map<string, number>();
+
+  // Process each metric time series
+  for (const series of response.multiDailyMetricTimeSeries || []) {
+    const metricType = series.dailyMetricTimeSeries?.dailyMetric;
+    const values = series.dailyMetricTimeSeries?.timeSeries?.datedValues || [];
+
+    for (const dv of values) {
+      if (!dv.date?.year || !dv.date?.month || !dv.date?.day) continue;
+
+      const dateKey = `${dv.date.year}-${dv.date.month}-${dv.date.day}`;
+      const value = parseInt(dv.value || "0", 10);
+      const dailyMetric: GMBDailyMetric = {
+        date: {
+          year: dv.date.year,
+          month: dv.date.month,
+          day: dv.date.day,
+        },
+        value,
+      };
+
+      switch (metricType) {
+        case "BUSINESS_IMPRESSIONS_DESKTOP_MAPS":
+        case "BUSINESS_IMPRESSIONS_MOBILE_MAPS":
+          mapsImpressionsMap.set(
+            dateKey,
+            (mapsImpressionsMap.get(dateKey) || 0) + value
+          );
+          break;
+        case "BUSINESS_IMPRESSIONS_DESKTOP_SEARCH":
+        case "BUSINESS_IMPRESSIONS_MOBILE_SEARCH":
+          searchImpressionsMap.set(
+            dateKey,
+            (searchImpressionsMap.get(dateKey) || 0) + value
+          );
+          break;
+        case "WEBSITE_CLICKS":
+          metrics.websiteClicks.push(dailyMetric);
+          break;
+        case "CALL_CLICKS":
+          metrics.phoneClicks.push(dailyMetric);
+          break;
+        case "BUSINESS_DIRECTION_REQUESTS":
+          metrics.directionRequests.push(dailyMetric);
+          break;
+      }
+    }
+  }
+
+  // Convert combined maps impressions to array
+  for (const [dateKey, value] of mapsImpressionsMap) {
+    const [year, month, day] = dateKey.split("-").map(Number);
+    metrics.searchImpressionsMaps.push({
+      date: { year: year!, month: month!, day: day! },
+      value,
+    });
+  }
+
+  // Convert combined search impressions to array
+  for (const [dateKey, value] of searchImpressionsMap) {
+    const [year, month, day] = dateKey.split("-").map(Number);
+    metrics.searchImpressionsSearch.push({
+      date: { year: year!, month: month!, day: day! },
+      value,
+    });
+  }
+
+  // Sort all arrays by date
+  const sortByDate = (a: GMBDailyMetric, b: GMBDailyMetric) => {
+    const dateA = new Date(a.date.year, a.date.month - 1, a.date.day);
+    const dateB = new Date(b.date.year, b.date.month - 1, b.date.day);
+    return dateA.getTime() - dateB.getTime();
+  };
+
+  metrics.searchImpressionsMaps.sort(sortByDate);
+  metrics.searchImpressionsSearch.sort(sortByDate);
+  metrics.websiteClicks.sort(sortByDate);
+  metrics.phoneClicks.sort(sortByDate);
+  metrics.directionRequests.sort(sortByDate);
+
+  return metrics;
+}
+
+/**
+ * Fetch search keywords for a location (monthly data)
+ */
+export async function fetchSearchKeywords(
+  accessToken: string,
+  locationName: string,
+  yearMonth: string // YYYYMM format
+): Promise<GMBSearchKeyword[]> {
+  const year = parseInt(yearMonth.substring(0, 4), 10);
+  const month = parseInt(yearMonth.substring(4, 6), 10);
+
+  const params = new URLSearchParams();
+  params.set("searchKeywords.year", String(year));
+  params.set("searchKeywords.month", String(month));
+
+  const url = `${PERFORMANCE_API_URL}/${locationName}/searchkeywords/impressions/monthly?${params.toString()}`;
+
+  const response = await gmbFetch<SearchKeywordsApiResponse>(url, accessToken);
+
+  return (response.searchKeywordsCounts || [])
+    .map((item) => ({
+      keyword: item.searchKeyword || "",
+      impressions: parseInt(item.insightsValue?.value || "0", 10),
+    }))
+    .filter((item) => item.keyword && item.impressions > 0)
+    .sort((a, b) => b.impressions - a.impressions);
+}
+
+// ============================================================================
+// Media API (using direct fetch - v4 API)
+// ============================================================================
+
+/**
+ * Raw media item response from GMB API
+ */
+type GMBMediaApiResponse = {
+  name: string;
+  mediaFormat: string;
+  googleUrl: string;
+  thumbnailUrl?: string;
+  createTime: string;
+  locationAssociation?: {
+    category: string;
+  };
+  dimensions?: {
+    widthPixels: number;
+    heightPixels: number;
+  };
+  insights?: {
+    viewCount: string;
+  };
+  description?: string;
+};
+
+/**
+ * Fetch media items for a location
+ */
+export async function fetchMedia(
+  accessToken: string,
+  accountName: string,
+  locationId: string,
+  pageToken?: string
+): Promise<GMBMediaResponse> {
+  const params = new URLSearchParams();
+  if (pageToken) {
+    params.set("pageToken", pageToken);
+  }
+
+  const url = `${MYBUSINESS_V4_URL}/${accountName}/locations/${locationId}/media${params.toString() ? `?${params.toString()}` : ""}`;
+
+  const response = await gmbFetch<{
+    mediaItems?: GMBMediaApiResponse[];
+    nextPageToken?: string;
+    totalMediaItemCount?: number;
+  }>(url, accessToken);
+
+  return {
+    mediaItems: (response.mediaItems || []).map((item) => ({
+      name: item.name,
+      mediaFormat: item.mediaFormat as GMBMediaItem["mediaFormat"],
+      googleUrl: item.googleUrl,
+      thumbnailUrl: item.thumbnailUrl,
+      category: (item.locationAssociation?.category ||
+        "ADDITIONAL") as GMBMediaCategory,
+      createTime: item.createTime,
+      dimensions: item.dimensions,
+      insights: item.insights,
+      description: item.description,
+    })),
+    nextPageToken: response.nextPageToken,
+    totalMediaItemCount: response.totalMediaItemCount,
+  };
+}
+
+/**
+ * Upload media from a URL
+ */
+export async function uploadMediaFromUrl(
+  accessToken: string,
+  accountName: string,
+  locationId: string,
+  sourceUrl: string,
+  category: GMBMediaCategory,
+  description?: string
+): Promise<GMBMediaItem> {
+  const url = `${MYBUSINESS_V4_URL}/${accountName}/locations/${locationId}/media`;
+
+  const body = {
+    mediaFormat: "PHOTO",
+    locationAssociation: {
+      category,
+    },
+    sourceUrl,
+    description,
+  };
+
+  const response = await gmbFetch<GMBMediaApiResponse>(url, accessToken, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
+  return {
+    name: response.name,
+    mediaFormat: response.mediaFormat as GMBMediaItem["mediaFormat"],
+    googleUrl: response.googleUrl,
+    thumbnailUrl: response.thumbnailUrl,
+    category: (response.locationAssociation?.category ||
+      category) as GMBMediaCategory,
+    createTime: response.createTime,
+    dimensions: response.dimensions,
+    insights: response.insights,
+    description: response.description,
+  };
+}
+
+/**
+ * Delete a media item
+ */
+export async function deleteMedia(
+  accessToken: string,
+  mediaName: string
+): Promise<void> {
+  const url = `${MYBUSINESS_V4_URL}/${mediaName}`;
 
   await gmbFetch(url, accessToken, {
     method: "DELETE",

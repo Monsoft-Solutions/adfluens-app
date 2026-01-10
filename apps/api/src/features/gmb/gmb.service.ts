@@ -35,8 +35,37 @@ import {
   fetchPosts,
   createLocalPost,
   deleteLocalPost,
+  fetchPerformanceMetrics,
+  fetchSearchKeywords,
+  fetchMedia,
+  uploadMediaFromUrl,
+  deleteMedia as deleteMediaApi,
   GMB_SCOPE,
 } from "./gmb-api.utils";
+import type { GMBPerformanceData } from "@repo/types/gmb/gmb-performance.type";
+import type {
+  GMBReviewAnalysis,
+  GMBReplyTone,
+} from "@repo/types/gmb/gmb-review.type";
+import {
+  generateReviewReply as generateReviewReplyAI,
+  analyzeReview as analyzeReviewAI,
+} from "./gmb-ai.utils";
+import type {
+  GMBMediaResponse,
+  GMBMediaItem,
+  GMBMediaCategory,
+} from "@repo/types/gmb/gmb-media.type";
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+/** Buffer time before token expiration to trigger refresh (5 minutes) */
+const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000;
+
+/** Cache duration for location data (24 hours) */
+const LOCATION_CACHE_DURATION_MS = 24 * 60 * 60 * 1000;
 
 // ============================================================================
 // OAuth & Connection Management
@@ -100,10 +129,11 @@ export async function getValidAccessToken(
     );
   }
 
-  // Check if token is expired or about to expire (5 min buffer)
+  // Check if token is expired or about to expire
   const expiresAt = connection.accessTokenExpiresAt;
   const isExpired =
-    !expiresAt || new Date() >= new Date(expiresAt.getTime() - 5 * 60 * 1000);
+    !expiresAt ||
+    new Date() >= new Date(expiresAt.getTime() - TOKEN_REFRESH_BUFFER_MS);
 
   if (isExpired) {
     if (!connection.refreshToken) {
@@ -323,12 +353,11 @@ export async function getLocationInfo(
     return null;
   }
 
-  // Return cached data if available and recent (less than 24 hours old)
+  // Return cached data if available and recent
   if (connection.locationData && connection.lastSyncedAt) {
     const ageMs = Date.now() - connection.lastSyncedAt.getTime();
-    const oneDayMs = 24 * 60 * 60 * 1000;
 
-    if (ageMs < oneDayMs) {
+    if (ageMs < LOCATION_CACHE_DURATION_MS) {
       return connection.locationData;
     }
   }
@@ -455,6 +484,207 @@ export async function deletePost(
   const accessToken = await getValidAccessToken(organizationId);
 
   await deleteLocalPost(accessToken, postName);
+}
+
+// ============================================================================
+// Performance Analytics
+// ============================================================================
+
+/**
+ * Get performance metrics for the connected location
+ */
+export async function getPerformanceMetrics(
+  organizationId: string,
+  days: number = 30
+): Promise<GMBPerformanceData> {
+  const { connection, accessToken } =
+    await getValidConnectionWithToken(organizationId);
+
+  // Calculate date range
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+
+  // Format dates as YYYY-MM-DD
+  const formatDate = (d: Date): string =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+  const startDateStr = formatDate(startDate);
+  const endDateStr = formatDate(endDate);
+
+  // Build the location name for Performance API (uses locations/ prefix)
+  const locationName = `locations/${connection.gmbLocationId}`;
+
+  // Fetch daily metrics
+  const metrics = await fetchPerformanceMetrics(
+    accessToken,
+    locationName,
+    startDateStr,
+    endDateStr
+  );
+
+  // Fetch search keywords for current month
+  const currentYearMonth = `${endDate.getFullYear()}${String(endDate.getMonth() + 1).padStart(2, "0")}`;
+  let searchKeywords: GMBPerformanceData["searchKeywords"] = [];
+
+  try {
+    searchKeywords = await fetchSearchKeywords(
+      accessToken,
+      locationName,
+      currentYearMonth
+    );
+  } catch (error) {
+    // Keywords API may fail if no data or not enough impressions
+    console.warn("[gmb] Failed to fetch search keywords:", error);
+  }
+
+  // Calculate totals
+  const sumValues = (arr: Array<{ value: number }>) =>
+    arr.reduce((sum, item) => sum + item.value, 0);
+
+  const totalImpressions =
+    sumValues(metrics.searchImpressionsMaps) +
+    sumValues(metrics.searchImpressionsSearch);
+
+  return {
+    metrics,
+    searchKeywords,
+    dateRange: {
+      startDate: startDateStr,
+      endDate: endDateStr,
+    },
+    totals: {
+      totalImpressions,
+      totalWebsiteClicks: sumValues(metrics.websiteClicks),
+      totalPhoneClicks: sumValues(metrics.phoneClicks),
+      totalDirectionRequests: sumValues(metrics.directionRequests),
+    },
+  };
+}
+
+// ============================================================================
+// AI Review Responses
+// ============================================================================
+
+/**
+ * Generate an AI-suggested reply for a specific review
+ */
+export async function generateReplySuggestion(
+  organizationId: string,
+  reviewId: string,
+  tone?: GMBReplyTone
+): Promise<string> {
+  // Get the connection and location data
+  const connection = await db.query.gmbConnectionTable.findFirst({
+    where: eq(gmbConnectionTable.organizationId, organizationId),
+  });
+
+  if (!connection) {
+    throw new Error("GMB not connected");
+  }
+
+  const businessName =
+    connection.gmbLocationName ||
+    connection.locationData?.title ||
+    "our business";
+
+  // Fetch the specific review
+  const reviewsResponse = await listReviews(organizationId);
+  const review = reviewsResponse.reviews.find((r) => r.reviewId === reviewId);
+
+  if (!review) {
+    throw new Error("Review not found");
+  }
+
+  return generateReviewReplyAI(review, businessName, tone);
+}
+
+/**
+ * Analyze a specific review for sentiment and suggestions
+ */
+export async function analyzeReviewSentiment(
+  organizationId: string,
+  reviewId: string
+): Promise<GMBReviewAnalysis> {
+  // Get the connection and location data
+  const connection = await db.query.gmbConnectionTable.findFirst({
+    where: eq(gmbConnectionTable.organizationId, organizationId),
+  });
+
+  if (!connection) {
+    throw new Error("GMB not connected");
+  }
+
+  const businessName =
+    connection.gmbLocationName ||
+    connection.locationData?.title ||
+    "our business";
+
+  // Fetch the specific review
+  const reviewsResponse = await listReviews(organizationId);
+  const review = reviewsResponse.reviews.find((r) => r.reviewId === reviewId);
+
+  if (!review) {
+    throw new Error("Review not found");
+  }
+
+  return analyzeReviewAI(review, businessName);
+}
+
+// ============================================================================
+// Media Management
+// ============================================================================
+
+/**
+ * List media items for the connected location
+ */
+export async function listMedia(
+  organizationId: string,
+  pageToken?: string
+): Promise<GMBMediaResponse> {
+  const { connection, accessToken } =
+    await getValidConnectionWithToken(organizationId);
+
+  return fetchMedia(
+    accessToken,
+    buildAccountName(connection),
+    connection.gmbLocationId,
+    pageToken
+  );
+}
+
+/**
+ * Upload media from a URL
+ */
+export async function uploadMedia(
+  organizationId: string,
+  sourceUrl: string,
+  category: GMBMediaCategory,
+  description?: string
+): Promise<GMBMediaItem> {
+  const { connection, accessToken } =
+    await getValidConnectionWithToken(organizationId);
+
+  return uploadMediaFromUrl(
+    accessToken,
+    buildAccountName(connection),
+    connection.gmbLocationId,
+    sourceUrl,
+    category,
+    description
+  );
+}
+
+/**
+ * Delete a media item
+ */
+export async function deleteMediaItem(
+  organizationId: string,
+  mediaName: string
+): Promise<void> {
+  const accessToken = await getValidAccessToken(organizationId);
+
+  await deleteMediaApi(accessToken, mediaName);
 }
 
 // ============================================================================
