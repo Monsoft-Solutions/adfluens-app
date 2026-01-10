@@ -27,6 +27,17 @@ const TiktokIcon: React.FC<{ className?: string }> = ({ className }) => (
     <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
   </svg>
 );
+
+/**
+ * Google Business icon component
+ */
+const GoogleBusinessIcon: React.FC<{ className?: string }> = ({
+  className,
+}) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+  </svg>
+);
 import { Button, cn, Skeleton, Separator, ThemeToggleIcon } from "@repo/ui";
 import { useSession, signOut } from "@repo/auth/client";
 import { useTheme } from "@/lib/theme.provider";
@@ -131,6 +142,18 @@ export const Sidebar: React.FC = () => {
             to="/social/tiktok"
             icon={<TiktokIcon className="w-5 h-5" />}
             label="TikTok"
+          />
+        </div>
+
+        {/* Business Section */}
+        <div className="pt-4">
+          <p className="px-4 pb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Business
+          </p>
+          <NavItem
+            to="/gmb"
+            icon={<GoogleBusinessIcon className="w-5 h-5" />}
+            label="Google Business"
           />
         </div>
       </nav>

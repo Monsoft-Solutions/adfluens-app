@@ -11,6 +11,7 @@ import { env } from "@repo/env";
 import { mediaStorage } from "@repo/media-storage";
 import { db } from "@repo/db/client";
 import { sql } from "drizzle-orm";
+import { handleOAuthCallback } from "./features/gmb/gmb.service";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,6 +40,72 @@ app.use(
     credentials: true,
   })
 );
+
+/**
+ * Google Business Profile OAuth callback
+ * Handles the redirect from Google after user grants GMB access
+ * Exchanges the code for tokens and redirects to frontend with tokens
+ */
+app.get("/api/auth/gmb/callback", async (req, res) => {
+  const { code, state, error: oauthError } = req.query;
+  const appUrl = env.APP_URL;
+
+  // Handle OAuth errors
+  if (oauthError) {
+    const errorMessage = encodeURIComponent(
+      typeof oauthError === "string" ? oauthError : "OAuth authorization failed"
+    );
+    return res.redirect(`${appUrl}/settings?gmb_error=${errorMessage}`);
+  }
+
+  // Validate required parameters
+  if (typeof code !== "string" || typeof state !== "string") {
+    return res.redirect(
+      `${appUrl}/settings?gmb_error=${encodeURIComponent("Missing required OAuth parameters")}`
+    );
+  }
+
+  try {
+    // Decode state to get organization ID and redirect path
+    const stateData = JSON.parse(Buffer.from(state, "base64").toString("utf8"));
+    const { organizationId, redirectPath = "/settings" } = stateData;
+
+    if (!organizationId) {
+      throw new Error("Organization ID not found in state");
+    }
+
+    // Exchange code for tokens
+    const tokens = await handleOAuthCallback(code);
+
+    // Redirect to frontend with tokens in URL params
+    // Frontend will use these to list accounts/locations and complete setup
+    const params = new URLSearchParams({
+      gmb_setup: "true",
+      access_token: tokens.accessToken,
+      organization_id: organizationId,
+    });
+
+    if (tokens.refreshToken) {
+      params.set("refresh_token", tokens.refreshToken);
+    }
+
+    if (tokens.expiresAt) {
+      params.set("expires_at", tokens.expiresAt.toISOString());
+    }
+
+    if (tokens.scope) {
+      params.set("scope", tokens.scope);
+    }
+
+    return res.redirect(`${appUrl}${redirectPath}?${params.toString()}`);
+  } catch (err) {
+    console.error("[GMB OAuth] Callback error:", err);
+    const errorMessage = encodeURIComponent(
+      err instanceof Error ? err.message : "Failed to complete OAuth flow"
+    );
+    return res.redirect(`${appUrl}/settings?gmb_error=${errorMessage}`);
+  }
+});
 
 /**
  * Better Auth handler
