@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { FileText, Loader2, RefreshCw } from "lucide-react";
 import { Button, Skeleton } from "@repo/ui";
-import { useTRPC } from "@/lib/trpc";
+import { trpcClient } from "@/lib/trpc";
 import { ErrorAlert } from "@/shared/components/error-alert.component";
 import { LoadMoreButton } from "@/shared/components/load-more-button.component";
 import { GMBPostCard } from "./gmb-post-card.component";
@@ -12,13 +12,22 @@ import { GMBCreatePostForm } from "./gmb-create-post-form.component";
  * Posts list component with create functionality
  */
 export const GMBPostsList: React.FC = () => {
-  const trpc = useTRPC();
-  const [pageToken, setPageToken] = useState<string | undefined>(undefined);
-
-  const { data, isLoading, error, refetch, isRefetching, isFetching } =
-    useQuery({
-      ...trpc.gmb.listPosts.queryOptions({ pageSize: 20, pageToken }),
-    });
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+    isRefetching,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["gmb", "listPosts"],
+    queryFn: ({ pageParam }) =>
+      trpcClient.gmb.listPosts.query({ pageSize: 20, pageToken: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextPageToken,
+  });
 
   if (isLoading) {
     return (
@@ -39,8 +48,8 @@ export const GMBPostsList: React.FC = () => {
     );
   }
 
-  const posts = data?.posts || [];
-  const hasMore = !!data?.nextPageToken;
+  // Flatten all pages into a single posts array
+  const posts = data?.pages.flatMap((page) => page.posts) || [];
 
   return (
     <div className="space-y-6">
@@ -81,10 +90,10 @@ export const GMBPostsList: React.FC = () => {
       )}
 
       {/* Load More */}
-      {hasMore && (
+      {hasNextPage && (
         <LoadMoreButton
-          onClick={() => setPageToken(data?.nextPageToken)}
-          isLoading={isFetching}
+          onClick={() => fetchNextPage()}
+          isLoading={isFetchingNextPage}
           label="Load More Posts"
         />
       )}

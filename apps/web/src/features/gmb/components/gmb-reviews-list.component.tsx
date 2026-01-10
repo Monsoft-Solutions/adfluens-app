@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { Star, MessageSquareText, Loader2, RefreshCw } from "lucide-react";
 import { Button, Skeleton } from "@repo/ui";
-import { useTRPC } from "@/lib/trpc";
+import { trpcClient } from "@/lib/trpc";
 import { ErrorAlert } from "@/shared/components/error-alert.component";
 import { LoadMoreButton } from "@/shared/components/load-more-button.component";
 import { GMBReviewCard } from "./gmb-review-card.component";
@@ -11,13 +11,22 @@ import { GMBReviewCard } from "./gmb-review-card.component";
  * Reviews list component with pagination
  */
 export const GMBReviewsList: React.FC = () => {
-  const trpc = useTRPC();
-  const [pageToken, setPageToken] = useState<string | undefined>(undefined);
-
-  const { data, isLoading, error, refetch, isRefetching, isFetching } =
-    useQuery({
-      ...trpc.gmb.listReviews.queryOptions({ pageSize: 20, pageToken }),
-    });
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+    isRefetching,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["gmb", "listReviews"],
+    queryFn: ({ pageParam }) =>
+      trpcClient.gmb.listReviews.query({ pageSize: 20, pageToken: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextPageToken,
+  });
 
   if (isLoading) {
     return (
@@ -38,22 +47,24 @@ export const GMBReviewsList: React.FC = () => {
     );
   }
 
-  const reviews = data?.reviews || [];
-  const hasMore = !!data?.nextPageToken;
+  // Flatten all pages into a single reviews array
+  const reviews = data?.pages.flatMap((page) => page.reviews) || [];
+  // Get stats from the first page (they're the same across all pages)
+  const firstPage = data?.pages[0];
 
   return (
     <div className="space-y-6">
       {/* Header with stats */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          {data?.averageRating !== undefined && (
+          {firstPage?.averageRating !== undefined && (
             <div className="flex items-center gap-2">
               <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
               <span className="font-semibold text-lg">
-                {data.averageRating.toFixed(1)}
+                {firstPage.averageRating.toFixed(1)}
               </span>
               <span className="text-muted-foreground text-sm">
-                ({data.totalReviewCount || 0} reviews)
+                ({firstPage.totalReviewCount || 0} reviews)
               </span>
             </div>
           )}
@@ -93,10 +104,10 @@ export const GMBReviewsList: React.FC = () => {
       )}
 
       {/* Load More */}
-      {hasMore && (
+      {hasNextPage && (
         <LoadMoreButton
-          onClick={() => setPageToken(data?.nextPageToken)}
-          isLoading={isFetching}
+          onClick={() => fetchNextPage()}
+          isLoading={isFetchingNextPage}
           label="Load More Reviews"
         />
       )}
