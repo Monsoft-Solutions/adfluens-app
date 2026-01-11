@@ -146,7 +146,7 @@ async function processMessengerEvent(
   if (event.sender.id === event.recipient.id) return;
 
   // Skip echo messages (messages sent by the page)
-  const isFromPage = event.recipient.id === pageId;
+  const isFromPage = event.sender.id === pageId;
   if (isFromPage) return;
 
   // Find the page in our database

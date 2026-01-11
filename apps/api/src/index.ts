@@ -19,6 +19,7 @@ import { handleOAuthCallback as handleMetaOAuthCallback } from "./features/meta/
 import {
   handleVerification as handleMetaWebhookVerification,
   handleWebhook as handleMetaWebhook,
+  verifyWebhookSignature,
 } from "./features/meta/meta-webhook.handler";
 import cron from "node-cron";
 import { processScheduledExecutions } from "./features/meta-bot/scheduled-execution.service";
@@ -173,8 +174,13 @@ app.get("/api/webhooks/meta", handleMetaWebhookVerification);
 /**
  * Meta Webhook Handler (POST)
  * Receives webhook events for leads and messages
+ * Verifies X-Hub-Signature-256 header to ensure request authenticity
  */
-app.post("/api/webhooks/meta", express.json(), handleMetaWebhook);
+app.post(
+  "/api/webhooks/meta",
+  express.json({ verify: verifyWebhookSignature }),
+  handleMetaWebhook
+);
 
 /**
  * Better Auth handler
