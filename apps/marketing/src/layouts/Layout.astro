@@ -1,4 +1,6 @@
 ---
+import JsonLd from "../components/seo/JsonLd.astro";
+
 type Props = {
   title?: string;
   description?: string;
@@ -12,6 +14,29 @@ const {
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+
+// Organization schema for all pages
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Adfluens",
+  url: "https://adfluens.io",
+  logo: "https://adfluens.io/favicon.svg",
+  description: "AI-Powered Social Media Command Center",
+  sameAs: [
+    "https://twitter.com/adfluens",
+    "https://linkedin.com/company/adfluens",
+    "https://instagram.com/adfluens",
+  ],
+};
+
+// WebSite schema for search functionality
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Adfluens",
+  url: "https://adfluens.io",
+};
 ---
 
 <!doctype html>
@@ -40,6 +65,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <meta property="twitter:title" content={title} />
     <meta property="twitter:description" content={description} />
     <meta property="twitter:image" content={new URL(ogImage, Astro.site)} />
+
+    <!-- Structured Data -->
+    <JsonLd schema={organizationSchema} />
+    <JsonLd schema={websiteSchema} />
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
