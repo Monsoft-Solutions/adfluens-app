@@ -14,6 +14,7 @@ export { EntryNodeFields } from "./entry-field.component";
 export { HttpRequestNodeFields } from "./http-request-field.component";
 export { SetVariableNodeFields } from "./set-variable-field.component";
 export { GotoNodeFields } from "./goto-field.component";
+export { AiNodeFields } from "./ai-node-field.component";
 export { VariablePicker } from "./variable-picker.component";
 export { VariableInput, VariableTextarea } from "./variable-input.component";
 export type { NodeFieldProps } from "./field.types";

@@ -16,7 +16,7 @@ export type FlowNodeType =
   | "quick-replies"
   | "collect-input"
   | "condition"
-  | "ai-response"
+  | "ai-node"
   | "handoff"
   | "delay"
   | "http-request"
@@ -34,7 +34,7 @@ export type FlowActionType =
   | "set_variable"
   | "handoff"
   | "goto_node"
-  | "ai_response"
+  | "ai_node"
   | "delay"
   | "http_request";
 
@@ -74,7 +74,68 @@ export type GotoNodeActionConfig = {
   targetNodeId: string;
 };
 
-export type AiResponseActionConfig = Record<string, unknown>;
+// ============================================================================
+// AI Node Types
+// ============================================================================
+
+/**
+ * AI Node operation types
+ */
+export type AiNodeOperation =
+  | "generate_response" // Conversational response (default, backward compatible)
+  | "generate_content" // Generate text with custom prompt
+  | "extract_data" // Extract structured data to variables
+  | "classify_intent" // Classify message with custom categories
+  | "analyze_sentiment" // Analyze sentiment
+  | "summarize" // Summarize text
+  | "translate" // Translate content
+  | "custom"; // Full custom prompt with schema
+
+/**
+ * Available AI models
+ */
+export type AiNodeModel =
+  | "gpt-4o"
+  | "gpt-4o-mini"
+  | "gpt-4.1"
+  | "gpt-4.1-mini"
+  | "gpt-4.1-nano";
+
+/**
+ * Field definition for extract_data operation
+ */
+export type ExtractedField = {
+  name: string;
+  type: "string" | "number" | "boolean" | "array";
+  description: string;
+  required?: boolean;
+};
+
+/**
+ * AI Node action configuration
+ */
+export type AiNodeActionConfig = {
+  // Operation type (defaults to generate_response for backward compatibility)
+  operation?: AiNodeOperation;
+
+  // Common options
+  outputVariable?: string; // Store result in this variable
+  sendAsMessage?: boolean; // Send result as message (default: true for generate_*)
+
+  // Prompt customization
+  customSystemPrompt?: string; // Override default system prompt
+  customUserPrompt?: string; // Template for user prompt with {{variables}}
+
+  // Model settings
+  model?: AiNodeModel;
+  temperature?: number; // 0.0-1.0
+
+  // Operation-specific config
+  extractionSchema?: ExtractedField[]; // For extract_data
+  extractionSchemaJson?: string; // Raw JSON schema for power users
+  classificationCategories?: string[]; // For classify_intent
+  targetLanguage?: string; // For translate
+};
 
 export type HttpRequestActionConfig = {
   method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -93,7 +154,7 @@ export type FlowAction =
   | { type: "delay"; config: DelayActionConfig }
   | { type: "set_variable"; config: SetVariableActionConfig }
   | { type: "goto_node"; config: GotoNodeActionConfig }
-  | { type: "ai_response"; config: AiResponseActionConfig }
+  | { type: "ai_node"; config: AiNodeActionConfig }
   | { type: "http_request"; config: HttpRequestActionConfig };
 
 // ============================================================================
@@ -242,7 +303,7 @@ export const nodeTypeToApiType: Record<FlowNodeType, ApiFlowNode["type"]> = {
   "quick-replies": "message",
   "collect-input": "message",
   condition: "condition",
-  "ai-response": "ai_node",
+  "ai-node": "ai_node",
   handoff: "action",
   delay: "action",
   "http-request": "action",
@@ -258,7 +319,7 @@ export function apiTypeToNodeType(apiNode: ApiFlowNode): FlowNodeType {
 
   if (apiNode.type === "entry") return "entry";
   if (apiNode.type === "condition") return "condition";
-  if (apiNode.type === "ai_node") return "ai-response";
+  if (apiNode.type === "ai_node") return "ai-node";
 
   if (action) {
     switch (action.type) {
@@ -268,8 +329,8 @@ export function apiTypeToNodeType(apiNode: ApiFlowNode): FlowNodeType {
         return "collect-input";
       case "handoff":
         return "handoff";
-      case "ai_response":
-        return "ai-response";
+      case "ai_node":
+        return "ai-node";
       case "delay":
         return "delay";
       case "http_request":

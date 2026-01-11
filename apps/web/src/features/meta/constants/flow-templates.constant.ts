@@ -131,7 +131,9 @@ export const FLOW_TEMPLATES_DATA: FlowTemplateData[] = [
         id: "ai",
         name: "AI Response",
         type: "ai_node",
-        actions: [{ type: "ai_response", config: {} }],
+        actions: [
+          { type: "ai_node", config: { operation: "generate_response" } },
+        ],
         nextNodes: [],
         position: { x: 250, y: 200 },
       },
@@ -341,7 +343,9 @@ export const FLOW_TEMPLATES_DATA: FlowTemplateData[] = [
         id: "ai",
         name: "AI Info",
         type: "ai_node",
-        actions: [{ type: "ai_response", config: {} }],
+        actions: [
+          { type: "ai_node", config: { operation: "generate_response" } },
+        ],
         nextNodes: [],
         position: { x: 250, y: 350 },
       },

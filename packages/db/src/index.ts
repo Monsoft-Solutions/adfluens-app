@@ -141,6 +141,10 @@ export type {
   MetaBotFlowTrigger,
   MetaBotFlowAction,
   MetaBotFlowNode,
+  MetaAiNodeOperation,
+  MetaAiNodeModel,
+  MetaExtractedField,
+  MetaAiNodeActionConfig,
 } from "./schema/meta-bot-flow.table";
 
 // Re-export Meta conversation state types
@@ -150,6 +154,8 @@ export type {
   MetaConversationContext,
   MetaSalesContext,
   MetaAppointmentContext,
+  MetaUserMemory,
+  MetaDetectedLanguage,
 } from "./schema/meta-conversation-state.table";
 
 // Re-export Meta team inbox types

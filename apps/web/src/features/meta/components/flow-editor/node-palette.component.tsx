@@ -80,15 +80,17 @@ const PALETTE_ITEMS: NodePaletteItem[] = [
     },
   },
   {
-    type: "ai-response",
-    label: "AI Response",
-    description: "AI generates reply",
+    type: "ai-node",
+    label: "AI Node",
+    description: "AI-powered operations",
     icon: <Sparkles className="w-4 h-4" />,
     category: "logic",
     defaultData: {
-      name: "AI Response",
-      nodeType: "ai-response",
-      actions: [{ type: "ai_response", config: {} }],
+      name: "AI Node",
+      nodeType: "ai-node",
+      actions: [
+        { type: "ai_node", config: { operation: "generate_response" } },
+      ],
     },
   },
   {

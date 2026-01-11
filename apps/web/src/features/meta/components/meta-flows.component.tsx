@@ -276,7 +276,9 @@ export function MetaFlows({ pageId }: MetaFlowsProps) {
         id: "ai",
         name: "AI Fallback",
         type: "ai_node",
-        actions: [{ type: "ai_response", config: {} }],
+        actions: [
+          { type: "ai_node", config: { operation: "generate_response" } },
+        ],
         nextNodes: [],
         position: { x: 250, y: 200 },
       });

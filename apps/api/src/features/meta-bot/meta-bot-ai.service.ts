@@ -437,6 +437,7 @@ export type GenerateResponseOptions = {
   conversationId?: string;
   intent: DetectedIntent;
   conversationState?: MetaConversationStateRow;
+  memoryContext?: string;
 };
 
 /**
@@ -456,6 +457,7 @@ export async function generateAiResponse(
     conversationId,
     intent,
     conversationState,
+    memoryContext,
   } = options;
 
   // Build context
@@ -464,6 +466,11 @@ export async function generateAiResponse(
     ? await getConversationHistory(conversationId)
     : [];
   const toneInstructions = getToneInstructions(config.aiPersonality);
+
+  // Include memory context if available (for returning customers)
+  const fullBusinessContext = memoryContext
+    ? `${businessContext}${memoryContext}`
+    : businessContext;
 
   // Determine which prompt to use based on intent and enabled capabilities
   let systemPrompt: string;
@@ -475,7 +482,7 @@ export async function generateAiResponse(
   ) {
     const servicesInfo = await getAppointmentServices(config.metaPageId);
     systemPrompt = buildAppointmentPrompt(
-      businessContext,
+      fullBusinessContext,
       servicesInfo,
       toneInstructions,
       conversationState?.context?.appointmentContext,
@@ -483,7 +490,7 @@ export async function generateAiResponse(
     );
   } else if (intent.category === "sales" && config.salesAssistantEnabled) {
     systemPrompt = buildSalesPrompt(
-      businessContext,
+      fullBusinessContext,
       toneInstructions,
       conversationState?.context?.salesContext,
       config.additionalContext || undefined
@@ -507,13 +514,13 @@ export async function generateAiResponse(
     config.customerSupportEnabled
   ) {
     systemPrompt = buildSupportPrompt(
-      businessContext,
+      fullBusinessContext,
       toneInstructions,
       config.additionalContext || undefined
     );
   } else {
     systemPrompt = buildGeneralPrompt(
-      businessContext,
+      fullBusinessContext,
       toneInstructions,
       config.additionalContext || undefined
     );
@@ -665,6 +672,103 @@ export function isWithinBusinessHours(
 }
 
 // =============================================================================
+// Language Detection & Translation
+// =============================================================================
+
+/**
+ * Detected language result
+ */
+export type DetectedLanguage = {
+  code: string;
+  name: string;
+  confidence: number;
+};
+
+const languageSchema = z.object({
+  code: z.string().length(2),
+  name: z.string(),
+  confidence: z.number().min(0).max(1),
+});
+
+/**
+ * Detect the language of a message
+ */
+export async function detectLanguage(
+  message: string
+): Promise<DetectedLanguage> {
+  try {
+    const result = await coreGenerateObject({
+      schema: languageSchema,
+      system: `You are a language detection expert. Analyze the message and identify the language.
+Return the ISO 639-1 two-letter language code (e.g., "en", "es", "fr", "de", "pt", "zh", "ja", "ko").
+Common codes: en=English, es=Spanish, fr=French, de=German, pt=Portuguese, it=Italian,
+zh=Chinese, ja=Japanese, ko=Korean, ar=Arabic, ru=Russian, hi=Hindi, nl=Dutch.`,
+      prompt: `Detect the language of this message: "${message}"`,
+      temperature: 0.1,
+    });
+
+    return result.object;
+  } catch (error) {
+    console.error("[meta-bot-ai] Language detection failed:", error);
+    // Default to English on error
+    return {
+      code: "en",
+      name: "English",
+      confidence: 0.5,
+    };
+  }
+}
+
+/**
+ * Translate a message to the target language
+ */
+export async function translateMessage(
+  text: string,
+  targetLanguage: string,
+  targetLanguageName?: string
+): Promise<string> {
+  // Skip translation if already in English or target is English
+  if (targetLanguage === "en") {
+    return text;
+  }
+
+  const langName = targetLanguageName || targetLanguage;
+
+  try {
+    const result = await coreGenerateText({
+      system: `You are a professional translator. Translate the text to ${langName}.
+Rules:
+- Preserve the original tone and meaning
+- Keep any placeholders/variables like {{name}} or {product} unchanged
+- Preserve markdown formatting if present
+- Keep emojis unchanged
+- Do not add any explanations, just return the translated text`,
+      prompt: text,
+      temperature: 0.3,
+    });
+
+    return result.text.trim();
+  } catch (error) {
+    console.error("[meta-bot-ai] Translation failed:", error);
+    // Return original text on error
+    return text;
+  }
+}
+
+/**
+ * Check if a language code is supported
+ */
+export function isLanguageSupported(
+  languageCode: string,
+  supportedLanguages?: string[]
+): boolean {
+  if (!supportedLanguages || supportedLanguages.length === 0) {
+    return true; // If no list specified, support all
+  }
+  return supportedLanguages.includes(languageCode);
+}
+
+// =============================================================================
 // Test Response (for settings preview)
 // =============================================================================
 
@@ -700,6 +804,9 @@ export async function testAiResponse(
     fallbackToAi: config.fallbackToAi ?? true,
     salesConfig: config.salesConfig || null,
     supportConfig: config.supportConfig || null,
+    autoTranslateEnabled: config.autoTranslateEnabled ?? false,
+    supportedLanguages: config.supportedLanguages ?? ["en"],
+    defaultLanguage: config.defaultLanguage ?? "en",
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -729,4 +836,528 @@ export async function testAiResponse(
     console.error("[meta-bot-ai] Test response failed:", error);
     return "Unable to generate response. Please check your configuration.";
   }
+}
+
+// =============================================================================
+// AI Node Operations
+// =============================================================================
+
+import type {
+  MetaAiNodeModel,
+  MetaExtractedField,
+  MetaAiNodeActionConfig,
+} from "@repo/db";
+import { MODEL_MAP } from "./ai-node-models.constants";
+
+/**
+ * Result of an AI node operation
+ */
+export type AiNodeResult = {
+  success: boolean;
+  result?: unknown;
+  textResult?: string;
+  error?: string;
+};
+
+/**
+ * Context for AI node execution
+ */
+export type AiNodeExecutionContext = {
+  message: string;
+  organizationId: string;
+  conversationId?: string;
+  variables: Record<string, unknown>;
+  collectedInputs: Record<string, string>;
+};
+
+/**
+ * Get the model ID for the AI provider based on config
+ */
+function getModelId(model?: MetaAiNodeModel): string {
+  return MODEL_MAP[model || "gpt-4o-mini"] || "gpt-4o-mini";
+}
+
+/**
+ * Execute an AI node operation
+ */
+export async function executeAiNodeOperation(
+  config: MetaAiNodeActionConfig,
+  context: AiNodeExecutionContext
+): Promise<AiNodeResult> {
+  const operation = config.operation || "generate_response";
+
+  try {
+    switch (operation) {
+      case "generate_response":
+        return await executeGenerateResponse(config, context);
+      case "generate_content":
+        return await executeGenerateContent(config, context);
+      case "extract_data":
+        return await executeExtractData(config, context);
+      case "classify_intent":
+        return await executeClassifyIntent(config, context);
+      case "analyze_sentiment":
+        return await executeAnalyzeSentiment(config, context);
+      case "summarize":
+        return await executeSummarize(config, context);
+      case "translate":
+        return await executeTranslate(config, context);
+      case "custom":
+        return await executeCustom(config, context);
+      default:
+        return { success: false, error: `Unknown operation: ${operation}` };
+    }
+  } catch (error) {
+    console.error(`[ai-node] Operation ${operation} failed:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+/**
+ * Interpolate variables in a string template
+ */
+function interpolateTemplate(
+  template: string,
+  variables: Record<string, unknown>,
+  collectedInputs: Record<string, string>
+): string {
+  let result = template;
+
+  // Replace {{variable}} patterns
+  result = result.replace(/\{\{(\w+)\}\}/g, (_, key) => {
+    if (key in collectedInputs) {
+      return collectedInputs[key] || "";
+    }
+    if (key in variables) {
+      return String(variables[key] ?? "");
+    }
+    return `{{${key}}}`;
+  });
+
+  return result;
+}
+
+/**
+ * Generate a conversational response (default operation)
+ */
+async function executeGenerateResponse(
+  config: MetaAiNodeActionConfig,
+  context: AiNodeExecutionContext
+): Promise<AiNodeResult> {
+  const businessContext = await buildBusinessContext(context.organizationId);
+  const conversationHistory = context.conversationId
+    ? await getConversationHistory(context.conversationId)
+    : [];
+
+  const systemPrompt =
+    config.customSystemPrompt ||
+    `You are a helpful assistant. Answer the user's question based on the context provided.
+
+BUSINESS CONTEXT:
+${businessContext}`;
+
+  const userPrompt = config.customUserPrompt
+    ? interpolateTemplate(
+        config.customUserPrompt,
+        context.variables,
+        context.collectedInputs
+      )
+    : context.message;
+
+  const result = await coreGenerateText({
+    system: systemPrompt,
+    messages: [...conversationHistory, { role: "user", content: userPrompt }],
+    temperature: config.temperature ?? 0.7,
+    modelId: getModelId(config.model),
+  });
+
+  return {
+    success: true,
+    textResult: result.text.trim(),
+    result: result.text.trim(),
+  };
+}
+
+/**
+ * Generate custom content with a prompt
+ */
+async function executeGenerateContent(
+  config: MetaAiNodeActionConfig,
+  context: AiNodeExecutionContext
+): Promise<AiNodeResult> {
+  const systemPrompt =
+    config.customSystemPrompt ||
+    "You are a helpful content generator. Generate content based on the user's request.";
+
+  const userPrompt = config.customUserPrompt
+    ? interpolateTemplate(
+        config.customUserPrompt,
+        context.variables,
+        context.collectedInputs
+      )
+    : context.message;
+
+  const result = await coreGenerateText({
+    system: systemPrompt,
+    prompt: userPrompt,
+    temperature: config.temperature ?? 0.7,
+    modelId: getModelId(config.model),
+  });
+
+  return {
+    success: true,
+    textResult: result.text.trim(),
+    result: result.text.trim(),
+  };
+}
+
+/**
+ * Extract structured data from a message
+ */
+async function executeExtractData(
+  config: MetaAiNodeActionConfig,
+  context: AiNodeExecutionContext
+): Promise<AiNodeResult> {
+  // Build Zod schema from extraction config
+  let schema: z.ZodType;
+
+  if (config.extractionSchemaJson) {
+    // Parse JSON schema (advanced mode)
+    try {
+      const jsonSchema = JSON.parse(config.extractionSchemaJson);
+      schema = buildSchemaFromJson(jsonSchema);
+    } catch {
+      return { success: false, error: "Invalid extraction schema JSON" };
+    }
+  } else if (config.extractionSchema?.length) {
+    // Build from visual builder config
+    schema = buildSchemaFromFields(config.extractionSchema);
+  } else {
+    return { success: false, error: "No extraction schema provided" };
+  }
+
+  const systemPrompt =
+    config.customSystemPrompt ||
+    `You are a data extraction expert. Extract the requested information from the user's message.
+If a field cannot be found, use null for optional fields or make your best guess for required fields.`;
+
+  const userPrompt = config.customUserPrompt
+    ? interpolateTemplate(
+        config.customUserPrompt,
+        context.variables,
+        context.collectedInputs
+      )
+    : context.message;
+
+  const result = await coreGenerateObject({
+    schema,
+    system: systemPrompt,
+    prompt: `Extract data from: "${userPrompt}"`,
+    temperature: config.temperature ?? 0.3,
+    modelId: getModelId(config.model),
+  });
+
+  return {
+    success: true,
+    result: result.object,
+  };
+}
+
+/**
+ * Classify message intent with custom categories
+ */
+async function executeClassifyIntent(
+  config: MetaAiNodeActionConfig,
+  context: AiNodeExecutionContext
+): Promise<AiNodeResult> {
+  const categories =
+    config.classificationCategories &&
+    config.classificationCategories.length > 0
+      ? config.classificationCategories
+      : ["general", "question", "request"];
+
+  const classificationSchema = z.object({
+    category: z.enum(categories as [string, ...string[]]),
+    confidence: z.number().min(0).max(1),
+    reasoning: z.string().optional(),
+  });
+
+  const systemPrompt =
+    config.customSystemPrompt ||
+    `You are a message classifier. Classify the user's message into one of these categories: ${categories.join(", ")}.
+Provide your confidence level (0-1) and brief reasoning.`;
+
+  const userPrompt = config.customUserPrompt
+    ? interpolateTemplate(
+        config.customUserPrompt,
+        context.variables,
+        context.collectedInputs
+      )
+    : context.message;
+
+  const result = await coreGenerateObject({
+    schema: classificationSchema,
+    system: systemPrompt,
+    prompt: `Classify this message: "${userPrompt}"`,
+    temperature: config.temperature ?? 0.3,
+    modelId: getModelId(config.model),
+  });
+
+  return {
+    success: true,
+    result: result.object,
+    textResult: result.object.category,
+  };
+}
+
+/**
+ * Analyze sentiment of a message
+ */
+async function executeAnalyzeSentiment(
+  config: MetaAiNodeActionConfig,
+  context: AiNodeExecutionContext
+): Promise<AiNodeResult> {
+  const sentimentSchema = z.object({
+    sentiment: z.enum(["positive", "neutral", "negative"]),
+    score: z.number().min(-1).max(1),
+    emotions: z.array(z.string()).optional(),
+  });
+
+  const systemPrompt =
+    config.customSystemPrompt ||
+    `You are a sentiment analysis expert. Analyze the sentiment of the user's message.
+Return the overall sentiment (positive/neutral/negative), a score from -1 (very negative) to 1 (very positive),
+and optionally list any specific emotions detected.`;
+
+  const userPrompt = config.customUserPrompt
+    ? interpolateTemplate(
+        config.customUserPrompt,
+        context.variables,
+        context.collectedInputs
+      )
+    : context.message;
+
+  const result = await coreGenerateObject({
+    schema: sentimentSchema,
+    system: systemPrompt,
+    prompt: `Analyze sentiment: "${userPrompt}"`,
+    temperature: config.temperature ?? 0.3,
+    modelId: getModelId(config.model),
+  });
+
+  return {
+    success: true,
+    result: result.object,
+    textResult: result.object.sentiment,
+  };
+}
+
+/**
+ * Summarize text content
+ */
+async function executeSummarize(
+  config: MetaAiNodeActionConfig,
+  context: AiNodeExecutionContext
+): Promise<AiNodeResult> {
+  const systemPrompt =
+    config.customSystemPrompt ||
+    `You are a summarization expert. Create a concise summary of the provided text.
+Capture the key points while keeping it brief and readable.`;
+
+  const userPrompt = config.customUserPrompt
+    ? interpolateTemplate(
+        config.customUserPrompt,
+        context.variables,
+        context.collectedInputs
+      )
+    : context.message;
+
+  const result = await coreGenerateText({
+    system: systemPrompt,
+    prompt: `Summarize the following:\n\n${userPrompt}`,
+    temperature: config.temperature ?? 0.5,
+    modelId: getModelId(config.model),
+  });
+
+  return {
+    success: true,
+    textResult: result.text.trim(),
+    result: result.text.trim(),
+  };
+}
+
+/**
+ * Translate message content
+ */
+async function executeTranslate(
+  config: MetaAiNodeActionConfig,
+  context: AiNodeExecutionContext
+): Promise<AiNodeResult> {
+  const targetLanguage = config.targetLanguage || "en";
+
+  const systemPrompt =
+    config.customSystemPrompt ||
+    `You are a professional translator. Translate the text to ${targetLanguage}.
+Rules:
+- Preserve the original tone and meaning
+- Keep any placeholders/variables like {{name}} or {product} unchanged
+- Preserve markdown formatting if present
+- Keep emojis unchanged
+- Do not add any explanations, just return the translated text`;
+
+  const userPrompt = config.customUserPrompt
+    ? interpolateTemplate(
+        config.customUserPrompt,
+        context.variables,
+        context.collectedInputs
+      )
+    : context.message;
+
+  const result = await coreGenerateText({
+    system: systemPrompt,
+    prompt: userPrompt,
+    temperature: config.temperature ?? 0.3,
+    modelId: getModelId(config.model),
+  });
+
+  return {
+    success: true,
+    textResult: result.text.trim(),
+    result: result.text.trim(),
+  };
+}
+
+/**
+ * Execute custom AI operation with full control
+ */
+async function executeCustom(
+  config: MetaAiNodeActionConfig,
+  context: AiNodeExecutionContext
+): Promise<AiNodeResult> {
+  if (!config.customSystemPrompt && !config.customUserPrompt) {
+    return {
+      success: false,
+      error: "Custom operation requires at least a system or user prompt",
+    };
+  }
+
+  const systemPrompt =
+    config.customSystemPrompt || "You are a helpful AI assistant.";
+  const userPrompt = config.customUserPrompt
+    ? interpolateTemplate(
+        config.customUserPrompt,
+        context.variables,
+        context.collectedInputs
+      )
+    : context.message;
+
+  const result = await coreGenerateText({
+    system: systemPrompt,
+    prompt: userPrompt,
+    temperature: config.temperature ?? 0.7,
+    modelId: getModelId(config.model),
+  });
+
+  return {
+    success: true,
+    textResult: result.text.trim(),
+    result: result.text.trim(),
+  };
+}
+
+/**
+ * Build Zod schema from visual builder field definitions
+ */
+function buildSchemaFromFields(fields: MetaExtractedField[]): z.ZodType {
+  const shape: Record<string, z.ZodType> = {};
+
+  for (const field of fields) {
+    let fieldSchema: z.ZodType;
+
+    switch (field.type) {
+      case "string":
+        fieldSchema = z.string().describe(field.description);
+        break;
+      case "number":
+        fieldSchema = z.number().describe(field.description);
+        break;
+      case "boolean":
+        fieldSchema = z.boolean().describe(field.description);
+        break;
+      case "array":
+        fieldSchema = z.array(z.string()).describe(field.description);
+        break;
+      default:
+        fieldSchema = z.string().describe(field.description);
+    }
+
+    if (!field.required) {
+      fieldSchema = fieldSchema.nullable().optional();
+    }
+
+    shape[field.name] = fieldSchema;
+  }
+
+  return z.object(shape);
+}
+
+/**
+ * Build Zod schema from JSON schema definition (simplified)
+ */
+function buildSchemaFromJson(jsonSchema: Record<string, unknown>): z.ZodType {
+  const properties = jsonSchema.properties;
+  const required = (jsonSchema.required as string[]) || [];
+
+  // Validate properties is a plain object
+  if (
+    !properties ||
+    typeof properties !== "object" ||
+    Array.isArray(properties)
+  ) {
+    return z.object({});
+  }
+
+  const typedProperties = properties as Record<
+    string,
+    { type: string; description?: string }
+  >;
+
+  const shape: Record<string, z.ZodType> = {};
+
+  for (const [key, prop] of Object.entries(typedProperties)) {
+    let fieldSchema: z.ZodType;
+
+    switch (prop.type) {
+      case "string":
+        fieldSchema = z.string();
+        break;
+      case "number":
+      case "integer":
+        fieldSchema = z.number();
+        break;
+      case "boolean":
+        fieldSchema = z.boolean();
+        break;
+      case "array":
+        fieldSchema = z.array(z.string());
+        break;
+      default:
+        fieldSchema = z.string();
+    }
+
+    if (prop.description) {
+      fieldSchema = fieldSchema.describe(prop.description);
+    }
+
+    if (!required.includes(key)) {
+      fieldSchema = fieldSchema.nullable().optional();
+    }
+
+    shape[key] = fieldSchema;
+  }
+
+  return z.object(shape);
 }

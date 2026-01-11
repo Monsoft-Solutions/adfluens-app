@@ -15,6 +15,7 @@ import type {
   HttpRequestActionConfig,
   SetVariableActionConfig,
   GotoNodeActionConfig,
+  AiNodeActionConfig,
 } from "../flow-editor.types";
 
 // ============================================================================
@@ -135,6 +136,17 @@ export const getGotoConfig = (data: FlowNodeData): GotoNodeActionConfig => {
     return action.config;
   }
   return { targetNodeId: "" };
+};
+
+/**
+ * Type-safe config extraction for AI nodes.
+ */
+export const getAiNodeConfig = (data: FlowNodeData): AiNodeActionConfig => {
+  const action = getFirstAction(data);
+  if (action?.type === "ai_node") {
+    return action.config;
+  }
+  return { operation: "generate_response" };
 };
 
 // ============================================================================
