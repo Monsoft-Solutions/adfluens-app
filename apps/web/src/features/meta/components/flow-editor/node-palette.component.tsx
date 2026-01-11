@@ -12,6 +12,9 @@ import {
   Sparkles,
   UserCheck,
   Clock,
+  Globe,
+  Variable,
+  CornerDownRight,
 } from "lucide-react";
 import { Card, cn } from "@repo/ui";
 import type { FlowNodeType, NodePaletteItem } from "./flow-editor.types";
@@ -102,6 +105,32 @@ const PALETTE_ITEMS: NodePaletteItem[] = [
       ],
     },
   },
+  {
+    type: "set-variable",
+    label: "Set Variable",
+    description: "Store data for later",
+    icon: <Variable className="w-4 h-4" />,
+    category: "logic",
+    defaultData: {
+      name: "Set Variable",
+      nodeType: "set-variable",
+      actions: [
+        { type: "set_variable", config: { variableName: "", value: "" } },
+      ],
+    },
+  },
+  {
+    type: "goto",
+    label: "Go To",
+    description: "Jump to another node",
+    icon: <CornerDownRight className="w-4 h-4" />,
+    category: "logic",
+    defaultData: {
+      name: "Go To",
+      nodeType: "goto",
+      actions: [{ type: "goto_node", config: { targetNodeId: "" } }],
+    },
+  },
   // Actions
   {
     type: "handoff",
@@ -113,6 +142,18 @@ const PALETTE_ITEMS: NodePaletteItem[] = [
       name: "Handoff",
       nodeType: "handoff",
       actions: [{ type: "handoff", config: { reason: "" } }],
+    },
+  },
+  {
+    type: "http-request",
+    label: "HTTP Request",
+    description: "Call external API",
+    icon: <Globe className="w-4 h-4" />,
+    category: "actions",
+    defaultData: {
+      name: "HTTP Request",
+      nodeType: "http-request",
+      actions: [{ type: "http_request", config: { method: "GET", url: "" } }],
     },
   },
 ];

@@ -35,6 +35,10 @@ import {
   scheduleFlowExecution,
   cancelPendingExecutions,
 } from "./scheduled-execution.service";
+import {
+  interpolateVariables,
+  createInterpolationContext,
+} from "./utils/variable-interpolation.utils";
 
 // =============================================================================
 // Types
@@ -717,6 +721,180 @@ async function executeNode(
           response: responses.join("\n") || undefined,
           reason: "flow_delay_scheduled",
         };
+      }
+      case "set_variable": {
+        const config = action.config as {
+          variableName: string;
+          value: unknown;
+        };
+        const { variableName, value } = config;
+
+        // Create interpolation context
+        const interpolationContext = createInterpolationContext(
+          state.context.variables,
+          state.context.collectedInputs
+        );
+
+        // Interpolate the value if it's a string containing {{}}
+        const resolvedValue =
+          typeof value === "string"
+            ? interpolateVariables(value, interpolationContext)
+            : value;
+
+        // Update state with new variable
+        await updateConversationState(state.id, {
+          context: {
+            ...state.context,
+            variables: {
+              ...state.context.variables,
+              [variableName]: resolvedValue,
+            },
+          },
+        });
+
+        // Update local state reference for subsequent actions
+        state.context.variables[variableName] = resolvedValue;
+        console.log(
+          `[meta-bot] Set variable: ${variableName} = ${JSON.stringify(resolvedValue)}`
+        );
+        break;
+      }
+      case "http_request": {
+        const config = action.config as {
+          method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+          url: string;
+          headers?: Record<string, string>;
+          body?: string;
+          responseVariable?: string;
+        };
+
+        const interpolationContext = createInterpolationContext(
+          state.context.variables,
+          state.context.collectedInputs
+        );
+
+        // Interpolate URL and body
+        const url = interpolateVariables(config.url, interpolationContext);
+        const body = config.body
+          ? interpolateVariables(config.body, interpolationContext)
+          : undefined;
+
+        // Build headers
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+          ...config.headers,
+        };
+
+        try {
+          const response = await fetch(url, {
+            method: config.method,
+            headers,
+            body:
+              body && ["POST", "PUT", "PATCH"].includes(config.method)
+                ? body
+                : undefined,
+          });
+
+          let responseData: unknown;
+          const contentType = response.headers.get("content-type");
+          if (contentType?.includes("application/json")) {
+            responseData = await response.json();
+          } else {
+            responseData = await response.text();
+          }
+
+          // Store response in variable if specified
+          if (config.responseVariable) {
+            const updatedVariables = {
+              ...state.context.variables,
+              [config.responseVariable]: responseData,
+              [`${config.responseVariable}_status`]: response.status,
+              [`${config.responseVariable}_ok`]: response.ok,
+            };
+
+            await updateConversationState(state.id, {
+              context: {
+                ...state.context,
+                variables: updatedVariables,
+              },
+            });
+
+            // Update local state
+            state.context.variables = updatedVariables;
+          }
+
+          console.log(
+            `[meta-bot] HTTP ${config.method} ${url} - ${response.status}`
+          );
+        } catch (error) {
+          console.error(`[meta-bot] HTTP request failed:`, error);
+
+          // Store error in variable if specified
+          if (config.responseVariable) {
+            const errorMessage =
+              error instanceof Error ? error.message : "Unknown error";
+            const updatedVariables = {
+              ...state.context.variables,
+              [config.responseVariable]: null,
+              [`${config.responseVariable}_error`]: errorMessage,
+              [`${config.responseVariable}_ok`]: false,
+            };
+
+            await updateConversationState(state.id, {
+              context: {
+                ...state.context,
+                variables: updatedVariables,
+              },
+            });
+
+            state.context.variables = updatedVariables;
+          }
+        }
+        break;
+      }
+      case "goto_node": {
+        const config = action.config as { targetNodeId: string };
+        const targetNode = flow.nodes.find((n) => n.id === config.targetNodeId);
+
+        if (targetNode) {
+          // Update current node pointer
+          await updateConversationState(state.id, {
+            context: {
+              ...state.context,
+              currentNodeId: config.targetNodeId,
+            },
+          });
+
+          console.log(`[meta-bot] Goto node: ${config.targetNodeId}`);
+
+          // Execute the target node immediately (with any collected responses)
+          const gotoResult = await executeNode(
+            targetNode,
+            state,
+            flow,
+            flowContext
+          );
+
+          // Combine responses if the goto target also has responses
+          if (responses.length > 0 && gotoResult.response) {
+            return {
+              ...gotoResult,
+              response: [...responses, gotoResult.response].join("\n"),
+            };
+          } else if (responses.length > 0) {
+            return {
+              ...gotoResult,
+              response: responses.join("\n"),
+            };
+          }
+
+          return gotoResult;
+        } else {
+          console.warn(
+            `[meta-bot] goto_node: Target node ${config.targetNodeId} not found`
+          );
+        }
+        break;
       }
     }
   }

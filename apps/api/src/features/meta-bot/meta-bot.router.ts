@@ -88,6 +88,7 @@ const flowActionSchema = z.object({
     "goto_node",
     "ai_response",
     "delay",
+    "http_request",
   ]),
   config: z.record(z.string(), z.unknown()),
 });

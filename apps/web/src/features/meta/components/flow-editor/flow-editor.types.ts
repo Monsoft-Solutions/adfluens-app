@@ -18,7 +18,10 @@ export type FlowNodeType =
   | "condition"
   | "ai-response"
   | "handoff"
-  | "delay";
+  | "delay"
+  | "http-request"
+  | "set-variable"
+  | "goto";
 
 // ============================================================================
 // Action Types (from backend)
@@ -32,7 +35,8 @@ export type FlowActionType =
   | "handoff"
   | "goto_node"
   | "ai_response"
-  | "delay";
+  | "delay"
+  | "http_request";
 
 // ============================================================================
 // Action Config Types (for type-safe config access)
@@ -72,6 +76,14 @@ export type GotoNodeActionConfig = {
 
 export type AiResponseActionConfig = Record<string, unknown>;
 
+export type HttpRequestActionConfig = {
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  url: string;
+  headers?: Record<string, string>;
+  body?: string;
+  responseVariable?: string;
+};
+
 // Discriminated union for type-safe action handling
 export type FlowAction =
   | { type: "send_message"; config: MessageActionConfig }
@@ -81,7 +93,8 @@ export type FlowAction =
   | { type: "delay"; config: DelayActionConfig }
   | { type: "set_variable"; config: SetVariableActionConfig }
   | { type: "goto_node"; config: GotoNodeActionConfig }
-  | { type: "ai_response"; config: AiResponseActionConfig };
+  | { type: "ai_response"; config: AiResponseActionConfig }
+  | { type: "http_request"; config: HttpRequestActionConfig };
 
 // ============================================================================
 // Trigger Types (from backend)
@@ -106,8 +119,33 @@ export type FlowTrigger = {
 // Condition Types
 // ============================================================================
 
+export type ConditionOperator =
+  | "equals"
+  | "not_equals"
+  | "contains"
+  | "not_contains"
+  | "starts_with"
+  | "ends_with"
+  | "greater_than"
+  | "less_than"
+  | "is_empty"
+  | "is_not_empty";
+
+export type SingleCondition = {
+  variable: string;
+  operator: ConditionOperator;
+  value: string;
+};
+
+export type FlowConditionGroup = {
+  logic: "and" | "or";
+  conditions: SingleCondition[];
+};
+
+// Keep legacy support for simple expression-based conditions
 export type FlowCondition = {
-  expression: string;
+  expression?: string;
+  conditionGroup?: FlowConditionGroup;
   targetNodeId: string;
 };
 
@@ -207,6 +245,9 @@ export const nodeTypeToApiType: Record<FlowNodeType, ApiFlowNode["type"]> = {
   "ai-response": "ai_node",
   handoff: "action",
   delay: "action",
+  "http-request": "action",
+  "set-variable": "action",
+  goto: "action",
 };
 
 /**
@@ -231,6 +272,12 @@ export function apiTypeToNodeType(apiNode: ApiFlowNode): FlowNodeType {
         return "ai-response";
       case "delay":
         return "delay";
+      case "http_request":
+        return "http-request";
+      case "set_variable":
+        return "set-variable";
+      case "goto_node":
+        return "goto";
     }
   }
 

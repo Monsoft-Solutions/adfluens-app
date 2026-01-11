@@ -33,7 +33,8 @@ export type MetaBotFlowAction = {
     | "handoff"
     | "goto_node"
     | "ai_response"
-    | "delay";
+    | "delay"
+    | "http_request";
   config: Record<string, unknown>;
 };
 

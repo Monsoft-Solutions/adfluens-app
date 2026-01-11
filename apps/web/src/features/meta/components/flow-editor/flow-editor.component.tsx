@@ -30,6 +30,9 @@ import {
   HandoffNodeFields,
   DelayNodeFields,
   EntryNodeFields,
+  HttpRequestNodeFields,
+  SetVariableNodeFields,
+  GotoNodeFields,
 } from "./fields";
 import type {
   FlowEditorProps,
@@ -443,6 +446,7 @@ function FlowEditorInner({
         {selectedNode && (
           <NodePropertiesPanel
             node={selectedNode}
+            nodes={nodes}
             onUpdate={(updates) => updateNodeData(selectedNode.id, updates)}
             onClose={() => setSelectedNode(null)}
           />
@@ -458,23 +462,25 @@ function FlowEditorInner({
 
 type NodePropertiesPanelProps = {
   node: FlowEditorNode;
+  nodes: FlowEditorNode[];
   onUpdate: (updates: Partial<FlowNodeData>) => void;
   onClose: () => void;
 };
 
 function NodePropertiesPanel({
   node,
+  nodes,
   onUpdate,
   onClose,
 }: NodePropertiesPanelProps) {
   const { data, type } = node;
 
   return (
-    <div className="w-72 bg-card border-l border-border p-4 overflow-y-auto">
-      <div className="flex items-center justify-between mb-4">
+    <div className="w-72 overflow-y-auto border-l border-border bg-card p-4">
+      <div className="mb-4 flex items-center justify-between">
         <h3 className="font-semibold">Node Properties</h3>
         <Button variant="ghost" size="sm" onClick={onClose}>
-          <X className="w-4 h-4" />
+          <X className="h-4 w-4" />
         </Button>
       </div>
 
@@ -490,22 +496,47 @@ function NodePropertiesPanel({
 
         {/* Type-specific fields */}
         {type === "message" && (
-          <MessageNodeFields data={data} onUpdate={onUpdate} />
+          <MessageNodeFields data={data} onUpdate={onUpdate} nodes={nodes} />
         )}
         {type === "quick-replies" && (
-          <QuickRepliesNodeFields data={data} onUpdate={onUpdate} />
+          <QuickRepliesNodeFields
+            data={data}
+            onUpdate={onUpdate}
+            nodes={nodes}
+          />
         )}
         {type === "collect-input" && (
-          <CollectInputNodeFields data={data} onUpdate={onUpdate} />
+          <CollectInputNodeFields
+            data={data}
+            onUpdate={onUpdate}
+            nodes={nodes}
+          />
         )}
         {type === "condition" && (
-          <ConditionNodeFields data={data} onUpdate={onUpdate} />
+          <ConditionNodeFields data={data} onUpdate={onUpdate} nodes={nodes} />
         )}
         {type === "handoff" && (
-          <HandoffNodeFields data={data} onUpdate={onUpdate} />
+          <HandoffNodeFields data={data} onUpdate={onUpdate} nodes={nodes} />
         )}
         {type === "delay" && (
-          <DelayNodeFields data={data} onUpdate={onUpdate} />
+          <DelayNodeFields data={data} onUpdate={onUpdate} nodes={nodes} />
+        )}
+        {type === "http-request" && (
+          <HttpRequestNodeFields
+            data={data}
+            onUpdate={onUpdate}
+            nodes={nodes}
+          />
+        )}
+        {type === "set-variable" && (
+          <SetVariableNodeFields
+            data={data}
+            onUpdate={onUpdate}
+            nodes={nodes}
+          />
+        )}
+        {type === "goto" && (
+          <GotoNodeFields data={data} onUpdate={onUpdate} nodes={nodes} />
         )}
         {type === "entry" && <EntryNodeFields />}
       </div>

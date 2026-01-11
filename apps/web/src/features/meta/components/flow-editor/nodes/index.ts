@@ -12,6 +12,9 @@ export { ConditionNode } from "./condition-node.component";
 export { AiResponseNode } from "./ai-response-node.component";
 export { HandoffNode } from "./handoff-node.component";
 export { DelayNode } from "./delay-node.component";
+export { HttpRequestNode } from "./http-request-node.component";
+export { SetVariableNode } from "./set-variable-node.component";
+export { GotoNode } from "./goto-node.component";
 
 import { EntryNode } from "./entry-node.component";
 import { MessageNode } from "./message-node.component";
@@ -21,6 +24,9 @@ import { ConditionNode } from "./condition-node.component";
 import { AiResponseNode } from "./ai-response-node.component";
 import { HandoffNode } from "./handoff-node.component";
 import { DelayNode } from "./delay-node.component";
+import { HttpRequestNode } from "./http-request-node.component";
+import { SetVariableNode } from "./set-variable-node.component";
+import { GotoNode } from "./goto-node.component";
 
 /**
  * Map of node type names to their React components
@@ -35,4 +41,7 @@ export const nodeTypes = {
   "ai-response": AiResponseNode,
   handoff: HandoffNode,
   delay: DelayNode,
+  "http-request": HttpRequestNode,
+  "set-variable": SetVariableNode,
+  goto: GotoNode,
 } as const;

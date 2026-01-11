@@ -8,7 +8,11 @@ import { Input, Label } from "@repo/ui";
 import type { NodeFieldProps } from "./field.types";
 import { getHandoffConfig } from "../nodes/node.utils";
 
-export function HandoffNodeFields({ data, onUpdate }: NodeFieldProps) {
+export function HandoffNodeFields({
+  data,
+  onUpdate,
+  nodes: _nodes,
+}: NodeFieldProps) {
   const { reason } = getHandoffConfig(data);
 
   return (

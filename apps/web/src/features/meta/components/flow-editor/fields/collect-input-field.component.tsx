@@ -8,7 +8,11 @@ import { Input, Label, Textarea } from "@repo/ui";
 import type { NodeFieldProps } from "./field.types";
 import { getCollectInputConfig } from "../nodes/node.utils";
 
-export function CollectInputNodeFields({ data, onUpdate }: NodeFieldProps) {
+export function CollectInputNodeFields({
+  data,
+  onUpdate,
+  nodes: _nodes,
+}: NodeFieldProps) {
   const { prompt, inputName } = getCollectInputConfig(data);
 
   return (

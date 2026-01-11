@@ -12,6 +12,9 @@ import type {
   CollectInputActionConfig,
   HandoffActionConfig,
   DelayActionConfig,
+  HttpRequestActionConfig,
+  SetVariableActionConfig,
+  GotoNodeActionConfig,
 } from "../flow-editor.types";
 
 // ============================================================================
@@ -97,6 +100,43 @@ export const getDelayConfig = (data: FlowNodeData): DelayActionConfig => {
   return { delayAmount: 1, delayUnit: "days" };
 };
 
+/**
+ * Type-safe config extraction for HTTP request nodes.
+ */
+export const getHttpRequestConfig = (
+  data: FlowNodeData
+): HttpRequestActionConfig => {
+  const action = getFirstAction(data);
+  if (action?.type === "http_request") {
+    return action.config;
+  }
+  return { method: "GET", url: "" };
+};
+
+/**
+ * Type-safe config extraction for set variable nodes.
+ */
+export const getSetVariableConfig = (
+  data: FlowNodeData
+): SetVariableActionConfig => {
+  const action = getFirstAction(data);
+  if (action?.type === "set_variable") {
+    return action.config;
+  }
+  return { variableName: "", value: "" };
+};
+
+/**
+ * Type-safe config extraction for goto nodes.
+ */
+export const getGotoConfig = (data: FlowNodeData): GotoNodeActionConfig => {
+  const action = getFirstAction(data);
+  if (action?.type === "goto_node") {
+    return action.config;
+  }
+  return { targetNodeId: "" };
+};
+
 // ============================================================================
 // Styling Constants
 // ============================================================================
@@ -142,5 +182,17 @@ export const NODE_STYLES = {
   entry: {
     iconColor: "bg-green-500/20 text-green-500",
     borderColor: "ring-green-500",
+  },
+  httpRequest: {
+    iconColor: "bg-indigo-500/20 text-indigo-500",
+    borderColor: "ring-indigo-500",
+  },
+  setVariable: {
+    iconColor: "bg-teal-500/20 text-teal-500",
+    borderColor: "ring-teal-500",
+  },
+  goto: {
+    iconColor: "bg-pink-500/20 text-pink-500",
+    borderColor: "ring-pink-500",
   },
 } as const;

@@ -4,32 +4,41 @@
  * Properties panel fields for editing quick replies nodes.
  */
 
-import { Input, Label, Textarea } from "@repo/ui";
+import { Input, Label } from "@repo/ui";
 import type { NodeFieldProps } from "./field.types";
 import { getQuickRepliesConfig } from "../nodes/node.utils";
+import { VariableTextarea } from "./variable-input.component";
 
-export function QuickRepliesNodeFields({ data, onUpdate }: NodeFieldProps) {
+export function QuickRepliesNodeFields({
+  data,
+  onUpdate,
+  nodes,
+}: NodeFieldProps) {
   const { message, replies } = getQuickRepliesConfig(data);
 
   return (
     <div className="space-y-4">
       <div className="space-y-2">
         <Label>Message</Label>
-        <Textarea
+        <VariableTextarea
+          nodes={nodes}
           rows={3}
           value={message}
-          onChange={(e) =>
+          onValueChange={(value) =>
             onUpdate({
               actions: [
                 {
                   type: "send_quick_replies",
-                  config: { message: e.target.value, replies },
+                  config: { message: value, replies },
                 },
               ],
             })
           }
           placeholder="Enter your message..."
         />
+        <p className="text-xs text-muted-foreground">
+          Click the {"{}"} button to insert variables
+        </p>
       </div>
       <div className="space-y-2">
         <Label>Button Options (comma-separated)</Label>

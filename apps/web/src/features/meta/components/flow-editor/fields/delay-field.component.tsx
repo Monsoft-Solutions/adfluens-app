@@ -16,7 +16,11 @@ import {
 import type { NodeFieldProps } from "./field.types";
 import { getDelayConfig } from "../nodes/node.utils";
 
-export function DelayNodeFields({ data, onUpdate }: NodeFieldProps) {
+export function DelayNodeFields({
+  data,
+  onUpdate,
+  nodes: _nodes,
+}: NodeFieldProps) {
   const { delayAmount, delayUnit } = getDelayConfig(data);
 
   return (
