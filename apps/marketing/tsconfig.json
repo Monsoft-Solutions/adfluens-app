@@ -7,6 +7,6 @@
     },
     "strictNullChecks": true
   },
-  "include": ["src/**/*", "astro.config.mjs"],
+  "include": ["src/**/*", ".astro/types.d.ts", "astro.config.mjs"],
   "exclude": ["node_modules", "dist"]
 }

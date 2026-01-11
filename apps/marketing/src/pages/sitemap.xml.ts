@@ -1,5 +1,6 @@
 import type { APIContext } from "astro";
 import { getCollection } from "astro:content";
+import type { CollectionEntry } from "astro:content";
 
 export async function GET(context: APIContext) {
   // Remove trailing slash from site URL
@@ -35,7 +36,7 @@ export async function GET(context: APIContext) {
   );
 
   const blogUrls = posts.map(
-    (post) => `  <url>
+    (post: CollectionEntry<"blog">) => `  <url>
     <loc>${site}/blog/${post.slug}/</loc>
     <lastmod>${post.data.updatedAt?.toISOString().split("T")[0] ?? post.data.publishedAt.toISOString().split("T")[0]}</lastmod>
     <changefreq>monthly</changefreq>
