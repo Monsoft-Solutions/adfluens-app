@@ -1,7 +1,6 @@
 /**
  * Flow Editor Component
  *
- *  TODO: Decompose this component, it's too big and complex.
  * Visual node-based flow editor using @xyflow/react
  */
 
@@ -19,21 +18,19 @@ import {
   ReactFlowProvider,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import {
-  Button,
-  Input,
-  Label,
-  Textarea,
-  Switch,
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@repo/ui";
+import { Button, Input, Label, Switch } from "@repo/ui";
 import { Save, ArrowLeft, Zap, Loader2, CircleCheck, X } from "lucide-react";
 import { nodeTypes } from "./nodes";
 import { NodePalette, PALETTE_ITEMS } from "./node-palette.component";
+import {
+  MessageNodeFields,
+  QuickRepliesNodeFields,
+  CollectInputNodeFields,
+  ConditionNodeFields,
+  HandoffNodeFields,
+  DelayNodeFields,
+  EntryNodeFields,
+} from "./fields";
 import type {
   FlowEditorProps,
   FlowEditorNode,
@@ -510,303 +507,8 @@ function NodePropertiesPanel({
         {type === "delay" && (
           <DelayNodeFields data={data} onUpdate={onUpdate} />
         )}
-        {type === "entry" && (
-          <EntryNodeFields _data={data} _onUpdate={onUpdate} />
-        )}
+        {type === "entry" && <EntryNodeFields />}
       </div>
-    </div>
-  );
-}
-
-// ============================================================================
-// Node-specific Field Components
-// ============================================================================
-
-function MessageNodeFields({
-  data,
-  onUpdate,
-}: {
-  data: FlowNodeData;
-  onUpdate: (updates: Partial<FlowNodeData>) => void;
-}) {
-  const message = (data.actions[0]?.config?.message as string) || "";
-
-  return (
-    <div className="space-y-2">
-      <Label>Message</Label>
-      <Textarea
-        rows={4}
-        value={message}
-        onChange={(e) =>
-          onUpdate({
-            actions: [
-              { type: "send_message", config: { message: e.target.value } },
-            ],
-          })
-        }
-        placeholder="Enter your message..."
-      />
-    </div>
-  );
-}
-
-function QuickRepliesNodeFields({
-  data,
-  onUpdate,
-}: {
-  data: FlowNodeData;
-  onUpdate: (updates: Partial<FlowNodeData>) => void;
-}) {
-  const action = data.actions[0];
-  const message = (action?.config?.message as string) || "";
-  const replies = (action?.config?.replies as string[]) || [];
-
-  return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label>Message</Label>
-        <Textarea
-          rows={3}
-          value={message}
-          onChange={(e) =>
-            onUpdate({
-              actions: [
-                {
-                  type: "send_quick_replies",
-                  config: { message: e.target.value, replies },
-                },
-              ],
-            })
-          }
-          placeholder="Enter your message..."
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Button Options (comma-separated)</Label>
-        <Input
-          value={replies.join(", ")}
-          onChange={(e) =>
-            onUpdate({
-              actions: [
-                {
-                  type: "send_quick_replies",
-                  config: {
-                    message,
-                    replies: e.target.value.split(",").map((r) => r.trim()),
-                  },
-                },
-              ],
-            })
-          }
-          placeholder="Option 1, Option 2, Option 3"
-        />
-      </div>
-    </div>
-  );
-}
-
-function CollectInputNodeFields({
-  data,
-  onUpdate,
-}: {
-  data: FlowNodeData;
-  onUpdate: (updates: Partial<FlowNodeData>) => void;
-}) {
-  const action = data.actions[0];
-  const prompt = (action?.config?.prompt as string) || "";
-  const inputName = (action?.config?.inputName as string) || "";
-
-  return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label>Question</Label>
-        <Textarea
-          rows={3}
-          value={prompt}
-          onChange={(e) =>
-            onUpdate({
-              actions: [
-                {
-                  type: "collect_input",
-                  config: { prompt: e.target.value, inputName },
-                },
-              ],
-            })
-          }
-          placeholder="What question do you want to ask?"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Save response as</Label>
-        <Input
-          value={inputName}
-          onChange={(e) =>
-            onUpdate({
-              actions: [
-                {
-                  type: "collect_input",
-                  config: { prompt, inputName: e.target.value },
-                },
-              ],
-            })
-          }
-          placeholder="variable_name"
-          className="font-mono"
-        />
-      </div>
-    </div>
-  );
-}
-
-function ConditionNodeFields({
-  data,
-  onUpdate,
-}: {
-  data: FlowNodeData;
-  onUpdate: (updates: Partial<FlowNodeData>) => void;
-}) {
-  const condition = data.conditions?.[0];
-  const expression = condition?.expression || "";
-
-  return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label>Condition</Label>
-        <Input
-          value={expression}
-          onChange={(e) =>
-            onUpdate({
-              conditions: [
-                {
-                  expression: e.target.value,
-                  targetNodeId: condition?.targetNodeId || "",
-                },
-              ],
-            })
-          }
-          placeholder="contains:keyword"
-        />
-        <p className="text-xs text-muted-foreground">
-          Formats: contains:word, equals:value, regex:pattern
-        </p>
-      </div>
-      <div className="text-xs text-muted-foreground">
-        <p>
-          <span className="text-green-500">Green output</span> = condition true
-        </p>
-        <p>
-          <span className="text-red-500">Red output</span> = condition false
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function HandoffNodeFields({
-  data,
-  onUpdate,
-}: {
-  data: FlowNodeData;
-  onUpdate: (updates: Partial<FlowNodeData>) => void;
-}) {
-  const reason = (data.actions[0]?.config?.reason as string) || "";
-
-  return (
-    <div className="space-y-2">
-      <Label>Handoff Reason</Label>
-      <Input
-        value={reason}
-        onChange={(e) =>
-          onUpdate({
-            actions: [{ type: "handoff", config: { reason: e.target.value } }],
-          })
-        }
-        placeholder="Why are you handing off?"
-      />
-    </div>
-  );
-}
-
-function DelayNodeFields({
-  data,
-  onUpdate,
-}: {
-  data: FlowNodeData;
-  onUpdate: (updates: Partial<FlowNodeData>) => void;
-}) {
-  const action = data.actions[0];
-  const amount = (action?.config?.delayAmount as number) || 1;
-  const unit = (action?.config?.delayUnit as string) || "days";
-
-  return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label>Wait for</Label>
-        <div className="flex gap-2">
-          <Input
-            type="number"
-            min={1}
-            value={amount}
-            onChange={(e) =>
-              onUpdate({
-                actions: [
-                  {
-                    type: "delay",
-                    config: {
-                      delayAmount: parseInt(e.target.value) || 1,
-                      delayUnit: unit,
-                    },
-                  },
-                ],
-              })
-            }
-            className="w-20"
-          />
-          <Select
-            value={unit}
-            onValueChange={(value) =>
-              onUpdate({
-                actions: [
-                  {
-                    type: "delay",
-                    config: { delayAmount: amount, delayUnit: value },
-                  },
-                ],
-              })
-            }
-          >
-            <SelectTrigger className="flex-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="minutes">Minutes</SelectItem>
-              <SelectItem value="hours">Hours</SelectItem>
-              <SelectItem value="days">Days</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      <div className="text-xs text-muted-foreground">
-        <p>The flow will pause and continue after this time.</p>
-        <p className="mt-1">
-          If the user sends a message during the wait, the delay is cancelled.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function EntryNodeFields({
-  _data,
-  _onUpdate,
-}: {
-  _data: FlowNodeData;
-  _onUpdate: (updates: Partial<FlowNodeData>) => void;
-}) {
-  return (
-    <div className="text-sm text-muted-foreground">
-      <p>This is the starting point of your flow.</p>
-      <p className="mt-2">Trigger keywords are set in the toolbar above.</p>
     </div>
   );
 }

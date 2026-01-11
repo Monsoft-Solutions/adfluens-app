@@ -5,55 +5,34 @@
  */
 
 import { MousePointer2 } from "lucide-react";
-import { Badge } from "@repo/ui";
 import { BaseNode } from "./base-node.component";
-import type { FlowNodeData } from "../flow-editor.types";
+import type { FlowNodeProps } from "../flow-editor.types";
+import {
+  getNodeDeleteHandler,
+  getQuickRepliesConfig,
+  NODE_ICON_SIZE,
+  NODE_STYLES,
+} from "./node.utils";
+import { BadgeList } from "./badge-list.component";
 
-type QuickRepliesNodeProps = {
-  id: string;
-  data: FlowNodeData;
-  selected?: boolean;
-};
-
-export function QuickRepliesNode({
-  id,
-  data,
-  selected,
-}: QuickRepliesNodeProps) {
-  const action = data.actions[0];
-  const message = (action?.config?.message as string) || "";
-  const replies = (action?.config?.replies as string[]) || [];
+export function QuickRepliesNode({ id, data, selected }: FlowNodeProps) {
+  const { message, replies } = getQuickRepliesConfig(data);
 
   return (
     <BaseNode
       selected={selected}
-      icon={<MousePointer2 className="w-4 h-4" />}
-      iconColor="bg-blue-500/20 text-blue-500"
+      icon={<MousePointer2 className={NODE_ICON_SIZE} />}
+      iconColor={NODE_STYLES.quickReplies.iconColor}
       bgColor="bg-card"
-      borderColor="ring-blue-500"
+      borderColor={NODE_STYLES.quickReplies.borderColor}
       title={data.name || "Quick Replies"}
-      hasTargetHandle={true}
-      hasSourceHandle={true}
-      onDelete={data.onDelete ? () => data.onDelete?.(id) : undefined}
+      onDelete={getNodeDeleteHandler(data, id)}
     >
       <div className="space-y-2">
         <div className="text-sm text-muted-foreground line-clamp-2">
           {message || <span className="italic">Click to add message...</span>}
         </div>
-        {replies.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {replies.slice(0, 3).map((reply, i) => (
-              <Badge key={i} variant="outline" className="text-xs">
-                {reply}
-              </Badge>
-            ))}
-            {replies.length > 3 && (
-              <Badge variant="secondary" className="text-xs">
-                +{replies.length - 3}
-              </Badge>
-            )}
-          </div>
-        )}
+        <BadgeList items={replies} limit={3} />
       </div>
     </BaseNode>
   );

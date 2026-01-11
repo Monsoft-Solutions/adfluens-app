@@ -34,10 +34,54 @@ export type FlowActionType =
   | "ai_response"
   | "delay";
 
-export type FlowAction = {
-  type: FlowActionType;
-  config: Record<string, unknown>;
+// ============================================================================
+// Action Config Types (for type-safe config access)
+// ============================================================================
+
+export type MessageActionConfig = {
+  message: string;
 };
+
+export type QuickRepliesActionConfig = {
+  message: string;
+  replies: string[];
+};
+
+export type CollectInputActionConfig = {
+  prompt: string;
+  inputName: string;
+};
+
+export type HandoffActionConfig = {
+  reason: string;
+};
+
+export type DelayActionConfig = {
+  delayAmount: number;
+  delayUnit: "minutes" | "hours" | "days";
+};
+
+export type SetVariableActionConfig = {
+  variableName: string;
+  value: unknown;
+};
+
+export type GotoNodeActionConfig = {
+  targetNodeId: string;
+};
+
+export type AiResponseActionConfig = Record<string, unknown>;
+
+// Discriminated union for type-safe action handling
+export type FlowAction =
+  | { type: "send_message"; config: MessageActionConfig }
+  | { type: "send_quick_replies"; config: QuickRepliesActionConfig }
+  | { type: "collect_input"; config: CollectInputActionConfig }
+  | { type: "handoff"; config: HandoffActionConfig }
+  | { type: "delay"; config: DelayActionConfig }
+  | { type: "set_variable"; config: SetVariableActionConfig }
+  | { type: "goto_node"; config: GotoNodeActionConfig }
+  | { type: "ai_response"; config: AiResponseActionConfig };
 
 // ============================================================================
 // Trigger Types (from backend)
@@ -92,7 +136,6 @@ export type FlowNodeData = {
   actions: FlowAction[];
   triggers?: FlowTrigger[];
   conditions?: FlowCondition[];
-  onEdit?: (nodeId: string) => void;
   onDelete?: (nodeId: string) => void;
 };
 
@@ -101,6 +144,13 @@ export type FlowEditorNode = Node<FlowNodeData, FlowNodeType>;
 
 // React Flow edge
 export type FlowEditorEdge = Edge;
+
+// Shared props type for all flow node components (DRY)
+export type FlowNodeProps = {
+  id: string;
+  data: FlowNodeData;
+  selected?: boolean;
+};
 
 // ============================================================================
 // Flow Editor Props

@@ -6,30 +6,28 @@
 
 import { GitBranch } from "lucide-react";
 import { BaseNode } from "./base-node.component";
-import type { FlowNodeData } from "../flow-editor.types";
+import type { FlowNodeProps } from "../flow-editor.types";
+import {
+  getNodeDeleteHandler,
+  NODE_ICON_SIZE,
+  NODE_STYLES,
+} from "./node.utils";
 
-type ConditionNodeProps = {
-  id: string;
-  data: FlowNodeData;
-  selected?: boolean;
-};
-
-export function ConditionNode({ id, data, selected }: ConditionNodeProps) {
+export function ConditionNode({ id, data, selected }: FlowNodeProps) {
   const condition = data.conditions?.[0];
   const expression = condition?.expression || "";
 
   return (
     <BaseNode
       selected={selected}
-      icon={<GitBranch className="w-4 h-4" />}
-      iconColor="bg-orange-500/20 text-orange-500"
+      icon={<GitBranch className={NODE_ICON_SIZE} />}
+      iconColor={NODE_STYLES.condition.iconColor}
       bgColor="bg-card"
-      borderColor="ring-orange-500"
+      borderColor={NODE_STYLES.condition.borderColor}
       title={data.name || "Condition"}
-      hasTargetHandle={true}
       hasSourceHandle={false}
       hasMultipleSources={true}
-      onDelete={data.onDelete ? () => data.onDelete?.(id) : undefined}
+      onDelete={getNodeDeleteHandler(data, id)}
     >
       <div className="space-y-2">
         <div className="text-sm text-muted-foreground">
@@ -38,8 +36,8 @@ export function ConditionNode({ id, data, selected }: ConditionNodeProps) {
           )}
         </div>
         <div className="flex justify-between text-xs">
-          <span className="text-green-500">Yes</span>
-          <span className="text-red-500">No</span>
+          <span className="text-emerald-600 dark:text-emerald-400">Yes</span>
+          <span className="text-rose-600 dark:text-rose-400">No</span>
         </div>
       </div>
     </BaseNode>

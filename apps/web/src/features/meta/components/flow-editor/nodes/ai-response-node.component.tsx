@@ -6,26 +6,23 @@
 
 import { Sparkles } from "lucide-react";
 import { BaseNode } from "./base-node.component";
-import type { FlowNodeData } from "../flow-editor.types";
+import type { FlowNodeProps } from "../flow-editor.types";
+import {
+  getNodeDeleteHandler,
+  NODE_ICON_SIZE,
+  NODE_STYLES,
+} from "./node.utils";
 
-type AiResponseNodeProps = {
-  id: string;
-  data: FlowNodeData;
-  selected?: boolean;
-};
-
-export function AiResponseNode({ id, data, selected }: AiResponseNodeProps) {
+export function AiResponseNode({ id, data, selected }: FlowNodeProps) {
   return (
     <BaseNode
       selected={selected}
-      icon={<Sparkles className="w-4 h-4" />}
-      iconColor="bg-cyan-500/20 text-cyan-500"
+      icon={<Sparkles className={NODE_ICON_SIZE} />}
+      iconColor={NODE_STYLES.aiResponse.iconColor}
       bgColor="bg-card"
-      borderColor="ring-cyan-500"
+      borderColor={NODE_STYLES.aiResponse.borderColor}
       title={data.name || "AI Response"}
-      hasTargetHandle={true}
-      hasSourceHandle={true}
-      onDelete={data.onDelete ? () => data.onDelete?.(id) : undefined}
+      onDelete={getNodeDeleteHandler(data, id)}
     >
       <div className="text-sm text-muted-foreground">
         AI will generate a contextual response based on the conversation.

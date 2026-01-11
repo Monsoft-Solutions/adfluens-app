@@ -7,29 +7,27 @@
 import { UserCheck } from "lucide-react";
 import { Badge } from "@repo/ui";
 import { BaseNode } from "./base-node.component";
-import type { FlowNodeData } from "../flow-editor.types";
+import type { FlowNodeProps } from "../flow-editor.types";
+import {
+  getNodeDeleteHandler,
+  getHandoffConfig,
+  NODE_ICON_SIZE,
+  NODE_STYLES,
+} from "./node.utils";
 
-type HandoffNodeProps = {
-  id: string;
-  data: FlowNodeData;
-  selected?: boolean;
-};
-
-export function HandoffNode({ id, data, selected }: HandoffNodeProps) {
-  const action = data.actions[0];
-  const reason = (action?.config?.reason as string) || "";
+export function HandoffNode({ id, data, selected }: FlowNodeProps) {
+  const { reason } = getHandoffConfig(data);
 
   return (
     <BaseNode
       selected={selected}
-      icon={<UserCheck className="w-4 h-4" />}
-      iconColor="bg-red-500/20 text-red-500"
+      icon={<UserCheck className={NODE_ICON_SIZE} />}
+      iconColor={NODE_STYLES.handoff.iconColor}
       bgColor="bg-card"
-      borderColor="ring-red-500"
+      borderColor={NODE_STYLES.handoff.borderColor}
       title={data.name || "Handoff"}
-      hasTargetHandle={true}
       hasSourceHandle={false}
-      onDelete={data.onDelete ? () => data.onDelete?.(id) : undefined}
+      onDelete={getNodeDeleteHandler(data, id)}
     >
       <div className="space-y-2">
         <div className="text-sm text-muted-foreground">

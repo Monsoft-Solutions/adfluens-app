@@ -7,34 +7,26 @@
 import { TextCursorInput } from "lucide-react";
 import { Badge } from "@repo/ui";
 import { BaseNode } from "./base-node.component";
-import type { FlowNodeData } from "../flow-editor.types";
+import type { FlowNodeProps } from "../flow-editor.types";
+import {
+  getNodeDeleteHandler,
+  getCollectInputConfig,
+  NODE_ICON_SIZE,
+  NODE_STYLES,
+} from "./node.utils";
 
-type CollectInputNodeProps = {
-  id: string;
-  data: FlowNodeData;
-  selected?: boolean;
-};
-
-export function CollectInputNode({
-  id,
-  data,
-  selected,
-}: CollectInputNodeProps) {
-  const action = data.actions[0];
-  const prompt = (action?.config?.prompt as string) || "";
-  const inputName = (action?.config?.inputName as string) || "";
+export function CollectInputNode({ id, data, selected }: FlowNodeProps) {
+  const { prompt, inputName } = getCollectInputConfig(data);
 
   return (
     <BaseNode
       selected={selected}
-      icon={<TextCursorInput className="w-4 h-4" />}
-      iconColor="bg-purple-500/20 text-purple-500"
+      icon={<TextCursorInput className={NODE_ICON_SIZE} />}
+      iconColor={NODE_STYLES.collectInput.iconColor}
       bgColor="bg-card"
-      borderColor="ring-purple-500"
+      borderColor={NODE_STYLES.collectInput.borderColor}
       title={data.name || "Collect Input"}
-      hasTargetHandle={true}
-      hasSourceHandle={true}
-      onDelete={data.onDelete ? () => data.onDelete?.(id) : undefined}
+      onDelete={getNodeDeleteHandler(data, id)}
     >
       <div className="space-y-2">
         <div className="text-sm text-muted-foreground line-clamp-2">

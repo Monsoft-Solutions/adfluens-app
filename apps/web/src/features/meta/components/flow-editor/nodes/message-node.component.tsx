@@ -6,29 +6,26 @@
 
 import { MessageSquare } from "lucide-react";
 import { BaseNode } from "./base-node.component";
-import type { FlowNodeData } from "../flow-editor.types";
+import type { FlowNodeProps } from "../flow-editor.types";
+import {
+  getNodeDeleteHandler,
+  getMessageConfig,
+  NODE_ICON_SIZE,
+  NODE_STYLES,
+} from "./node.utils";
 
-type MessageNodeProps = {
-  id: string;
-  data: FlowNodeData;
-  selected?: boolean;
-};
-
-export function MessageNode({ id, data, selected }: MessageNodeProps) {
-  const action = data.actions[0];
-  const message = (action?.config?.message as string) || "";
+export function MessageNode({ id, data, selected }: FlowNodeProps) {
+  const { message } = getMessageConfig(data);
 
   return (
     <BaseNode
       selected={selected}
-      icon={<MessageSquare className="w-4 h-4" />}
-      iconColor="bg-blue-500/20 text-blue-500"
+      icon={<MessageSquare className={NODE_ICON_SIZE} />}
+      iconColor={NODE_STYLES.message.iconColor}
       bgColor="bg-card"
-      borderColor="ring-blue-500"
+      borderColor={NODE_STYLES.message.borderColor}
       title={data.name || "Send Message"}
-      hasTargetHandle={true}
-      hasSourceHandle={true}
-      onDelete={data.onDelete ? () => data.onDelete?.(id) : undefined}
+      onDelete={getNodeDeleteHandler(data, id)}
     >
       <div className="text-sm text-muted-foreground line-clamp-3">
         {message || <span className="italic">Click to add message...</span>}

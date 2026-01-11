@@ -6,36 +6,32 @@
 
 import { Clock } from "lucide-react";
 import { BaseNode } from "./base-node.component";
-import type { FlowNodeData } from "../flow-editor.types";
+import type { FlowNodeProps } from "../flow-editor.types";
+import {
+  getNodeDeleteHandler,
+  getDelayConfig,
+  NODE_ICON_SIZE,
+  NODE_STYLES,
+} from "./node.utils";
 
-type DelayNodeProps = {
-  id: string;
-  data: FlowNodeData;
-  selected?: boolean;
-};
-
-export function DelayNode({ id, data, selected }: DelayNodeProps) {
-  const action = data.actions[0];
-  const amount = (action?.config?.delayAmount as number) || 1;
-  const unit = (action?.config?.delayUnit as string) || "days";
+export function DelayNode({ id, data, selected }: FlowNodeProps) {
+  const { delayAmount, delayUnit } = getDelayConfig(data);
 
   // Format the display text
   const formatDelay = () => {
-    const unitLabel = amount === 1 ? unit.slice(0, -1) : unit;
-    return `${amount} ${unitLabel}`;
+    const unitLabel = delayAmount === 1 ? delayUnit.slice(0, -1) : delayUnit;
+    return `${delayAmount} ${unitLabel}`;
   };
 
   return (
     <BaseNode
       selected={selected}
-      icon={<Clock className="w-4 h-4" />}
-      iconColor="bg-amber-500/20 text-amber-500"
+      icon={<Clock className={NODE_ICON_SIZE} />}
+      iconColor={NODE_STYLES.delay.iconColor}
       bgColor="bg-card"
-      borderColor="ring-amber-500"
+      borderColor={NODE_STYLES.delay.borderColor}
       title={data.name || "Wait"}
-      hasTargetHandle={true}
-      hasSourceHandle={true}
-      onDelete={data.onDelete ? () => data.onDelete?.(id) : undefined}
+      onDelete={getNodeDeleteHandler(data, id)}
     >
       <div className="space-y-2">
         <div className="text-sm text-muted-foreground">

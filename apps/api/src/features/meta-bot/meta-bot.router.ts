@@ -214,48 +214,10 @@ export const metaBotRouter = router({
         );
       }
 
-      // Build update object
-      const updateData: Record<string, unknown> = {};
-
-      if (updates.aiEnabled !== undefined)
-        updateData.aiEnabled = updates.aiEnabled;
-      if (updates.aiPersonality !== undefined)
-        updateData.aiPersonality = updates.aiPersonality;
-      if (updates.aiTemperature !== undefined)
-        updateData.aiTemperature = updates.aiTemperature;
-      if (updates.welcomeMessage !== undefined)
-        updateData.welcomeMessage = updates.welcomeMessage;
-      if (updates.awayMessage !== undefined)
-        updateData.awayMessage = updates.awayMessage;
-      if (updates.businessHours !== undefined)
-        updateData.businessHours = updates.businessHours;
-      if (updates.responseRules !== undefined)
-        updateData.responseRules = updates.responseRules;
-      if (updates.handoffKeywords !== undefined)
-        updateData.handoffKeywords = updates.handoffKeywords;
-      if (updates.handoffNotificationEmail !== undefined)
-        updateData.handoffNotificationEmail = updates.handoffNotificationEmail;
-      if (updates.useOrganizationContext !== undefined)
-        updateData.useOrganizationContext = updates.useOrganizationContext;
-      if (updates.useWebsiteContext !== undefined)
-        updateData.useWebsiteContext = updates.useWebsiteContext;
-      if (updates.additionalContext !== undefined)
-        updateData.additionalContext = updates.additionalContext;
-      if (updates.salesAssistantEnabled !== undefined)
-        updateData.salesAssistantEnabled = updates.salesAssistantEnabled;
-      if (updates.customerSupportEnabled !== undefined)
-        updateData.customerSupportEnabled = updates.customerSupportEnabled;
-      if (updates.appointmentSchedulingEnabled !== undefined)
-        updateData.appointmentSchedulingEnabled =
-          updates.appointmentSchedulingEnabled;
-      if (updates.flowsEnabled !== undefined)
-        updateData.flowsEnabled = updates.flowsEnabled;
-      if (updates.fallbackToAi !== undefined)
-        updateData.fallbackToAi = updates.fallbackToAi;
-      if (updates.salesConfig !== undefined)
-        updateData.salesConfig = updates.salesConfig;
-      if (updates.supportConfig !== undefined)
-        updateData.supportConfig = updates.supportConfig;
+      // Build update object - filter out undefined values
+      const updateData = Object.fromEntries(
+        Object.entries(updates).filter(([_, value]) => value !== undefined)
+      );
 
       await db
         .update(metaConversationConfigTable)

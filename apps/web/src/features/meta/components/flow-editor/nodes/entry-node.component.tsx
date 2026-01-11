@@ -5,17 +5,16 @@
  */
 
 import { Zap } from "lucide-react";
-import { Badge } from "@repo/ui";
 import { BaseNode } from "./base-node.component";
-import type { FlowNodeData } from "../flow-editor.types";
+import type { FlowNodeProps } from "../flow-editor.types";
+import {
+  getNodeDeleteHandler,
+  NODE_ICON_SIZE,
+  NODE_STYLES,
+} from "./node.utils";
+import { BadgeList } from "./badge-list.component";
 
-type EntryNodeProps = {
-  id: string;
-  data: FlowNodeData;
-  selected?: boolean;
-};
-
-export function EntryNode({ id, data, selected }: EntryNodeProps) {
+export function EntryNode({ id, data, selected }: FlowNodeProps) {
   const triggers = data.triggers || [];
   const keywords = triggers
     .filter((t) => t.type === "keyword")
@@ -24,31 +23,24 @@ export function EntryNode({ id, data, selected }: EntryNodeProps) {
   return (
     <BaseNode
       selected={selected}
-      icon={<Zap className="w-4 h-4" />}
-      iconColor="bg-green-500/20 text-green-500"
+      icon={<Zap className={NODE_ICON_SIZE} />}
+      iconColor={NODE_STYLES.entry.iconColor}
       bgColor="bg-card"
-      borderColor="ring-green-500"
+      borderColor={NODE_STYLES.entry.borderColor}
       title={data.name || "Entry Point"}
       subtitle="Flow starts here"
       hasTargetHandle={false}
-      hasSourceHandle={true}
-      onDelete={data.onDelete ? () => data.onDelete?.(id) : undefined}
+      onDelete={getNodeDeleteHandler(data, id)}
     >
       <div className="space-y-2">
         <div className="text-xs text-muted-foreground">Trigger keywords:</div>
         {keywords.length > 0 ? (
-          <div className="flex flex-wrap gap-1">
-            {keywords.slice(0, 4).map((keyword, i) => (
-              <Badge key={i} variant="secondary" className="text-xs">
-                {keyword}
-              </Badge>
-            ))}
-            {keywords.length > 4 && (
-              <Badge variant="outline" className="text-xs">
-                +{keywords.length - 4} more
-              </Badge>
-            )}
-          </div>
+          <BadgeList
+            items={keywords}
+            limit={4}
+            primaryVariant="secondary"
+            overflowVariant="outline"
+          />
         ) : (
           <div className="text-xs text-muted-foreground italic">
             No triggers set
