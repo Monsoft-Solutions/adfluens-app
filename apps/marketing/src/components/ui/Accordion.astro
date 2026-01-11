@@ -1,0 +1,85 @@
+---
+type Props = {
+  items: Array<{
+    question: string;
+    answer: string;
+  }>;
+  class?: string;
+};
+
+const { items, class: className } = Astro.props;
+---
+
+<div class:list={["space-y-3", className]} data-accordion>
+  {
+    items.map((item, index) => (
+      <div class="border border-border rounded-lg bg-card overflow-hidden">
+        <button
+          type="button"
+          class="w-full flex items-center justify-between p-4 text-left font-medium text-foreground hover:bg-muted/30 transition-colors"
+          data-accordion-trigger
+          aria-expanded="false"
+          aria-controls={`accordion-content-${index}`}
+        >
+          <span>{item.question}</span>
+          <svg
+            class="w-5 h-5 text-muted-foreground transition-transform duration-200"
+            data-accordion-icon
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </button>
+        <div
+          id={`accordion-content-${index}`}
+          class="hidden"
+          data-accordion-content
+        >
+          <div class="px-4 pb-4 text-sm text-muted-foreground leading-relaxed border-t border-border pt-4">
+            {item.answer}
+          </div>
+        </div>
+      </div>
+    ))
+  }
+</div>
+
+<script>
+  function initAccordion() {
+    document.querySelectorAll("[data-accordion]").forEach((accordion) => {
+      accordion.querySelectorAll("[data-accordion-trigger]").forEach((trigger) => {
+        trigger.addEventListener("click", () => {
+          const content = trigger.nextElementSibling as HTMLElement;
+          const icon = trigger.querySelector("[data-accordion-icon]") as HTMLElement;
+          const isExpanded = trigger.getAttribute("aria-expanded") === "true";
+
+          // Close all other items in this accordion
+          accordion.querySelectorAll("[data-accordion-trigger]").forEach((otherTrigger) => {
+            if (otherTrigger !== trigger) {
+              otherTrigger.setAttribute("aria-expanded", "false");
+              const otherContent = otherTrigger.nextElementSibling as HTMLElement;
+              const otherIcon = otherTrigger.querySelector("[data-accordion-icon]") as HTMLElement;
+              if (otherContent) otherContent.classList.add("hidden");
+              if (otherIcon) otherIcon.style.transform = "rotate(0deg)";
+            }
+          });
+
+          // Toggle current item
+          trigger.setAttribute("aria-expanded", String(!isExpanded));
+          if (content) {
+            content.classList.toggle("hidden", isExpanded);
+          }
+          if (icon) {
+            icon.style.transform = isExpanded ? "rotate(0deg)" : "rotate(180deg)";
+          }
+        });
+      });
+    });
+  }
+
+  initAccordion();
+  document.addEventListener("astro:page-load", initAccordion);
+</script>

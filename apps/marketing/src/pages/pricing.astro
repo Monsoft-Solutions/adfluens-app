@@ -1,0 +1,364 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import PricingCard from "../components/ui/PricingCard.astro";
+import PricingToggle from "../components/ui/PricingToggle.astro";
+import Button from "../components/ui/Button.astro";
+import Accordion from "../components/ui/Accordion.astro";
+import GlowOrb from "../components/effects/GlowOrb.astro";
+import GridPattern from "../components/effects/GridPattern.astro";
+
+const pricingTiers = [
+  {
+    name: "Starter",
+    price: 29,
+    annualPrice: 23,
+    profiles: "3",
+    description: "Perfect for solo creators and micro-businesses",
+    features: [
+      "Basic AI content generation",
+      "Core analytics dashboard",
+      "GMB basics (posts & reviews)",
+      "Email support",
+      "1 team member",
+    ],
+    cta: "Start Free Trial",
+    popular: false,
+  },
+  {
+    name: "Professional",
+    price: 79,
+    annualPrice: 63,
+    profiles: "10",
+    description: "For growing businesses and freelancers",
+    features: [
+      "Advanced AI with brand voice learning",
+      "Full GMB suite with AI responses",
+      "Conversation flows & automation",
+      "Custom reports",
+      "Priority support",
+      "3 team members",
+    ],
+    cta: "Start Free Trial",
+    popular: true,
+  },
+  {
+    name: "Agency",
+    price: 199,
+    annualPrice: 159,
+    profiles: "25",
+    description: "For agencies and multi-location businesses",
+    features: [
+      "Everything in Professional",
+      "White-label reports",
+      "Team collaboration tools",
+      "API access",
+      "Dedicated account manager",
+      "10 team members",
+    ],
+    cta: "Start Free Trial",
+    popular: false,
+  },
+  {
+    name: "Enterprise",
+    price: "Custom" as const,
+    profiles: "Unlimited",
+    description: "For large organizations with custom needs",
+    features: [
+      "Everything in Agency",
+      "Custom integrations",
+      "SLA guarantee",
+      "Security review",
+      "Dedicated training",
+      "Unlimited team members",
+    ],
+    cta: "Contact Sales",
+    ctaHref: "/contact",
+    popular: false,
+  },
+];
+
+const pricingFaq = [
+  {
+    question: "Is AI included in all plans?",
+    answer:
+      "Yes! Unlike competitors who charge extra for AI features, Adfluens includes AI-powered content generation, review responses, and smart analytics in every plan—even Starter.",
+  },
+  {
+    question: "Can I switch plans anytime?",
+    answer:
+      "Absolutely. You can upgrade or downgrade your plan at any time. When upgrading, you'll get immediate access to new features. When downgrading, changes take effect at the end of your billing cycle.",
+  },
+  {
+    question: "What happens after my free trial?",
+    answer:
+      "After your 14-day trial, you can choose any plan that fits your needs. No credit card is required to start, so you won't be charged automatically. We'll send you a reminder before your trial ends.",
+  },
+  {
+    question: "Do you offer discounts for nonprofits?",
+    answer:
+      "Yes! We offer a 30% discount for registered nonprofits and educational institutions. Contact our support team with your organization details to apply.",
+  },
+  {
+    question: "What payment methods do you accept?",
+    answer:
+      "We accept all major credit cards (Visa, Mastercard, American Express), PayPal, and bank transfers for annual plans. Enterprise customers can also pay via invoice.",
+  },
+  {
+    question: "Can I cancel anytime?",
+    answer:
+      "Yes, you can cancel your subscription at any time with no penalties. Your access continues until the end of your current billing period.",
+  },
+];
+
+const featureComparison = [
+  { feature: "Social profiles", starter: "3", pro: "10", agency: "25", enterprise: "Unlimited" },
+  { feature: "AI content generation", starter: "Basic", pro: "Advanced", agency: "Advanced", enterprise: "Custom" },
+  { feature: "Brand voice learning", starter: false, pro: true, agency: true, enterprise: true },
+  { feature: "GMB management", starter: "Basic", pro: "Full suite", agency: "Full suite", enterprise: "Full suite" },
+  { feature: "AI review responses", starter: false, pro: true, agency: true, enterprise: true },
+  { feature: "Conversation flows", starter: false, pro: true, agency: true, enterprise: true },
+  { feature: "Custom reports", starter: false, pro: true, agency: true, enterprise: true },
+  { feature: "White-label reports", starter: false, pro: false, agency: true, enterprise: true },
+  { feature: "API access", starter: false, pro: false, agency: true, enterprise: true },
+  { feature: "Team members", starter: "1", pro: "3", agency: "10", enterprise: "Unlimited" },
+  { feature: "Dedicated support", starter: false, pro: false, agency: true, enterprise: true },
+];
+---
+
+<Layout
+  title="Pricing - Adfluens"
+  description="Simple, transparent pricing. AI included in every plan. Choose the perfect plan for your social media management needs."
+>
+  <Header />
+  <main>
+    <!-- Hero Section -->
+    <section class="relative section-padding bg-background overflow-hidden">
+      <GridPattern class="opacity-[0.02]" />
+      <GlowOrb color="orange" position="top-right" size="xl" animation="slow" class="opacity-15" />
+
+      <div class="relative z-10 container-marketing text-center">
+        <h1
+          class="font-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-6"
+          data-reveal
+        >
+          Simple, transparent
+          <span class="text-gradient-primary">pricing</span>
+        </h1>
+        <p class="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8" data-reveal data-delay="1">
+          AI included in every plan. No hidden fees. Start free for 14 days.
+        </p>
+
+        <!-- Billing Toggle -->
+        <div class="flex justify-center mb-12" data-reveal data-delay="2">
+          <PricingToggle />
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing Cards -->
+    <section class="relative pb-20 bg-background">
+      <div class="container-marketing">
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {
+            pricingTiers.map((tier, index) => (
+              <div data-reveal data-delay={index + 1}>
+                <PricingCard
+                  name={tier.name}
+                  price={tier.price}
+                  annualPrice={tier.annualPrice}
+                  profiles={tier.profiles}
+                  description={tier.description}
+                  features={tier.features}
+                  cta={tier.cta}
+                  ctaHref={tier.ctaHref}
+                  popular={tier.popular}
+                />
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature Comparison -->
+    <section class="relative section-padding bg-muted/10 border-t border-border">
+      <div class="container-marketing">
+        <h2 class="font-display text-2xl md:text-3xl font-bold text-foreground text-center mb-12" data-reveal>
+          Compare all features
+        </h2>
+
+        <div class="overflow-x-auto" data-reveal data-delay="1">
+          <table class="w-full min-w-[640px] border-collapse">
+            <thead>
+              <tr class="border-b border-border">
+                <th class="text-left py-4 px-4 font-medium text-muted-foreground">Feature</th>
+                <th class="text-center py-4 px-4 font-medium text-foreground">Starter</th>
+                <th class="text-center py-4 px-4 font-medium text-primary">Professional</th>
+                <th class="text-center py-4 px-4 font-medium text-foreground">Agency</th>
+                <th class="text-center py-4 px-4 font-medium text-foreground">Enterprise</th>
+              </tr>
+            </thead>
+            <tbody>
+              {
+                featureComparison.map((row) => (
+                  <tr class="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                    <td class="py-4 px-4 text-sm text-foreground">{row.feature}</td>
+                    <td class="py-4 px-4 text-center">
+                      {typeof row.starter === "boolean" ? (
+                        row.starter ? (
+                          <svg
+                            class="w-5 h-5 text-secondary mx-auto"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            viewBox="0 0 24 24"
+                          >
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <svg
+                            class="w-5 h-5 text-muted-foreground/30 mx-auto"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            viewBox="0 0 24 24"
+                          >
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        )
+                      ) : (
+                        <span class="text-sm text-muted-foreground">{row.starter}</span>
+                      )}
+                    </td>
+                    <td class="py-4 px-4 text-center bg-primary/5">
+                      {typeof row.pro === "boolean" ? (
+                        row.pro ? (
+                          <svg
+                            class="w-5 h-5 text-secondary mx-auto"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            viewBox="0 0 24 24"
+                          >
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <svg
+                            class="w-5 h-5 text-muted-foreground/30 mx-auto"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            viewBox="0 0 24 24"
+                          >
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        )
+                      ) : (
+                        <span class="text-sm text-foreground font-medium">{row.pro}</span>
+                      )}
+                    </td>
+                    <td class="py-4 px-4 text-center">
+                      {typeof row.agency === "boolean" ? (
+                        row.agency ? (
+                          <svg
+                            class="w-5 h-5 text-secondary mx-auto"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            viewBox="0 0 24 24"
+                          >
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <svg
+                            class="w-5 h-5 text-muted-foreground/30 mx-auto"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            viewBox="0 0 24 24"
+                          >
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        )
+                      ) : (
+                        <span class="text-sm text-muted-foreground">{row.agency}</span>
+                      )}
+                    </td>
+                    <td class="py-4 px-4 text-center">
+                      {typeof row.enterprise === "boolean" ? (
+                        row.enterprise ? (
+                          <svg
+                            class="w-5 h-5 text-secondary mx-auto"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            viewBox="0 0 24 24"
+                          >
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <svg
+                            class="w-5 h-5 text-muted-foreground/30 mx-auto"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            viewBox="0 0 24 24"
+                          >
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        )
+                      ) : (
+                        <span class="text-sm text-muted-foreground">{row.enterprise}</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="relative section-padding bg-background border-t border-border">
+      <div class="container-marketing max-w-3xl">
+        <h2 class="font-display text-2xl md:text-3xl font-bold text-foreground text-center mb-4" data-reveal>
+          Pricing FAQ
+        </h2>
+        <p class="text-muted-foreground text-center mb-12" data-reveal data-delay="1">
+          Have questions? We have answers.
+        </p>
+
+        <div data-reveal data-delay="2">
+          <Accordion items={pricingFaq} />
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="relative section-padding bg-background overflow-hidden border-t border-border">
+      <GlowOrb color="lime" position="center" size="2xl" animation="none" class="opacity-10" />
+
+      <div class="relative z-10 container-marketing text-center">
+        <h2 class="font-display text-3xl md:text-4xl font-bold text-foreground mb-6" data-reveal>
+          Ready to get started?
+        </h2>
+        <p class="text-lg text-muted-foreground max-w-xl mx-auto mb-8" data-reveal data-delay="1">
+          Try Adfluens free for 14 days. No credit card required.
+        </p>
+        <div class="flex flex-wrap justify-center gap-4" data-reveal data-delay="2">
+          <Button variant="primary" size="lg" href="/signup">
+            Start Free Trial
+          </Button>
+          <Button variant="outline" size="lg" href="/demo">
+            Talk to Sales
+          </Button>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>

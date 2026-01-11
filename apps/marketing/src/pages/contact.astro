@@ -1,0 +1,375 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import Button from "../components/ui/Button.astro";
+import GlowOrb from "../components/effects/GlowOrb.astro";
+import GridPattern from "../components/effects/GridPattern.astro";
+
+const contactMethods = [
+  {
+    icon: `<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>`,
+    title: "Chat with us",
+    description: "Our friendly team is here to help.",
+    action: "Start a conversation",
+    href: "#",
+    badge: "Live Chat",
+  },
+  {
+    icon: `<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>`,
+    title: "Email us",
+    description: "We'll respond within 24 hours.",
+    action: "support@adfluens.io",
+    href: "mailto:support@adfluens.io",
+  },
+  {
+    icon: `<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>`,
+    title: "Call us",
+    description: "Mon-Fri from 9am to 6pm EST.",
+    action: "+1 (555) 123-4567",
+    href: "tel:+15551234567",
+  },
+  {
+    icon: `<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>`,
+    title: "Help Center",
+    description: "Browse our documentation.",
+    action: "Visit Help Center",
+    href: "https://docs.adfluens.io",
+  },
+];
+
+const departments = [
+  { value: "sales", label: "Sales" },
+  { value: "support", label: "Support" },
+  { value: "billing", label: "Billing" },
+  { value: "partnerships", label: "Partnerships" },
+  { value: "press", label: "Press & Media" },
+  { value: "other", label: "Other" },
+];
+---
+
+<Layout
+  title="Contact Us - Adfluens"
+  description="Get in touch with the Adfluens team. We're here to help with sales inquiries, support questions, and partnership opportunities."
+>
+  <Header />
+  <main>
+    <!-- Hero Section -->
+    <section class="relative section-padding bg-background overflow-hidden">
+      <GridPattern class="opacity-[0.02]" />
+      <GlowOrb color="orange" position="top-right" size="xl" animation="slow" class="opacity-15" />
+
+      <div class="relative z-10 container-marketing text-center">
+        <h1
+          class="font-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-6"
+          data-reveal
+        >
+          Get in
+          <span class="text-gradient-primary">touch</span>
+        </h1>
+        <p class="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto" data-reveal data-delay="1">
+          Have a question or need help? Our team is ready to assist you. Choose the best way to reach us.
+        </p>
+      </div>
+    </section>
+
+    <!-- Contact Methods -->
+    <section class="relative pb-16 bg-background">
+      <div class="container-marketing">
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {
+            contactMethods.map((method, index) => (
+              <a
+                href={method.href}
+                class="group relative p-6 rounded-lg border border-border bg-card hover:border-foreground/20 transition-all"
+                data-reveal
+                data-delay={index + 1}
+              >
+                {method.badge && (
+                  <span class="absolute top-4 right-4 px-2 py-0.5 text-xs font-medium bg-secondary/10 text-secondary rounded">
+                    {method.badge}
+                  </span>
+                )}
+                <div class="w-12 h-12 rounded-md border border-border bg-muted/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <svg
+                    class="w-6 h-6 text-foreground"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    viewBox="0 0 24 24"
+                    set:html={method.icon}
+                  />
+                </div>
+                <h3 class="font-display font-semibold text-lg text-foreground mb-1">{method.title}</h3>
+                <p class="text-sm text-muted-foreground mb-3">{method.description}</p>
+                <span class="text-sm font-medium text-primary group-hover:underline">{method.action}</span>
+              </a>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact Form Section -->
+    <section class="relative section-padding bg-muted/10 border-t border-border">
+      <div class="container-marketing">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-20">
+          <!-- Form -->
+          <div data-reveal>
+            <h2 class="font-display text-2xl md:text-3xl font-bold text-foreground mb-4">Send us a message</h2>
+            <p class="text-muted-foreground mb-8">
+              Fill out the form below and we'll get back to you as soon as possible.
+            </p>
+
+            <form class="space-y-6" id="contact-form">
+              <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="firstName" class="block text-sm font-medium text-foreground mb-2">First name</label>
+                  <input
+                    type="text"
+                    id="firstName"
+                    name="firstName"
+                    required
+                    class="w-full px-4 py-3 rounded-md border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+                    placeholder="John"
+                  />
+                </div>
+                <div>
+                  <label for="lastName" class="block text-sm font-medium text-foreground mb-2">Last name</label>
+                  <input
+                    type="text"
+                    id="lastName"
+                    name="lastName"
+                    required
+                    class="w-full px-4 py-3 rounded-md border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+                    placeholder="Doe"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label for="email" class="block text-sm font-medium text-foreground mb-2">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  class="w-full px-4 py-3 rounded-md border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+                  placeholder="john@company.com"
+                />
+              </div>
+
+              <div>
+                <label for="company" class="block text-sm font-medium text-foreground mb-2">Company (optional)</label>
+                <input
+                  type="text"
+                  id="company"
+                  name="company"
+                  class="w-full px-4 py-3 rounded-md border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+                  placeholder="Acme Inc."
+                />
+              </div>
+
+              <div>
+                <label for="department" class="block text-sm font-medium text-foreground mb-2"
+                  >What can we help with?</label
+                >
+                <select
+                  id="department"
+                  name="department"
+                  required
+                  class="w-full px-4 py-3 rounded-md border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+                >
+                  <option value="" disabled selected>Select a department</option>
+                  {departments.map((dept) => <option value={dept.value}>{dept.label}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label for="message" class="block text-sm font-medium text-foreground mb-2">Message</label>
+                <textarea
+                  id="message"
+                  name="message"
+                  rows="5"
+                  required
+                  class="w-full px-4 py-3 rounded-md border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors resize-none"
+                  placeholder="Tell us how we can help..."></textarea>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="privacy"
+                  name="privacy"
+                  required
+                  class="mt-1 w-4 h-4 rounded border-border bg-card text-primary focus:ring-primary/50"
+                />
+                <label for="privacy" class="text-sm text-muted-foreground">
+                  I agree to the <a href="/privacy" class="text-primary hover:underline">Privacy Policy</a> and consent
+                  to being contacted about my inquiry.
+                </label>
+              </div>
+
+              <Button variant="primary" size="lg" type="submit" class="w-full sm:w-auto">
+                Send Message
+              </Button>
+            </form>
+
+            <!-- Success Message (hidden by default) -->
+            <div id="form-success" class="hidden mt-6 p-4 rounded-lg bg-secondary/10 border border-secondary/20">
+              <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-secondary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <div>
+                  <p class="font-medium text-foreground">Message sent successfully!</p>
+                  <p class="text-sm text-muted-foreground">We'll get back to you within 24 hours.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact Info -->
+          <div class="lg:pl-8" data-reveal data-delay="1">
+            <div class="sticky top-24">
+              <h2 class="font-display text-2xl md:text-3xl font-bold text-foreground mb-4">Other ways to reach us</h2>
+              <p class="text-muted-foreground mb-8">
+                Prefer a different method? Here's how else you can get in touch.
+              </p>
+
+              <!-- Office Info -->
+              <div class="space-y-6">
+                <div class="p-6 rounded-lg border border-border bg-card">
+                  <h3 class="font-semibold text-foreground mb-3">Headquarters</h3>
+                  <address class="not-italic text-sm text-muted-foreground space-y-1">
+                    <p>Adfluens, Inc.</p>
+                    <p>123 Innovation Way, Suite 400</p>
+                    <p>San Francisco, CA 94105</p>
+                    <p>United States</p>
+                  </address>
+                </div>
+
+                <div class="p-6 rounded-lg border border-border bg-card">
+                  <h3 class="font-semibold text-foreground mb-3">Business Hours</h3>
+                  <div class="text-sm text-muted-foreground space-y-1">
+                    <p>Monday - Friday: 9:00 AM - 6:00 PM EST</p>
+                    <p>Saturday - Sunday: Closed</p>
+                    <p class="pt-2 text-xs">
+                      * Email support available 24/7
+                    </p>
+                  </div>
+                </div>
+
+                <div class="p-6 rounded-lg border border-border bg-card">
+                  <h3 class="font-semibold text-foreground mb-3">Connect with us</h3>
+                  <div class="flex gap-3">
+                    <a
+                      href="https://twitter.com/adfluens"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="w-10 h-10 rounded-md border border-border bg-muted/30 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+                      aria-label="Twitter"
+                    >
+                      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                          d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+                        ></path>
+                      </svg>
+                    </a>
+                    <a
+                      href="https://linkedin.com/company/adfluens"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="w-10 h-10 rounded-md border border-border bg-muted/30 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+                      aria-label="LinkedIn"
+                    >
+                      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                          d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
+                        ></path>
+                      </svg>
+                    </a>
+                    <a
+                      href="https://instagram.com/adfluens"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="w-10 h-10 rounded-md border border-border bg-muted/30 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+                      aria-label="Instagram"
+                    >
+                      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                          d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"
+                        ></path>
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Map Section (Placeholder) -->
+    <section class="relative h-64 md:h-96 bg-muted/20 border-t border-border">
+      <div class="absolute inset-0 flex items-center justify-center">
+        <div class="text-center">
+          <div
+            class="w-16 h-16 rounded-full border border-border bg-card flex items-center justify-center mx-auto mb-4"
+          >
+            <svg class="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"
+              ></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
+              ></path>
+            </svg>
+          </div>
+          <p class="text-muted-foreground text-sm">San Francisco, CA</p>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  function initContactForm() {
+    const form = document.getElementById("contact-form") as HTMLFormElement;
+    const successMessage = document.getElementById("form-success");
+
+    if (form && successMessage) {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        // In production, you would send this to your backend
+        // For now, we'll simulate a successful submission
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        console.log("Form submitted:", data);
+
+        // Show success message
+        form.style.display = "none";
+        successMessage.classList.remove("hidden");
+
+        // Reset form after delay
+        setTimeout(() => {
+          form.reset();
+          form.style.display = "block";
+          successMessage.classList.add("hidden");
+        }, 5000);
+      });
+    }
+  }
+
+  initContactForm();
+  document.addEventListener("astro:page-load", initContactForm);
+</script>

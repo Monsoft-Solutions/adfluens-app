@@ -1,0 +1,29 @@
+---
+type Props = {
+  step: number;
+  title: string;
+  description: string;
+  class?: string;
+};
+
+const { step, title, description, class: className } = Astro.props;
+---
+
+<div class:list={["relative", className]}>
+  <!-- Step Number -->
+  <div
+    class="w-12 h-12 rounded-md border border-border bg-card flex items-center justify-center mb-4 shadow-hard-sm"
+  >
+    <span class="font-mono font-semibold text-lg text-primary">
+      {step.toString().padStart(2, "0")}
+    </span>
+  </div>
+
+  <!-- Content -->
+  <h3 class="font-display font-semibold text-lg text-foreground mb-2">
+    {title}
+  </h3>
+  <p class="text-sm text-muted-foreground leading-relaxed">
+    {description}
+  </p>
+</div>

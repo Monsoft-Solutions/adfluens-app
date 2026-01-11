@@ -1,0 +1,181 @@
+---
+import Button from "../ui/Button.astro";
+import Badge from "../ui/Badge.astro";
+import GlowOrb from "../effects/GlowOrb.astro";
+import GridPattern from "../effects/GridPattern.astro";
+---
+
+<section class="relative min-h-screen overflow-hidden bg-background pt-24 pb-16 md:pt-32 md:pb-24">
+  <!-- Background Effects -->
+  <GridPattern />
+  <GlowOrb color="orange" position="top-right" size="xl" animation="slow" />
+  <GlowOrb color="lime" position="bottom-left" size="lg" animation="medium" class="opacity-60" />
+
+  <!-- Content -->
+  <div class="relative z-10 container-marketing">
+    <div class="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+      <!-- Left Column - Text Content -->
+      <div class="max-w-2xl">
+        <!-- Badge -->
+        <div data-reveal>
+          <Badge variant="default" pulse>
+            AI-First Social Media Platform
+          </Badge>
+        </div>
+
+        <!-- Headline -->
+        <h1
+          class="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground mt-6 mb-6"
+          data-reveal
+          data-delay="1"
+        >
+          Amplify Your Social
+          <span class="block text-gradient-primary">Presence with AI</span>
+        </h1>
+
+        <!-- Subheadline -->
+        <p
+          class="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl leading-relaxed"
+          data-reveal
+          data-delay="2"
+        >
+          The all-in-one platform that handles content, analytics, reviews, and
+          conversations across Google My Business, Instagram, Facebook, and
+          Threads.
+        </p>
+
+        <!-- CTAs -->
+        <div class="flex flex-wrap gap-4" data-reveal data-delay="3">
+          <Button variant="primary" size="lg" href="/signup">
+            Start Free Trial
+          </Button>
+          <Button variant="outline" size="lg" href="#demo">
+            <svg
+              class="w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            Watch Demo (2 min)
+          </Button>
+        </div>
+
+        <!-- Social Proof -->
+        <div class="mt-12 pt-8 border-t border-border" data-reveal data-delay="4">
+          <p class="text-sm text-muted-foreground mb-4">
+            Trusted by 2,000+ businesses
+          </p>
+          <div class="flex items-center gap-6 opacity-60">
+            <!-- Placeholder logos - replace with actual logos -->
+            <div class="h-6 w-20 bg-muted rounded"></div>
+            <div class="h-6 w-16 bg-muted rounded"></div>
+            <div class="h-6 w-24 bg-muted rounded"></div>
+            <div class="h-6 w-18 bg-muted rounded hidden sm:block"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column - Product Preview -->
+      <div class="relative lg:pl-8" data-reveal data-delay="2">
+        <!-- Browser Chrome Mockup -->
+        <div class="relative">
+          <div
+            class="rounded-lg border border-border bg-card overflow-hidden shadow-hard"
+          >
+            <!-- Browser Header -->
+            <div class="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
+              <div class="flex gap-1.5">
+                <div class="w-3 h-3 rounded-full bg-destructive/60"></div>
+                <div class="w-3 h-3 rounded-full bg-accent/60"></div>
+                <div class="w-3 h-3 rounded-full bg-secondary/60"></div>
+              </div>
+              <div class="flex-1 mx-4">
+                <div class="h-6 bg-muted rounded-md flex items-center px-3">
+                  <span class="text-xs text-muted-foreground">app.adfluens.com</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dashboard Preview -->
+            <div class="p-4 bg-background min-h-[300px] md:min-h-[400px]">
+              <!-- Simulated Dashboard UI -->
+              <div class="space-y-4">
+                <!-- Top Stats Row -->
+                <div class="grid grid-cols-3 gap-3">
+                  <div class="p-3 rounded-md border border-border bg-card">
+                    <div class="text-xs text-muted-foreground mb-1">Reach</div>
+                    <div class="font-mono font-semibold text-lg text-foreground">24.5K</div>
+                    <div class="text-xs text-secondary">+12%</div>
+                  </div>
+                  <div class="p-3 rounded-md border border-border bg-card">
+                    <div class="text-xs text-muted-foreground mb-1">Engagement</div>
+                    <div class="font-mono font-semibold text-lg text-foreground">3.2K</div>
+                    <div class="text-xs text-secondary">+8%</div>
+                  </div>
+                  <div class="p-3 rounded-md border border-border bg-card">
+                    <div class="text-xs text-muted-foreground mb-1">Reviews</div>
+                    <div class="font-mono font-semibold text-lg text-foreground">4.9</div>
+                    <div class="text-xs text-accent">147 new</div>
+                  </div>
+                </div>
+
+                <!-- Chart Placeholder -->
+                <div class="h-32 rounded-md border border-border bg-card p-3">
+                  <div class="flex items-end justify-between h-full gap-2">
+                    {[40, 65, 45, 80, 55, 90, 70].map((height) => (
+                      <div
+                        class="flex-1 bg-gradient-to-t from-primary/20 to-primary/60 rounded-sm"
+                        style={`height: ${height}%`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <!-- Content Row -->
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="p-3 rounded-md border border-border bg-card">
+                    <div class="flex items-center gap-2 mb-2">
+                      <div class="w-6 h-6 rounded bg-muted"></div>
+                      <span class="text-xs text-muted-foreground">Latest Post</span>
+                    </div>
+                    <div class="h-2 w-3/4 bg-muted rounded mb-1"></div>
+                    <div class="h-2 w-1/2 bg-muted rounded"></div>
+                  </div>
+                  <div class="p-3 rounded-md border border-border bg-card">
+                    <div class="flex items-center gap-2 mb-2">
+                      <div class="w-6 h-6 rounded bg-muted"></div>
+                      <span class="text-xs text-muted-foreground">AI Suggestion</span>
+                    </div>
+                    <div class="h-2 w-full bg-primary/20 rounded mb-1"></div>
+                    <div class="h-2 w-2/3 bg-primary/20 rounded"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Floating Stats Card -->
+          <div
+            class="absolute -left-4 md:-left-8 top-1/3 p-4 rounded-lg border border-border bg-card/95 backdrop-blur shadow-hard animate-float-slow hidden md:block"
+          >
+            <div class="font-mono text-2xl font-bold text-primary">+147%</div>
+            <div class="text-xs text-muted-foreground">Engagement Rate</div>
+          </div>
+
+          <!-- Floating AI Badge -->
+          <div
+            class="absolute -right-2 md:-right-4 bottom-1/4 px-3 py-2 rounded-lg border border-border bg-card/95 backdrop-blur shadow-hard animate-float-medium hidden md:block"
+          >
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-accent animate-pulse"></div>
+              <span class="text-xs font-medium">AI generating...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

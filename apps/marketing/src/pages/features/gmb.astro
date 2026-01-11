@@ -1,0 +1,342 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import Button from "../../components/ui/Button.astro";
+import FeatureCard from "../../components/ui/FeatureCard.astro";
+import GlowOrb from "../../components/effects/GlowOrb.astro";
+import GridPattern from "../../components/effects/GridPattern.astro";
+
+const features = [
+  {
+    icon: "map-pin",
+    title: "Profile Optimization",
+    description: "AI analyzes your profile and suggests improvements to help you rank higher in local search.",
+    gradient: "lime" as const,
+  },
+  {
+    icon: "calendar",
+    title: "Post Scheduling",
+    description: "Native GMB post support with AI-powered writing to keep your listing fresh automatically.",
+    gradient: "orange" as const,
+  },
+  {
+    icon: "bell",
+    title: "Review Monitoring",
+    description: "Real-time alerts for new reviews so you never miss important customer feedback.",
+    gradient: "emerald" as const,
+  },
+  {
+    icon: "message",
+    title: "AI Review Responses",
+    description: "Intelligent response suggestions for every review—reply in seconds, not minutes.",
+    gradient: "lime" as const,
+  },
+  {
+    icon: "bar-chart-2",
+    title: "Performance Analytics",
+    description: "Track views, clicks, calls, and directions to prove your GMB ROI.",
+    gradient: "orange" as const,
+  },
+  {
+    icon: "building",
+    title: "Multi-Location Management",
+    description: "Manage all your locations from one dashboard without switching between accounts.",
+    gradient: "emerald" as const,
+  },
+];
+
+const icons: Record<string, string> = {
+  "map-pin": `<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>`,
+  calendar: `<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>`,
+  bell: `<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>`,
+  message: `<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>`,
+  "bar-chart-2": `<line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/>`,
+  building: `<rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/>`,
+};
+
+const relatedFeatures = [
+  { name: "AI Content Engine", href: "/features/ai-content", description: "Generate content in seconds" },
+  { name: "Meta Unified", href: "/features/meta", description: "Instagram, Facebook, Threads in sync" },
+  { name: "Smart Analytics", href: "/features/analytics", description: "AI-powered insights" },
+];
+---
+
+<Layout
+  title="GMB Command Center - Adfluens"
+  description="Full control of your Google presence. Posts, reviews, analytics—managed from one place."
+>
+  <Header />
+  <main>
+    <!-- Hero Section -->
+    <section class="relative section-padding bg-background overflow-hidden">
+      <GridPattern class="opacity-[0.02]" />
+      <GlowOrb color="lime" position="top-right" size="xl" animation="slow" class="opacity-20" />
+
+      <div class="relative z-10 container-marketing">
+        <div class="max-w-3xl">
+          <a
+            href="/features"
+            class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+            data-reveal
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="m15 18-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            All Features
+          </a>
+
+          <div class="flex items-center gap-3 mb-6" data-reveal data-delay="1">
+            <div class="w-12 h-12 rounded-lg border border-accent/30 bg-accent/10 flex items-center justify-center">
+              <svg
+                class="w-6 h-6 text-accent-foreground"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+                set:html={icons["map-pin"]}
+              />
+            </div>
+            <span class="text-sm font-medium text-accent-foreground">GMB Command Center</span>
+          </div>
+
+          <h1
+            class="font-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-6"
+            data-reveal
+            data-delay="2"
+          >
+            Your Google presence,
+            <span class="text-gradient-primary">fully controlled</span>
+          </h1>
+
+          <p class="text-xl text-muted-foreground leading-relaxed mb-8" data-reveal data-delay="3">
+            The most comprehensive GMB integration on the market. Manage posts, reviews, analytics, and multiple
+            locations—all from one intelligent dashboard.
+          </p>
+
+          <div class="flex flex-wrap gap-4" data-reveal data-delay="4">
+            <Button variant="primary" size="lg" href="/signup">
+              Take Control of Your GMB
+            </Button>
+            <Button variant="outline" size="lg" href="/demo">
+              See It in Action
+            </Button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Problem/Solution Section -->
+    <section class="relative section-padding bg-muted/10 border-t border-b border-border">
+      <div class="container-marketing">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-20">
+          <!-- Problem -->
+          <div data-reveal>
+            <p class="text-sm font-medium text-destructive mb-3">The Problem</p>
+            <h2 class="font-display text-2xl md:text-3xl font-bold text-foreground mb-4">
+              GMB management is a nightmare
+            </h2>
+            <p class="text-muted-foreground leading-relaxed mb-6">
+              Google's interfaces are scattered and confusing. Responding to reviews takes forever. Managing multiple
+              locations means logging in and out constantly. And proving ROI? Good luck finding those metrics.
+            </p>
+            <ul class="space-y-3 text-muted-foreground">
+              <li class="flex items-start gap-3">
+                <svg
+                  class="w-5 h-5 text-destructive shrink-0 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                <span>Scattered across multiple Google interfaces</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <svg
+                  class="w-5 h-5 text-destructive shrink-0 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                <span>Reviews pile up with no time to respond</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <svg
+                  class="w-5 h-5 text-destructive shrink-0 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                <span>Multi-location management is chaos</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Solution -->
+          <div data-reveal data-delay="1">
+            <p class="text-sm font-medium text-secondary mb-3">The Solution</p>
+            <h2 class="font-display text-2xl md:text-3xl font-bold text-foreground mb-4">
+              One dashboard to rule them all
+            </h2>
+            <p class="text-muted-foreground leading-relaxed mb-6">
+              Adfluens brings all your GMB management into one place. Post content, respond to reviews with AI
+              assistance, track performance, and manage 100+ locations without the chaos.
+            </p>
+            <ul class="space-y-3 text-muted-foreground">
+              <li class="flex items-start gap-3">
+                <svg
+                  class="w-5 h-5 text-secondary shrink-0 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span>All GMB tools in one unified interface</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <svg
+                  class="w-5 h-5 text-secondary shrink-0 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span>Respond to reviews 10x faster with AI</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <svg
+                  class="w-5 h-5 text-secondary shrink-0 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span>Scale to 100+ locations effortlessly</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Grid -->
+    <section class="relative section-padding bg-background">
+      <div class="container-marketing">
+        <div class="text-center mb-12">
+          <h2 class="font-display text-2xl md:text-3xl font-bold text-foreground mb-4" data-reveal>
+            Complete GMB control
+          </h2>
+          <p class="text-muted-foreground max-w-2xl mx-auto" data-reveal data-delay="1">
+            Everything you need to dominate local search and manage your Google presence.
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {
+            features.map((feature, index) => (
+              <div data-reveal data-delay={index + 1}>
+                <FeatureCard
+                  title={feature.title}
+                  description={feature.description}
+                  icon={feature.icon}
+                  gradient={feature.gradient}
+                />
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="relative section-padding bg-muted/10 border-t border-border">
+      <div class="container-marketing">
+        <div class="text-center mb-12">
+          <h2 class="font-display text-2xl md:text-3xl font-bold text-foreground mb-4" data-reveal>
+            Results that matter
+          </h2>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div class="text-center" data-reveal data-delay="1">
+            <div class="font-mono text-4xl md:text-5xl font-bold text-foreground mb-2">10x</div>
+            <div class="text-sm text-muted-foreground">Faster review responses</div>
+          </div>
+          <div class="text-center" data-reveal data-delay="2">
+            <div class="font-mono text-4xl md:text-5xl font-bold text-foreground mb-2">100+</div>
+            <div class="text-sm text-muted-foreground">Locations managed</div>
+          </div>
+          <div class="text-center" data-reveal data-delay="3">
+            <div class="font-mono text-4xl md:text-5xl font-bold text-foreground mb-2">85%</div>
+            <div class="text-sm text-muted-foreground">Time saved on GMB</div>
+          </div>
+          <div class="text-center" data-reveal data-delay="4">
+            <div class="font-mono text-4xl md:text-5xl font-bold text-foreground mb-2">4.8★</div>
+            <div class="text-sm text-muted-foreground">Average user rating</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Related Features -->
+    <section class="relative section-padding bg-background border-t border-border">
+      <div class="container-marketing">
+        <h2 class="font-display text-xl font-bold text-foreground mb-8" data-reveal>
+          Explore more features
+        </h2>
+
+        <div class="grid md:grid-cols-3 gap-6">
+          {
+            relatedFeatures.map((feature, index) => (
+              <a
+                href={feature.href}
+                class="group p-6 rounded-lg border border-border bg-card hover:bg-muted/30 transition-colors"
+                data-reveal
+                data-delay={index + 1}
+              >
+                <h3 class="font-display font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
+                  {feature.name}
+                </h3>
+                <p class="text-sm text-muted-foreground">{feature.description}</p>
+              </a>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="relative section-padding bg-background overflow-hidden border-t border-border">
+      <GlowOrb color="lime" position="center" size="2xl" animation="none" class="opacity-15" />
+
+      <div class="relative z-10 container-marketing text-center">
+        <h2 class="font-display text-3xl md:text-4xl font-bold text-foreground mb-6" data-reveal>
+          Ready to own your Google presence?
+        </h2>
+        <p class="text-lg text-muted-foreground max-w-xl mx-auto mb-8" data-reveal data-delay="1">
+          Start your free trial and see why businesses trust Adfluens for GMB.
+        </p>
+        <div class="flex flex-wrap justify-center gap-4" data-reveal data-delay="2">
+          <Button variant="primary" size="lg" href="/signup">
+            Take Control of Your GMB
+          </Button>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>

@@ -1,0 +1,66 @@
+---
+import FeatureCard from "../ui/FeatureCard.astro";
+
+const features = [
+  {
+    icon: "brain",
+    title: "AI Content Engine",
+    description:
+      "Generate platform-perfect posts in seconds. Our AI learns your brand voice and never misses a trend.",
+    gradient: "orange" as const,
+  },
+  {
+    icon: "map-pin",
+    title: "GMB Command Center",
+    description:
+      "Full control of your Google presence. Posts, reviews, analytics—managed from one place.",
+    gradient: "emerald" as const,
+  },
+  {
+    icon: "smartphone",
+    title: "Meta Unified",
+    description:
+      "Instagram, Facebook, Threads—all in sync. Schedule, engage, analyze across the Meta universe.",
+    gradient: "lime" as const,
+  },
+  {
+    icon: "bar-chart-2",
+    title: "Smart Analytics",
+    description:
+      "Stop guessing, start knowing. AI-powered insights that tell you exactly what's working.",
+    gradient: "orange" as const,
+  },
+];
+---
+
+<section id="features" class="relative section-padding bg-background overflow-hidden">
+  <div class="container-marketing">
+    <!-- Section Header -->
+    <div class="max-w-2xl mb-12 md:mb-16" data-reveal>
+      <h2 class="font-display text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-foreground mb-4">
+        Everything you need.
+        <span class="text-muted-foreground">Nothing you don't.</span>
+      </h2>
+      <p class="text-lg text-muted-foreground">
+        Four powerful pillars to amplify your social presence—all powered by AI
+        that actually understands your brand.
+      </p>
+    </div>
+
+    <!-- Features Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {
+        features.map((feature, index) => (
+          <div data-reveal data-delay={String(index + 1)}>
+            <FeatureCard
+              icon={feature.icon}
+              title={feature.title}
+              description={feature.description}
+              gradient={feature.gradient}
+            />
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>

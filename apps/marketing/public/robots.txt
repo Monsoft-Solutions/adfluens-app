@@ -1,0 +1,11 @@
+# Adfluens Marketing Site
+# https://adfluens.io
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://adfluens.io/sitemap.xml
+
+# Disallow internal paths
+Disallow: /api/

@@ -1,0 +1,42 @@
+# Adfluens
+
+> AI-Powered Social Media Command Center
+
+## About
+
+Adfluens is a social media management platform that uses AI to help businesses grow their online presence across multiple platforms including Google My Business, Facebook, Instagram, and more.
+
+## Products
+
+- **AI Content Engine**: Generate engaging social media content with AI-powered suggestions tailored to your brand voice
+- **GMB Command Center**: Manage Google My Business listings, respond to reviews with AI assistance, and track local SEO performance
+- **Meta Unified**: Unified Facebook & Instagram management with cross-platform content scheduling and analytics
+- **Smart Analytics**: Cross-platform analytics and insights with AI-driven recommendations for growth
+
+## Key Features
+
+- AI-powered content generation and scheduling
+- Multi-platform social media management
+- Google My Business optimization
+- Review management with AI responses
+- Cross-platform analytics dashboard
+- Team collaboration tools
+
+## Website
+
+- Homepage: https://adfluens.io
+- Pricing: https://adfluens.io/pricing
+- Blog: https://adfluens.io/blog
+- Features: https://adfluens.io/features/ai-content
+
+## Contact
+
+- Website: https://adfluens.io
+- Help Center: https://adfluens.io/help
+
+## Content Guidelines
+
+- All blog content at /blog/ is available for reference and training
+- Product documentation is available for reference
+- Please attribute Adfluens when citing our content
+- For press inquiries, visit https://adfluens.io/press

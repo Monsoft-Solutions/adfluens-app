@@ -1,0 +1,123 @@
+---
+type Props = {
+  name: string;
+  price: number | "Custom";
+  period?: string;
+  description: string;
+  features: string[];
+  cta: string;
+  ctaHref?: string;
+  popular?: boolean;
+  profiles: string;
+  annualPrice?: number;
+  class?: string;
+};
+
+const {
+  name,
+  price,
+  period = "/mo",
+  description,
+  features,
+  cta,
+  ctaHref = "/signup",
+  popular = false,
+  profiles,
+  annualPrice,
+  class: className,
+} = Astro.props;
+---
+
+<div
+  class:list={[
+    "relative flex flex-col p-6 rounded-lg border bg-card transition-all",
+    popular
+      ? "border-primary shadow-hard ring-1 ring-primary/20"
+      : "border-border gradient-border",
+    className,
+  ]}
+  data-pricing-card
+  data-monthly-price={typeof price === "number" ? price : undefined}
+  data-annual-price={annualPrice}
+>
+  <!-- Popular badge -->
+  {
+    popular && (
+      <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+        <span class="inline-flex items-center px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+          Most Popular
+        </span>
+      </div>
+    )
+  }
+
+  <!-- Header -->
+  <div class="mb-6">
+    <h3 class="font-display font-semibold text-xl text-foreground mb-1">
+      {name}
+    </h3>
+    <p class="text-sm text-muted-foreground">{description}</p>
+  </div>
+
+  <!-- Price -->
+  <div class="mb-6">
+    <div class="flex items-baseline gap-1">
+      {
+        typeof price === "number" ? (
+          <>
+            <span class="text-4xl font-display font-bold text-foreground" data-price>
+              ${price}
+            </span>
+            <span class="text-muted-foreground" data-period>
+              {period}
+            </span>
+          </>
+        ) : (
+          <span class="text-4xl font-display font-bold text-foreground">
+            {price}
+          </span>
+        )
+      }
+    </div>
+    <p class="text-sm text-muted-foreground mt-1">
+      <span class="font-mono text-foreground">{profiles}</span> social profiles
+    </p>
+  </div>
+
+  <!-- Features -->
+  <ul class="space-y-3 mb-8 flex-grow">
+    {
+      features.map((feature) => (
+        <li class="flex items-start gap-3 text-sm text-muted-foreground">
+          <svg
+            class="w-5 h-5 text-secondary shrink-0 mt-0.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+          <span>{feature}</span>
+        </li>
+      ))
+    }
+  </ul>
+
+  <!-- CTA -->
+  <a
+    href={ctaHref}
+    class:list={[
+      "inline-flex items-center justify-center font-medium rounded-md transition-all text-center py-3 px-4",
+      popular
+        ? "bg-primary text-primary-foreground shadow-hard-sm hover:-translate-y-0.5 hover:translate-x-0.5 active:translate-y-0 active:translate-x-0 active:shadow-none"
+        : "border border-border bg-transparent hover:bg-muted/50 hover:border-foreground/20",
+    ]}
+  >
+    {cta}
+  </a>
+</div>

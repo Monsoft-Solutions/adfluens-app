@@ -1,0 +1,209 @@
+---
+import { getCollection, type CollectionEntry } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import BlogCard from "../../components/ui/BlogCard.astro";
+import Button from "../../components/ui/Button.astro";
+import GridPattern from "../../components/effects/GridPattern.astro";
+
+// Fetch all blog posts sorted by date (newest first)
+const allPosts = await getCollection("blog");
+const sortedPosts = allPosts.sort(
+  (a: CollectionEntry<"blog">, b: CollectionEntry<"blog">) =>
+    b.data.publishedAt.getTime() - a.data.publishedAt.getTime()
+);
+
+// Get featured post (first featured or most recent)
+const featuredPost = sortedPosts.find((post: CollectionEntry<"blog">) => post.data.featured) || sortedPosts[0];
+const otherPosts = sortedPosts.filter((post: CollectionEntry<"blog">) => post.slug !== featuredPost?.slug);
+
+// Format date helper
+const formatDate = (date: Date) =>
+  date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+// Calculate read time (200 words per minute)
+const getReadTime = (body: string) => {
+  const wordCount = body.split(/\s+/).length;
+  const minutes = Math.max(1, Math.ceil(wordCount / 200));
+  return `${minutes} min read`;
+};
+
+// Map category to color
+const categoryColors: Record<string, "primary" | "accent" | "secondary"> = {
+  Strategy: "primary",
+  GMB: "accent",
+  "Social Media": "secondary",
+  Analytics: "secondary",
+  AI: "primary",
+};
+
+// Build categories with counts
+const categoryCounts = sortedPosts.reduce(
+  (acc: Record<string, number>, post: CollectionEntry<"blog">) => {
+    acc[post.data.category] = (acc[post.data.category] || 0) + 1;
+    return acc;
+  },
+  {} as Record<string, number>
+);
+
+const categories = [
+  { name: "All", count: sortedPosts.length },
+  ...Object.entries(categoryCounts).map(([name, count]) => ({ name, count })),
+];
+---
+
+<Layout
+  title="Blog - Adfluens"
+  description="Tips, strategies, and insights for social media growth. Learn how to amplify your social presence with AI-powered tools."
+>
+  <Header />
+  <main>
+    <!-- Hero Section -->
+    <section class="relative section-padding bg-background overflow-hidden">
+      <GridPattern class="opacity-[0.02]" />
+
+      <div class="relative z-10 container-marketing text-center">
+        <h1
+          class="font-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-6"
+          data-reveal
+        >
+          The Adfluens
+          <span class="text-gradient-primary">Blog</span>
+        </h1>
+        <p class="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto" data-reveal data-delay="1">
+          Tips, strategies, and insights for social media growth. Learn how to amplify your presence with AI.
+        </p>
+      </div>
+    </section>
+
+    <!-- Categories -->
+    <section class="relative py-8 bg-background border-t border-border">
+      <div class="container-marketing">
+        <div class="flex flex-wrap gap-2 justify-center" data-reveal>
+          {
+            categories.map((cat, index) => (
+              <button
+                type="button"
+                class:list={[
+                  "px-4 py-2 rounded-md text-sm font-medium transition-colors",
+                  index === 0
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                ]}
+              >
+                {cat.name}
+                <span class="ml-1.5 text-xs opacity-70">({cat.count})</span>
+              </button>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Post -->
+    {
+      featuredPost && (
+        <section class="relative py-12 bg-background">
+          <div class="container-marketing">
+            <h2 class="font-display text-lg font-semibold text-muted-foreground mb-6" data-reveal>
+              Featured
+            </h2>
+            <div data-reveal data-delay="1">
+              <BlogCard
+                title={featuredPost.data.title}
+                excerpt={featuredPost.data.excerpt}
+                href={`/blog/${featuredPost.slug}`}
+                image={featuredPost.data.image}
+                category={featuredPost.data.category}
+                categoryColor={categoryColors[featuredPost.data.category] || "primary"}
+                date={formatDate(featuredPost.data.publishedAt)}
+                readTime={getReadTime(featuredPost.body)}
+                featured={true}
+              />
+            </div>
+          </div>
+        </section>
+      )
+    }
+
+    <!-- Post Grid -->
+    {
+      otherPosts.length > 0 && (
+        <section class="relative section-padding bg-muted/10 border-t border-border">
+          <div class="container-marketing">
+            <h2 class="font-display text-lg font-semibold text-muted-foreground mb-8" data-reveal>
+              Latest Articles
+            </h2>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {otherPosts.map((post: CollectionEntry<"blog">, index: number) => (
+                <div data-reveal data-delay={index + 1}>
+                  <BlogCard
+                    title={post.data.title}
+                    excerpt={post.data.excerpt}
+                    href={`/blog/${post.slug}`}
+                    image={post.data.image}
+                    category={post.data.category}
+                    categoryColor={categoryColors[post.data.category] || "primary"}
+                    date={formatDate(post.data.publishedAt)}
+                    readTime={getReadTime(post.body)}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {otherPosts.length > 6 && (
+              <div class="text-center mt-12" data-reveal>
+                <Button variant="outline" size="lg">
+                  Load More Articles
+                </Button>
+              </div>
+            )}
+          </div>
+        </section>
+      )
+    }
+
+    <!-- Empty State -->
+    {
+      sortedPosts.length === 0 && (
+        <section class="relative section-padding bg-muted/10 border-t border-border">
+          <div class="container-marketing text-center">
+            <p class="text-muted-foreground">No blog posts yet. Check back soon!</p>
+          </div>
+        </section>
+      )
+    }
+
+    <!-- Newsletter Section -->
+    <section class="relative section-padding bg-background border-t border-border">
+      <div class="container-marketing max-w-2xl text-center">
+        <h2 class="font-display text-2xl md:text-3xl font-bold text-foreground mb-4" data-reveal>
+          Get weekly social media tips
+        </h2>
+        <p class="text-muted-foreground mb-8" data-reveal data-delay="1">
+          Join 5,000+ marketers getting actionable insights delivered to their inbox every week.
+        </p>
+
+        <form class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto" data-reveal data-delay="2">
+          <input
+            type="email"
+            placeholder="Enter your email"
+            class="flex-1 px-4 py-3 rounded-md border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+          />
+          <Button variant="primary" type="submit">Subscribe</Button>
+        </form>
+
+        <p class="text-xs text-muted-foreground mt-4" data-reveal data-delay="3">
+          No spam. Unsubscribe anytime.
+        </p>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>

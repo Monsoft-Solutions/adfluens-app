@@ -1,0 +1,262 @@
+---
+import Layout from "./Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import Button from "../components/ui/Button.astro";
+import GlowOrb from "../components/effects/GlowOrb.astro";
+import JsonLd from "../components/seo/JsonLd.astro";
+import type { CollectionEntry } from "astro:content";
+
+type Props = {
+  post: CollectionEntry<"blog">;
+};
+
+const { post } = Astro.props;
+const { title, excerpt, category, publishedAt, updatedAt, author, image, imageAlt } = post.data;
+
+// Format dates
+const formatDate = (date: Date) =>
+  date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+// Calculate read time (rough estimate: 200 words per minute)
+const wordCount = post.body.split(/\s+/).length;
+const readTime = Math.max(1, Math.ceil(wordCount / 200));
+
+// Category colors
+const categoryColors: Record<string, string> = {
+  Strategy: "bg-primary/10 text-primary border-primary/20",
+  GMB: "bg-accent/10 text-accent-foreground border-accent/20",
+  "Social Media": "bg-secondary/10 text-secondary border-secondary/20",
+  Analytics: "bg-secondary/10 text-secondary border-secondary/20",
+  AI: "bg-primary/10 text-primary border-primary/20",
+};
+
+// Article schema for SEO
+const articleSchema = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: title,
+  description: excerpt,
+  author: {
+    "@type": "Person",
+    name: author,
+  },
+  publisher: {
+    "@type": "Organization",
+    name: "Adfluens",
+    logo: {
+      "@type": "ImageObject",
+      url: "https://adfluens.io/favicon.svg",
+    },
+  },
+  datePublished: publishedAt.toISOString(),
+  dateModified: updatedAt ? updatedAt.toISOString() : publishedAt.toISOString(),
+  mainEntityOfPage: {
+    "@type": "WebPage",
+    "@id": `https://adfluens.io/blog/${post.slug}`,
+  },
+  image: image ? `https://adfluens.io${image}` : undefined,
+};
+
+// Breadcrumb schema
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Home",
+      item: "https://adfluens.io",
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "Blog",
+      item: "https://adfluens.io/blog",
+    },
+    {
+      "@type": "ListItem",
+      position: 3,
+      name: title,
+      item: `https://adfluens.io/blog/${post.slug}`,
+    },
+  ],
+};
+---
+
+<Layout title={`${title} - Adfluens Blog`} description={excerpt}>
+  <!-- Article Structured Data -->
+  <JsonLd schema={articleSchema} />
+  <JsonLd schema={breadcrumbSchema} />
+
+  <Header />
+  <main class="min-h-screen">
+    <!-- Article Header -->
+    <article>
+      <header class="relative section-padding bg-background overflow-hidden border-b border-border">
+        <GlowOrb color="orange" position="top-right" size="xl" animation="none" class="opacity-10" />
+
+        <div class="relative z-10 container-marketing max-w-4xl">
+          <!-- Back link -->
+          <a
+            href="/blog"
+            class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="m15 18-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            Back to Blog
+          </a>
+
+          <!-- Category badge -->
+          <span
+            class:list={[
+              "inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border mb-4",
+              categoryColors[category] || categoryColors.Strategy,
+            ]}
+          >
+            {category}
+          </span>
+
+          <!-- Title -->
+          <h1 class="font-display text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-foreground mb-6">
+            {title}
+          </h1>
+
+          <!-- Excerpt -->
+          <p class="text-xl text-muted-foreground leading-relaxed mb-8">
+            {excerpt}
+          </p>
+
+          <!-- Meta -->
+          <div class="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                <svg class="w-4 h-4 text-foreground" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <circle cx="12" cy="7" r="4" stroke-linecap="round" stroke-linejoin="round"></circle>
+                </svg>
+              </div>
+              <span class="text-foreground font-medium">{author}</span>
+            </div>
+            <span class="text-border">|</span>
+            <time datetime={publishedAt.toISOString()}>{formatDate(publishedAt)}</time>
+            {
+              updatedAt && (
+                <>
+                  <span class="text-border">|</span>
+                  <span>
+                    Updated <time datetime={updatedAt.toISOString()}>{formatDate(updatedAt)}</time>
+                  </span>
+                </>
+              )
+            }
+            <span class="text-border">|</span>
+            <span>{readTime} min read</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Featured Image -->
+      {
+        image && (
+          <div class="relative bg-muted/10 border-b border-border">
+            <div class="container-marketing max-w-4xl py-8">
+              <img
+                src={image}
+                alt={imageAlt || title}
+                class="w-full rounded-lg border border-border"
+              />
+            </div>
+          </div>
+        )
+      }
+
+      <!-- Article Content -->
+      <div class="section-padding bg-background">
+        <div class="container-marketing max-w-3xl">
+          <div class="prose prose-lg max-w-none">
+            <slot />
+          </div>
+        </div>
+      </div>
+
+      <!-- Share Section -->
+      <div class="py-8 bg-background border-t border-border">
+        <div class="container-marketing max-w-3xl">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <span class="text-sm text-muted-foreground">Share this article:</span>
+            <div class="flex items-center gap-2">
+              <a
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(Astro.url.href)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="w-10 h-10 flex items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+                aria-label="Share on Twitter"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+              </a>
+              <a
+                href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(Astro.url.href)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="w-10 h-10 flex items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+                aria-label="Share on LinkedIn"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <rect width="4" height="12" x="2" y="9" stroke-linecap="round" stroke-linejoin="round"></rect>
+                  <circle cx="4" cy="4" r="2" stroke-linecap="round" stroke-linejoin="round"></circle>
+                </svg>
+              </a>
+              <button
+                type="button"
+                class="w-10 h-10 flex items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+                aria-label="Copy link"
+                onclick={`navigator.clipboard.writeText('${Astro.url.href}')`}
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round"></rect>
+                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Newsletter CTA -->
+    <section class="relative section-padding bg-muted/10 border-t border-border">
+      <GlowOrb color="lime" position="center" size="xl" animation="none" class="opacity-10" />
+
+      <div class="relative z-10 container-marketing max-w-2xl text-center">
+        <h2 class="font-display text-2xl md:text-3xl font-bold text-foreground mb-4">
+          Enjoyed this article?
+        </h2>
+        <p class="text-muted-foreground mb-8">
+          Get weekly tips and insights delivered straight to your inbox.
+        </p>
+
+        <form class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+          <input
+            type="email"
+            placeholder="Enter your email"
+            class="flex-1 px-4 py-3 rounded-md border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+          />
+          <Button variant="primary" type="submit">Subscribe</Button>
+        </form>
+
+        <p class="text-xs text-muted-foreground mt-4">No spam. Unsubscribe anytime.</p>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>

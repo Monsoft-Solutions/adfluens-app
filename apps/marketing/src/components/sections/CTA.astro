@@ -1,0 +1,95 @@
+---
+import Button from "../ui/Button.astro";
+import GlowOrb from "../effects/GlowOrb.astro";
+---
+
+<section class="relative section-padding bg-background overflow-hidden">
+  <!-- Background Effects -->
+  <GlowOrb color="orange" position="center" size="2xl" animation="none" class="opacity-20" />
+
+  <!-- Border Lines -->
+  <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
+
+  <div class="relative z-10 container-marketing text-center">
+    <!-- Headline -->
+    <h2
+      class="font-display text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-foreground mb-6"
+      data-reveal
+    >
+      Ready to amplify your
+      <span class="block text-gradient-primary">social presence?</span>
+    </h2>
+
+    <!-- Subtext -->
+    <p
+      class="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
+      data-reveal
+      data-delay="1"
+    >
+      Join thousands of businesses growing smarter with Adfluens. Start your
+      free trial today—no credit card required.
+    </p>
+
+    <!-- CTAs -->
+    <div class="flex flex-wrap justify-center gap-4 mb-12" data-reveal data-delay="2">
+      <Button variant="primary" size="lg" href="/signup">
+        Start Your Free Trial
+      </Button>
+      <Button variant="ghost" size="lg" href="/demo">
+        Book a Demo
+      </Button>
+    </div>
+
+    <!-- Trust Elements -->
+    <div
+      class="flex flex-wrap justify-center items-center gap-6 text-sm text-muted-foreground"
+      data-reveal
+      data-delay="3"
+    >
+      <span class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        No credit card required
+      </span>
+      <span class="hidden sm:inline text-border">|</span>
+      <span class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        Setup in 2 minutes
+      </span>
+      <span class="hidden sm:inline text-border">|</span>
+      <span class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+        Cancel anytime
+      </span>
+    </div>
+
+    <!-- Social Proof Stats -->
+    <div
+      class="mt-16 pt-12 border-t border-border flex flex-wrap justify-center items-center gap-8 md:gap-16"
+      data-reveal
+      data-delay="4"
+    >
+      <div class="text-center">
+        <div class="font-mono text-3xl md:text-4xl font-bold text-foreground">2,500+</div>
+        <div class="text-sm text-muted-foreground">Active Users</div>
+      </div>
+      <div class="hidden sm:block w-px h-12 bg-border"></div>
+      <div class="text-center">
+        <div class="font-mono text-3xl md:text-4xl font-bold text-foreground">50M+</div>
+        <div class="text-sm text-muted-foreground">Posts Published</div>
+      </div>
+      <div class="hidden sm:block w-px h-12 bg-border"></div>
+      <div class="text-center">
+        <div class="font-mono text-3xl md:text-4xl font-bold text-foreground">4.9</div>
+        <div class="text-sm text-muted-foreground">Customer Rating</div>
+      </div>
+    </div>
+  </div>
+</section>

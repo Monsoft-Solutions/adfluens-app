@@ -1,0 +1,148 @@
+---
+type Props = {
+  class?: string;
+};
+
+const { class: className } = Astro.props;
+
+const navLinks = [
+  { label: "Features", href: "/features" },
+  { label: "Pricing", href: "/pricing" },
+  { label: "About", href: "/about" },
+  { label: "Blog", href: "/blog" },
+];
+---
+
+<header
+  class:list={[
+    "fixed top-0 left-0 right-0 z-40",
+    "glass border-b border-border/50",
+    className,
+  ]}
+>
+  <div class="container-marketing">
+    <nav class="flex items-center justify-between h-16 md:h-18">
+      <!-- Logo -->
+      <a href="/" class="flex items-center gap-2 group">
+        <div
+          class="w-8 h-8 rounded-md bg-primary flex items-center justify-center shadow-hard-sm group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            class="w-5 h-5 text-primary-foreground"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+          </svg>
+        </div>
+        <span class="font-display font-bold text-xl tracking-tight">
+          Adfluens
+        </span>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <div class="hidden md:flex items-center gap-1">
+        {
+          navLinks.map((link) => (
+            <a
+              href={link.href}
+              class="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+            >
+              {link.label}
+            </a>
+          ))
+        }
+      </div>
+
+      <!-- CTAs -->
+      <div class="flex items-center gap-3">
+        <a
+          href="/login"
+          class="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Log in
+        </a>
+        <a
+          href="/signup"
+          class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground shadow-hard-sm hover:-translate-y-0.5 hover:translate-x-0.5 active:translate-y-0 active:translate-x-0 active:shadow-none transition-all"
+        >
+          Get Started
+        </a>
+
+        <!-- Mobile Menu Button -->
+        <button
+          type="button"
+          class="md:hidden p-2 text-muted-foreground hover:text-foreground"
+          aria-label="Toggle menu"
+          data-mobile-menu-toggle
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div
+    class="hidden md:hidden border-t border-border bg-card/95 backdrop-blur"
+    data-mobile-menu
+  >
+    <div class="container-marketing py-4 space-y-1">
+      {
+        navLinks.map((link) => (
+          <a
+            href={link.href}
+            class="block px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md transition-colors"
+          >
+            {link.label}
+          </a>
+        ))
+      }
+      <div class="pt-4 border-t border-border mt-4">
+        <a
+          href="/login"
+          class="block px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground"
+        >
+          Log in
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<script>
+  function initMobileMenu() {
+    const toggle = document.querySelector("[data-mobile-menu-toggle]");
+    const menu = document.querySelector("[data-mobile-menu]");
+
+    if (toggle && menu) {
+      toggle.addEventListener("click", () => {
+        menu.classList.toggle("hidden");
+      });
+
+      // Close menu when clicking a link
+      menu.querySelectorAll("a").forEach((link) => {
+        link.addEventListener("click", () => {
+          menu.classList.add("hidden");
+        });
+      });
+    }
+  }
+
+  document.addEventListener("astro:page-load", initMobileMenu);
+</script>

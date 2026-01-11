@@ -1,0 +1,304 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import Button from "../components/ui/Button.astro";
+import Accordion from "../components/ui/Accordion.astro";
+import GlowOrb from "../components/effects/GlowOrb.astro";
+import GridPattern from "../components/effects/GridPattern.astro";
+
+const faqCategories = [
+  {
+    name: "General",
+    icon: `<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>`,
+    questions: [
+      {
+        question: "What is Adfluens?",
+        answer:
+          "Adfluens is an AI-powered social media management platform that helps businesses manage their presence across multiple platforms from one unified dashboard. It includes AI content generation, Google Business Profile management, Meta (Facebook & Instagram) integration, and smart analytics.",
+      },
+      {
+        question: "Who is Adfluens designed for?",
+        answer:
+          "Adfluens is built for businesses of all sizes—from solo creators and local shops to agencies managing multiple clients. Our tiered pricing ensures there's a plan that fits your needs, whether you're managing 3 profiles or 100+.",
+      },
+      {
+        question: "How does Adfluens compare to other social media tools?",
+        answer:
+          "Unlike traditional schedulers, Adfluens is built with AI at its core. Every plan includes AI content generation, smart review responses, and intelligent analytics—features that competitors often charge extra for or reserve for enterprise tiers.",
+      },
+      {
+        question: "Is there a free trial?",
+        answer:
+          "Yes! We offer a 14-day free trial on all plans. No credit card required to start. You'll have full access to all features in your chosen plan during the trial period.",
+      },
+    ],
+  },
+  {
+    name: "Features",
+    icon: `<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>`,
+    questions: [
+      {
+        question: "What platforms does Adfluens support?",
+        answer:
+          "Adfluens currently supports Facebook, Instagram, Google Business Profile (GMB), and Twitter/X. We're actively working on adding LinkedIn, TikTok, and Pinterest support in upcoming releases.",
+      },
+      {
+        question: "How does the AI content generation work?",
+        answer:
+          "Our AI learns your brand voice from your existing content and preferences. Simply provide a topic or prompt, and it generates platform-optimized content suggestions. You can edit, customize, and schedule the content—the AI handles the heavy lifting while you maintain creative control.",
+      },
+      {
+        question: "Can I schedule posts in advance?",
+        answer:
+          "Absolutely. You can schedule posts days, weeks, or even months in advance. Our AI also suggests optimal posting times based on your audience's engagement patterns.",
+      },
+      {
+        question: "What GMB features are included?",
+        answer:
+          "Our GMB Command Center includes post scheduling, review monitoring and AI-powered response suggestions, Q&A management, insights tracking, and multi-location support. You can manage your entire Google Business presence from one dashboard.",
+      },
+      {
+        question: "Does Adfluens support multiple languages?",
+        answer:
+          "Yes! Our AI content generation supports 25+ languages. You can create content in different languages and manage international audiences from a single account.",
+      },
+    ],
+  },
+  {
+    name: "Pricing & Billing",
+    icon: `<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>`,
+    questions: [
+      {
+        question: "How does billing work?",
+        answer:
+          "We offer both monthly and annual billing. Annual plans save you 20% compared to monthly pricing. You can switch between billing cycles at any time—changes take effect at the start of your next billing period.",
+      },
+      {
+        question: "Can I change my plan later?",
+        answer:
+          "Yes, you can upgrade or downgrade at any time. Upgrades take effect immediately with prorated billing. Downgrades take effect at the end of your current billing period.",
+      },
+      {
+        question: "What payment methods do you accept?",
+        answer:
+          "We accept all major credit cards (Visa, Mastercard, American Express, Discover), PayPal, and bank transfers for annual enterprise plans. All payments are processed securely through Stripe.",
+      },
+      {
+        question: "Do you offer refunds?",
+        answer:
+          "We offer a full refund within the first 7 days of any paid subscription if you're not satisfied. After that, you can cancel anytime and continue using the service until your billing period ends.",
+      },
+      {
+        question: "Are there any hidden fees?",
+        answer:
+          "No hidden fees, ever. The price you see is the price you pay. AI features, analytics, and all core functionality are included in every plan—no surprise charges.",
+      },
+    ],
+  },
+  {
+    name: "Technical",
+    icon: `<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>`,
+    questions: [
+      {
+        question: "Is my data secure?",
+        answer:
+          "Security is our top priority. We use bank-level encryption (AES-256) for data at rest and TLS 1.3 for data in transit. We're SOC 2 Type II compliant and conduct regular security audits. Your data is stored in secure, redundant data centers.",
+      },
+      {
+        question: "Do you offer an API?",
+        answer:
+          "Yes, API access is available on Agency and Enterprise plans. Our RESTful API allows you to integrate Adfluens with your existing tools and workflows. Full documentation is available in our developer portal.",
+      },
+      {
+        question: "Can I export my data?",
+        answer:
+          "Yes, you can export all your data at any time. We support exports in CSV, JSON, and PDF formats. Your content, analytics, and reports are always accessible and portable.",
+      },
+      {
+        question: "What's your uptime guarantee?",
+        answer:
+          "We maintain 99.9% uptime across all services. Enterprise customers receive an SLA guarantee with service credits if we fall below this threshold. Our status page (status.adfluens.io) provides real-time system status.",
+      },
+      {
+        question: "Does Adfluens integrate with other tools?",
+        answer:
+          "Yes! We integrate with popular tools including Zapier, Google Analytics, Canva, Slack, and more. Enterprise customers can request custom integrations with their existing tech stack.",
+      },
+    ],
+  },
+  {
+    name: "Support",
+    icon: `<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>`,
+    questions: [
+      {
+        question: "What support options are available?",
+        answer:
+          "All plans include email support with 24-hour response times. Professional plans and above get priority support with faster response times. Agency and Enterprise customers receive dedicated account managers and phone support.",
+      },
+      {
+        question: "Do you offer onboarding help?",
+        answer:
+          "Yes! All new customers get access to our self-service onboarding guides and video tutorials. Professional plans include a complimentary onboarding call. Enterprise customers receive full white-glove onboarding with their dedicated team.",
+      },
+      {
+        question: "Where can I find documentation?",
+        answer:
+          "Our comprehensive knowledge base at help.adfluens.io includes guides, tutorials, and best practices for every feature. We also have a YouTube channel with video walkthroughs and webinar recordings.",
+      },
+      {
+        question: "Can I request new features?",
+        answer:
+          "Absolutely! We love hearing from customers. You can submit feature requests through our feedback portal. We review all suggestions and prioritize based on customer demand. Many of our best features started as customer requests.",
+      },
+      {
+        question: "What are your support hours?",
+        answer:
+          "Email support is available 24/7 with responses within 24 hours (typically much faster). Live chat is available Monday-Friday, 9 AM - 6 PM EST. Enterprise customers have access to 24/7 phone support.",
+      },
+    ],
+  },
+];
+
+---
+
+<Layout
+  title="FAQ - Frequently Asked Questions | Adfluens"
+  description="Find answers to common questions about Adfluens, our AI-powered social media management platform. Learn about features, pricing, security, and support."
+>
+  <Header />
+  <main>
+    <!-- Hero Section -->
+    <section class="relative section-padding bg-background overflow-hidden">
+      <GridPattern class="opacity-[0.02]" />
+      <GlowOrb color="lime" position="top-left" size="xl" animation="slow" class="opacity-15" />
+
+      <div class="relative z-10 container-marketing text-center">
+        <h1
+          class="font-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-6"
+          data-reveal
+        >
+          Frequently Asked
+          <span class="text-gradient-primary">Questions</span>
+        </h1>
+        <p class="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto" data-reveal data-delay="1">
+          Everything you need to know about Adfluens. Can't find the answer you're looking for? Reach out to our
+          support team.
+        </p>
+      </div>
+    </section>
+
+    <!-- FAQ Categories -->
+    <section class="relative section-padding bg-background">
+      <div class="container-marketing">
+        <!-- Category Navigation -->
+        <div class="flex flex-wrap justify-center gap-3 mb-12" data-reveal>
+          {
+            faqCategories.map((category, index) => (
+              <button
+                type="button"
+                class:list={[
+                  "faq-category-btn flex items-center gap-2 px-4 py-2 rounded-lg border transition-all",
+                  index === 0
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-card text-muted-foreground hover:border-foreground/20 hover:text-foreground",
+                ]}
+                data-category={category.name}
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  viewBox="0 0 24 24"
+                  set:html={category.icon}
+                />
+                <span class="text-sm font-medium">{category.name}</span>
+              </button>
+            ))
+          }
+        </div>
+
+        <!-- FAQ Sections -->
+        <div class="max-w-3xl mx-auto">
+          {
+            faqCategories.map((category, categoryIndex) => (
+              <div
+                class:list={["faq-section", categoryIndex === 0 ? "block" : "hidden"]}
+                data-section={category.name}
+                data-reveal
+                data-delay="1"
+              >
+                <div class="mb-6">
+                  <h2 class="font-display text-2xl font-bold text-foreground mb-2">{category.name}</h2>
+                  <div class="h-1 w-16 bg-primary rounded-full" />
+                </div>
+                <Accordion items={category.questions} />
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Still Have Questions CTA -->
+    <section class="relative section-padding bg-muted/10 border-t border-border">
+      <GlowOrb color="orange" position="center" size="xl" animation="none" class="opacity-10" />
+
+      <div class="relative z-10 container-marketing text-center">
+        <h2 class="font-display text-2xl md:text-3xl font-bold text-foreground mb-4" data-reveal>
+          Still have questions?
+        </h2>
+        <p class="text-muted-foreground max-w-xl mx-auto mb-8" data-reveal data-delay="1">
+          Can't find the answer you're looking for? Our friendly support team is here to help.
+        </p>
+        <div class="flex flex-wrap justify-center gap-4" data-reveal data-delay="2">
+          <Button variant="primary" size="lg" href="/contact">
+            Contact Support
+          </Button>
+          <Button variant="outline" size="lg" href="https://docs.adfluens.io">
+            Browse Help Center
+          </Button>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  function initFaqCategories() {
+    const categoryButtons = document.querySelectorAll(".faq-category-btn");
+    const faqSections = document.querySelectorAll(".faq-section");
+
+    categoryButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const category = button.getAttribute("data-category");
+
+        // Update button styles
+        categoryButtons.forEach((btn) => {
+          btn.classList.remove("border-primary", "bg-primary/10", "text-primary");
+          btn.classList.add("border-border", "bg-card", "text-muted-foreground");
+        });
+        button.classList.remove("border-border", "bg-card", "text-muted-foreground");
+        button.classList.add("border-primary", "bg-primary/10", "text-primary");
+
+        // Show/hide sections
+        faqSections.forEach((section) => {
+          if (section.getAttribute("data-section") === category) {
+            section.classList.remove("hidden");
+            section.classList.add("block");
+          } else {
+            section.classList.add("hidden");
+            section.classList.remove("block");
+          }
+        });
+      });
+    });
+  }
+
+  initFaqCategories();
+  document.addEventListener("astro:page-load", initFaqCategories);
+</script>
