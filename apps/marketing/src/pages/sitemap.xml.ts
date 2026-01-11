@@ -18,6 +18,8 @@ export async function GET(context: APIContext) {
     { path: "about", priority: "0.8" },
     { path: "pricing", priority: "0.9" },
     { path: "blog", priority: "0.8" },
+    { path: "faq", priority: "0.7" },
+    { path: "contact", priority: "0.7" },
     { path: "privacy", priority: "0.3" },
     { path: "terms", priority: "0.3" },
     { path: "features/ai-content", priority: "0.8" },
