@@ -1,0 +1,25 @@
+{
+  "name": "@repo/marketing",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --port 4000",
+    "build": "astro build",
+    "preview": "astro preview --port 4000",
+    "type-check": "astro check && tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "astro": "^5.2.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.0",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/tailwind-config": "workspace:*",
+    "@tailwindcss/postcss": "^4.1.17",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.17",
+    "typescript": "~5.9.3"
+  }
+}

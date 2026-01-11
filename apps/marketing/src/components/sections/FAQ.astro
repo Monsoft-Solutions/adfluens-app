@@ -1,0 +1,58 @@
+---
+import Accordion from "../ui/Accordion.astro";
+
+const faqItems = [
+  {
+    question: "How much does Adfluens cost?",
+    answer:
+      "We offer transparent pricing starting at $29/month for our Starter plan. AI features are included in all plans—no hidden fees or premium add-ons. We also offer a 14-day free trial with full access, no credit card required.",
+  },
+  {
+    question: "Is my data secure?",
+    answer:
+      "Absolutely. We use enterprise-grade encryption for all data in transit and at rest. We're GDPR compliant and follow industry best practices for data protection. Your social media credentials are securely stored using OAuth—we never see your passwords.",
+  },
+  {
+    question: "Can I migrate from another tool?",
+    answer:
+      "Yes! We support easy migration from Hootsuite, Buffer, Later, Sprout Social, and other popular tools. Our onboarding team can help you transfer your scheduled content, analytics history, and settings.",
+  },
+  {
+    question: "Do you offer a free trial?",
+    answer:
+      "Yes, we offer a 14-day free trial with full access to Professional tier features. No credit card required to start. You can explore all features and only upgrade when you're ready.",
+  },
+  {
+    question: "What kind of support do you offer?",
+    answer:
+      "All plans include access to our help center and email support. Professional and Agency plans include live chat support and priority response times. Agency and Enterprise plans include dedicated onboarding calls and a customer success manager.",
+  },
+];
+---
+
+<section id="faq" class="relative section-padding bg-card/30 overflow-hidden">
+  <!-- Top border gradient -->
+  <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
+
+  <div class="container-marketing">
+    <!-- Section Header -->
+    <div class="text-center max-w-2xl mx-auto mb-12" data-reveal>
+      <h2 class="font-display text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-foreground mb-4">
+        Frequently asked
+        <span class="text-muted-foreground">questions</span>
+      </h2>
+      <p class="text-lg text-muted-foreground">
+        Everything you need to know about Adfluens. Can't find what you're
+        looking for? <a href="/contact" class="text-primary hover:underline">Contact us</a>.
+      </p>
+    </div>
+
+    <!-- FAQ Accordion -->
+    <div class="max-w-3xl mx-auto" data-reveal data-delay="1">
+      <Accordion items={faqItems} />
+    </div>
+  </div>
+
+  <!-- Bottom border gradient -->
+  <div class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
+</section>

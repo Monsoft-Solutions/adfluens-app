@@ -38,3 +38,4 @@ apps/api/tsconfig.tsbuildinfo
 
 # Claude Code
 .claude/settings.local.json
+.playwright-mcp/

@@ -1,0 +1,55 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs (we rebuild in Docker)
+dist
+.astro
+
+# Development files
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Test files
+*.test.*
+*.spec.*
+__tests__
+coverage
+
+# Documentation
+*.md
+!README.md
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Turborepo
+.turbo
+
+# Playwright
+.playwright-mcp
+
+# Misc
+.claude

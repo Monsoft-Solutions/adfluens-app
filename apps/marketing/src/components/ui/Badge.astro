@@ -1,0 +1,34 @@
+---
+type Props = {
+  variant?: "default" | "primary" | "accent" | "secondary";
+  pulse?: boolean;
+  class?: string;
+};
+
+const { variant = "default", pulse = false, class: className } = Astro.props;
+
+const variantClasses = {
+  default: "bg-muted/50 border-border text-muted-foreground",
+  primary: "bg-primary/10 border-primary/20 text-primary",
+  accent: "bg-accent/10 border-accent/20 text-accent-foreground",
+  secondary: "bg-secondary/10 border-secondary/20 text-secondary",
+};
+---
+
+<span
+  class:list={[
+    "inline-flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm font-medium",
+    variantClasses[variant],
+    className,
+  ]}
+>
+  {
+    pulse && (
+      <span class="relative flex h-2 w-2">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-accent" />
+      </span>
+    )
+  }
+  <slot />
+</span>

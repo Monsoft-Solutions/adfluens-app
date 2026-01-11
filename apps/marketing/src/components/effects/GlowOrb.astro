@@ -1,0 +1,59 @@
+---
+type Props = {
+  color?: "orange" | "lime" | "emerald";
+  position?: "top-left" | "top-right" | "bottom-left" | "bottom-right" | "center";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl";
+  animation?: "slow" | "medium" | "fast" | "none";
+  class?: string;
+};
+
+const {
+  color = "orange",
+  position = "center",
+  size = "lg",
+  animation = "slow",
+  class: className,
+} = Astro.props;
+
+const colorClasses = {
+  orange: "from-primary/40 to-primary/5",
+  lime: "from-accent/30 to-accent/5",
+  emerald: "from-secondary/30 to-secondary/5",
+};
+
+const positionClasses = {
+  "top-left": "-top-1/4 -left-1/4",
+  "top-right": "-top-1/4 -right-1/4",
+  "bottom-left": "-bottom-1/4 -left-1/4",
+  "bottom-right": "-bottom-1/4 -right-1/4",
+  center: "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
+};
+
+const sizeClasses = {
+  sm: "w-32 h-32",
+  md: "w-64 h-64",
+  lg: "w-96 h-96",
+  xl: "w-[32rem] h-[32rem]",
+  "2xl": "w-[48rem] h-[48rem]",
+};
+
+const animationClasses = {
+  slow: "animate-float-slow",
+  medium: "animate-float-medium",
+  fast: "animate-float-fast",
+  none: "",
+};
+---
+
+<div
+  class:list={[
+    "absolute rounded-full bg-gradient-to-br blur-3xl pointer-events-none",
+    colorClasses[color],
+    positionClasses[position],
+    sizeClasses[size],
+    animationClasses[animation],
+    className,
+  ]}
+  aria-hidden="true"
+>
+</div>

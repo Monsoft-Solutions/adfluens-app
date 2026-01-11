@@ -1,0 +1,170 @@
+---
+type Props = {
+  class?: string;
+};
+
+const { class: className } = Astro.props;
+
+const footerLinks = {
+  product: {
+    title: "Product",
+    links: [
+      { label: "Features", href: "#features" },
+      { label: "Integrations", href: "#integrations" },
+      { label: "Pricing", href: "/pricing" },
+      { label: "Roadmap", href: "/roadmap" },
+    ],
+  },
+  company: {
+    title: "Company",
+    links: [
+      { label: "About", href: "/about" },
+      { label: "Blog", href: "/blog" },
+      { label: "Careers", href: "/careers" },
+      { label: "Press", href: "/press" },
+    ],
+  },
+  resources: {
+    title: "Resources",
+    links: [
+      { label: "Help Center", href: "/help" },
+      { label: "API Docs", href: "/docs" },
+      { label: "Status", href: "/status" },
+      { label: "Security", href: "/security" },
+    ],
+  },
+  legal: {
+    title: "Legal",
+    links: [
+      { label: "Privacy", href: "/privacy" },
+      { label: "Terms", href: "/terms" },
+      { label: "Cookies", href: "/cookies" },
+    ],
+  },
+};
+
+const socialLinks = [
+  {
+    label: "Twitter",
+    href: "https://twitter.com/adfluens",
+    icon: `<path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />`,
+  },
+  {
+    label: "LinkedIn",
+    href: "https://linkedin.com/company/adfluens",
+    icon: `<path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" /><rect width="4" height="12" x="2" y="9" /><circle cx="4" cy="4" r="2" />`,
+  },
+  {
+    label: "Instagram",
+    href: "https://instagram.com/adfluens",
+    icon: `<rect width="20" height="20" x="2" y="2" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />`,
+  },
+];
+---
+
+<footer class:list={["border-t border-border bg-card/50", className]}>
+  <div class="container-marketing section-padding">
+    <!-- Main Footer Content -->
+    <div class="grid grid-cols-2 md:grid-cols-6 gap-8 lg:gap-12">
+      <!-- Brand Column -->
+      <div class="col-span-2">
+        <a href="/" class="flex items-center gap-2 mb-4">
+          <div
+            class="w-8 h-8 rounded-md bg-primary flex items-center justify-center"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              class="w-5 h-5 text-primary-foreground"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+          </div>
+          <span class="font-display font-bold text-xl tracking-tight">
+            Adfluens
+          </span>
+        </a>
+        <p class="text-sm text-muted-foreground mb-6 max-w-xs">
+          Your AI-Powered Social Command Center. Amplify your presence across
+          every platform.
+        </p>
+
+        <!-- Social Links -->
+        <div class="flex items-center gap-3">
+          {
+            socialLinks.map((social) => (
+              <a
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={social.label}
+                class="w-9 h-9 flex items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  viewBox="0 0 24 24"
+                  set:html={social.icon}
+                />
+              </a>
+            ))
+          }
+        </div>
+      </div>
+
+      <!-- Link Columns -->
+      {
+        Object.values(footerLinks).map((section) => (
+          <div>
+            <h3 class="font-display font-semibold text-sm text-foreground mb-4">
+              {section.title}
+            </h3>
+            <ul class="space-y-3">
+              {section.links.map((link) => (
+                <li>
+                  <a
+                    href={link.href}
+                    class="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </div>
+
+    <!-- Bottom Bar -->
+    <div
+      class="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4"
+    >
+      <p class="text-sm text-muted-foreground">
+        &copy; {new Date().getFullYear()} Adfluens. All rights reserved.
+      </p>
+      <div class="flex items-center gap-6">
+        <a
+          href="/privacy"
+          class="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Privacy Policy
+        </a>
+        <a
+          href="/terms"
+          class="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Terms of Service
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>

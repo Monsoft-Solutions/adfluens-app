@@ -1,0 +1,215 @@
+/* Import shared Tailwind v4 theme from monorepo */
+@import "@repo/tailwind-config";
+
+/* ===== Marketing-Specific Animations ===== */
+@theme {
+  /* Floating animations for glow orbs */
+  --animate-float-slow: float-slow 8s ease-in-out infinite;
+  --animate-float-medium: float-medium 6s ease-in-out infinite;
+  --animate-float-fast: float-fast 4s ease-in-out infinite;
+
+  /* Glow pulse for orbs */
+  --animate-pulse-glow: pulse-glow 3s ease-in-out infinite;
+
+  /* Grid flow animation */
+  --animate-grid-flow: grid-flow 20s linear infinite;
+
+  /* Connection line animation */
+  --animate-connection-pulse: connection-pulse 2s ease-in-out infinite;
+
+  @keyframes float-slow {
+    0%,
+    100% {
+      transform: translate(0, 0) rotate(0deg);
+    }
+    25% {
+      transform: translate(10px, -15px) rotate(2deg);
+    }
+    50% {
+      transform: translate(-5px, -25px) rotate(-1deg);
+    }
+    75% {
+      transform: translate(15px, -10px) rotate(1deg);
+    }
+  }
+
+  @keyframes float-medium {
+    0%,
+    100% {
+      transform: translate(0, 0);
+    }
+    33% {
+      transform: translate(-20px, 15px);
+    }
+    66% {
+      transform: translate(15px, -10px);
+    }
+  }
+
+  @keyframes float-fast {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-15px);
+    }
+  }
+
+  @keyframes pulse-glow {
+    0%,
+    100% {
+      opacity: 0.4;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.6;
+      transform: scale(1.05);
+    }
+  }
+
+  @keyframes grid-flow {
+    0% {
+      background-position: 0 0;
+    }
+    100% {
+      background-position: 100px 100px;
+    }
+  }
+
+  @keyframes connection-pulse {
+    0%,
+    100% {
+      opacity: 0.3;
+      stroke-dashoffset: 0;
+    }
+    50% {
+      opacity: 0.8;
+      stroke-dashoffset: 20;
+    }
+  }
+}
+
+/* ===== Marketing-Specific Utilities ===== */
+
+/* Glow effect for orbs */
+@utility glow-orange {
+  box-shadow: 0 0 120px 60px oklch(0.65 0.27 34 / 0.3);
+}
+
+@utility glow-lime {
+  box-shadow: 0 0 120px 60px oklch(0.94 0.32 114 / 0.2);
+}
+
+@utility glow-emerald {
+  box-shadow: 0 0 120px 60px oklch(0.66 0.17 162 / 0.2);
+}
+
+/* Gradient border effect for cards */
+@utility gradient-border {
+  position: relative;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+}
+
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-accent) 50%,
+    var(--color-secondary) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+  pointer-events: none;
+}
+
+.gradient-border:hover::before {
+  opacity: 1;
+}
+
+/* Text gradient for headlines */
+@utility text-gradient-primary {
+  background: linear-gradient(
+    135deg,
+    var(--color-primary),
+    var(--color-accent)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Marketing-specific container */
+@utility container-marketing {
+  width: 100%;
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .container-marketing {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Section spacing */
+@utility section-padding {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+}
+
+@media (min-width: 768px) {
+  .section-padding {
+    padding-top: 7rem;
+    padding-bottom: 7rem;
+  }
+}
+
+/* Scroll reveal - starts hidden, revealed via JS */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger delays for reveal */
+[data-reveal][data-delay="1"] {
+  transition-delay: 100ms;
+}
+[data-reveal][data-delay="2"] {
+  transition-delay: 200ms;
+}
+[data-reveal][data-delay="3"] {
+  transition-delay: 300ms;
+}
+[data-reveal][data-delay="4"] {
+  transition-delay: 400ms;
+}
+[data-reveal][data-delay="5"] {
+  transition-delay: 500ms;
+}
