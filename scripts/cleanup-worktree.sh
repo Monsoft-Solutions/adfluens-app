@@ -46,7 +46,11 @@ echo ""
 
 # Check for uncommitted changes
 if [ -d "$WORKTREE_PATH" ]; then
-    cd "$WORKTREE_PATH"
+    if ! cd "$WORKTREE_PATH"; then
+        print_error "Failed to enter worktree directory: $WORKTREE_PATH"
+        exit 1
+    fi
+    
     if ! git diff-index --quiet HEAD -- 2>/dev/null; then
         print_error "Worktree has uncommitted changes!"
         echo ""
@@ -59,7 +63,11 @@ if [ -d "$WORKTREE_PATH" ]; then
             exit 1
         fi
     fi
-    cd - > /dev/null
+    
+    if ! cd - > /dev/null; then
+        print_error "Failed to return to previous directory"
+        exit 1
+    fi
 fi
 
 # Remove the worktree
@@ -74,14 +82,14 @@ if [ $? -eq 0 ]; then
         print_info "The branch '$BRANCH_NAME' still exists"
         echo ""
         echo "To delete the branch:"
-        echo "  git branch -d $BRANCH_NAME    # if merged"
-        echo "  git branch -D $BRANCH_NAME    # force delete"
+        echo "  git branch -d \"$BRANCH_NAME\"    # if merged"
+        echo "  git branch -D \"$BRANCH_NAME\"    # force delete"
     fi
 else
     print_error "Failed to remove worktree"
     echo ""
     print_info "You can manually remove it with:"
-    echo "  git worktree remove --force $WORKTREE_PATH"
+    echo "  git worktree remove --force \"$WORKTREE_PATH\""
     exit 1
 fi
 

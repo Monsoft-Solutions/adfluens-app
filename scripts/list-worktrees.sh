@@ -16,12 +16,12 @@ git worktree list --porcelain | awk -v green="$GREEN" -v blue="$BLUE" -v yellow=
 /^branch/ { branch=$2; sub(/^refs\/heads\//, "", branch) }
 /^$/ { 
     if (path && branch) {
-        # Try to read port from .env
-        cmd = "grep \"^PORT=\" " path "/.env 2>/dev/null | cut -d= -f2"
+        # Try to read port from .env (quoted path for safety)
+        cmd = "grep \"^PORT=\" \"" path "/.env\" 2>/dev/null | cut -d= -f2"
         cmd | getline api_port
         close(cmd)
         
-        cmd = "grep \"^VITE_PORT=\" " path "/.env 2>/dev/null | cut -d= -f2"
+        cmd = "grep \"^VITE_PORT=\" \"" path "/.env\" 2>/dev/null | cut -d= -f2"
         cmd | getline web_port
         close(cmd)
         
