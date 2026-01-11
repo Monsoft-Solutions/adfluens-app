@@ -34,14 +34,16 @@ import {
   SetVariableNodeFields,
   GotoNodeFields,
 } from "./fields";
-import type {
-  FlowEditorProps,
-  FlowEditorNode,
-  FlowEditorEdge,
-  FlowNodeData,
-  FlowNodeType,
-  ApiFlowNode,
-  FlowTrigger,
+import {
+  apiTypeToNodeType,
+  nodeTypeToApiType,
+  type FlowEditorProps,
+  type FlowEditorNode,
+  type FlowEditorEdge,
+  type FlowNodeData,
+  type FlowNodeType,
+  type ApiFlowNode,
+  type FlowTrigger,
 } from "./flow-editor.types";
 
 // ============================================================================
@@ -59,17 +61,8 @@ function convertApiToEditorNodes(
   onDelete: (nodeId: string) => void
 ): { nodes: FlowEditorNode[]; edges: FlowEditorEdge[] } {
   const nodes: FlowEditorNode[] = apiNodes.map((apiNode, index) => {
-    // Determine visual node type from API node
-    let nodeType: FlowNodeType = "message";
-    if (apiNode.type === "entry") nodeType = "entry";
-    else if (apiNode.type === "condition") nodeType = "condition";
-    else if (apiNode.type === "ai_node") nodeType = "ai-response";
-    else if (apiNode.actions[0]?.type === "send_quick_replies")
-      nodeType = "quick-replies";
-    else if (apiNode.actions[0]?.type === "collect_input")
-      nodeType = "collect-input";
-    else if (apiNode.actions[0]?.type === "handoff") nodeType = "handoff";
-    else if (apiNode.actions[0]?.type === "delay") nodeType = "delay";
+    // Use the helper function for complete type mapping
+    const nodeType = apiTypeToNodeType(apiNode);
 
     return {
       id: apiNode.id,
@@ -109,13 +102,8 @@ function convertEditorToApiNodes(
     const outgoingEdges = edges.filter((e) => e.source === node.id);
     const nextNodes = outgoingEdges.map((e) => e.target);
 
-    // Map visual node type to API type
-    let apiType: ApiFlowNode["type"] = "message";
-    if (node.type === "entry") apiType = "entry";
-    else if (node.type === "condition") apiType = "condition";
-    else if (node.type === "ai-response") apiType = "ai_node";
-    else if (node.type === "handoff") apiType = "action";
-    else if (node.type === "delay") apiType = "action";
+    // Use the helper record for complete type mapping
+    const apiType = nodeTypeToApiType[node.type as FlowNodeType] || "message";
 
     return {
       id: node.id,
@@ -431,13 +419,13 @@ function FlowEditorInner({
               nodeStrokeWidth={3}
               zoomable
               pannable
-              className="!bg-muted/50"
+              className="bg-muted/50!"
             />
             <Background
               variant={BackgroundVariant.Dots}
               gap={15}
               size={1}
-              className="!bg-background"
+              className="bg-background!"
             />
           </ReactFlow>
         </div>

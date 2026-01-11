@@ -9,6 +9,7 @@ import {
   db,
   eq,
   and,
+  sql,
   metaConversationConfigTable,
   metaConversationStateTable,
   metaTeamInboxTable,
@@ -39,6 +40,88 @@ import {
   interpolateVariables,
   createInterpolationContext,
 } from "./utils/variable-interpolation.utils";
+
+// =============================================================================
+// Constants
+// =============================================================================
+
+const MAX_EXECUTION_DEPTH = 50;
+const MAX_REGEX_LENGTH = 100;
+const HTTP_REQUEST_TIMEOUT_MS = 10000;
+
+// =============================================================================
+// Security Helpers
+// =============================================================================
+
+/**
+ * Validates a regex pattern for safety to prevent ReDoS attacks.
+ * Rejects patterns with nested quantifiers and excessive backtracking.
+ */
+function isSafeRegex(pattern: string): boolean {
+  // Reject patterns over max length
+  if (pattern.length > MAX_REGEX_LENGTH) return false;
+
+  // Reject nested quantifiers (ReDoS patterns like (a+)+)
+  if (/([+*?]|\{\d+,?\d*\})\s*([+*?]|\{\d+,?\d*\})/.test(pattern)) return false;
+
+  // Reject patterns with quantifiers inside groups followed by quantifiers
+  if (/\([^)]*[+*][^)]*\)[+*]/.test(pattern)) return false;
+
+  // Reject patterns with alternation inside groups followed by quantifiers
+  if (/\([^)]*\|[^)]*\)[+*]/.test(pattern)) return false;
+
+  return true;
+}
+
+/**
+ * Validates a URL to prevent SSRF attacks.
+ * Blocks localhost, private IPs, and cloud metadata endpoints.
+ */
+function isAllowedUrl(urlString: string): boolean {
+  try {
+    const url = new URL(urlString);
+
+    // Block non-HTTP(S) protocols
+    if (!["http:", "https:"].includes(url.protocol)) return false;
+
+    // Block localhost
+    const hostname = url.hostname.toLowerCase();
+    if (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "::1" ||
+      hostname === "0.0.0.0"
+    )
+      return false;
+
+    // Block cloud metadata endpoints
+    if (hostname === "169.254.169.254") return false;
+    if (hostname === "metadata.google.internal") return false;
+
+    // Block private IP ranges
+    const parts = hostname.split(".").map(Number);
+    if (parts.length === 4 && parts.every((p) => !isNaN(p))) {
+      // 10.0.0.0/8
+      if (parts[0] === 10) return false;
+      // 172.16.0.0/12
+      if (
+        parts[0] === 172 &&
+        parts[1] !== undefined &&
+        parts[1] >= 16 &&
+        parts[1] <= 31
+      )
+        return false;
+      // 192.168.0.0/16
+      if (parts[0] === 192 && parts[1] === 168) return false;
+      // 127.0.0.0/8
+      if (parts[0] === 127) return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 // =============================================================================
 // Types
@@ -508,6 +591,13 @@ async function findTriggeredFlow(
           break;
         }
         case "regex": {
+          // Validate regex pattern for safety (ReDoS prevention)
+          if (!isSafeRegex(trigger.value)) {
+            console.warn(
+              `[meta-bot] Unsafe regex pattern rejected: ${trigger.value.substring(0, 50)}`
+            );
+            break;
+          }
           try {
             const regex = new RegExp(
               trigger.value,
@@ -522,10 +612,10 @@ async function findTriggeredFlow(
       }
 
       if (matches) {
-        // Increment trigger count
+        // Increment trigger count atomically
         await db
           .update(metaBotFlowTable)
-          .set({ triggerCount: flow.triggerCount + 1 })
+          .set({ triggerCount: sql`${metaBotFlowTable.triggerCount} + 1` })
           .where(eq(metaBotFlowTable.id, flow.id));
 
         return flow;
@@ -646,10 +736,10 @@ async function executeFlowNode(
     },
   });
 
-  // Increment completion count
+  // Increment completion count atomically
   await db
     .update(metaBotFlowTable)
-    .set({ completionCount: flow.completionCount + 1 })
+    .set({ completionCount: sql`${metaBotFlowTable.completionCount} + 1` })
     .where(eq(metaBotFlowTable.id, flow.id));
 
   return { handled: false };
@@ -657,13 +747,34 @@ async function executeFlowNode(
 
 /**
  * Execute a single node and return response
+ * @param depth - Current recursion depth (for loop protection)
+ * @param visitedNodes - Set of node IDs already visited in this execution chain
  */
 async function executeNode(
   node: MetaBotFlowRow["nodes"][0],
   state: MetaConversationStateRow,
   flow: MetaBotFlowRow,
-  flowContext: FlowExecutionContext
+  flowContext: FlowExecutionContext,
+  depth: number = 0,
+  visitedNodes: Set<string> = new Set()
 ): Promise<BotResponse> {
+  // Protection against infinite recursion
+  if (depth > MAX_EXECUTION_DEPTH) {
+    console.error(
+      `[meta-bot] Max execution depth (${MAX_EXECUTION_DEPTH}) exceeded at node ${node.id}`
+    );
+    return { handled: false, reason: "max_depth_exceeded" };
+  }
+
+  // Protection against circular references in goto_node chains
+  if (visitedNodes.has(node.id)) {
+    console.warn(
+      `[meta-bot] Circular reference detected at node ${node.id}, stopping execution`
+    );
+    return { handled: false, reason: "circular_reference" };
+  }
+
+  visitedNodes.add(node.id);
   const responses: string[] = [];
 
   for (const action of node.actions) {
@@ -779,11 +890,38 @@ async function executeNode(
           ? interpolateVariables(config.body, interpolationContext)
           : undefined;
 
+        // SSRF protection: validate URL before making request
+        if (!isAllowedUrl(url)) {
+          console.error(
+            `[meta-bot] Blocked request to disallowed URL: ${url.substring(0, 100)}`
+          );
+          if (config.responseVariable) {
+            const updatedVariables = {
+              ...state.context.variables,
+              [config.responseVariable]: null,
+              [`${config.responseVariable}_error`]: "URL not allowed",
+              [`${config.responseVariable}_ok`]: false,
+            };
+            await updateConversationState(state.id, {
+              context: { ...state.context, variables: updatedVariables },
+            });
+            state.context.variables = updatedVariables;
+          }
+          break;
+        }
+
         // Build headers
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
           ...config.headers,
         };
+
+        // Create abort controller for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(
+          () => controller.abort(),
+          HTTP_REQUEST_TIMEOUT_MS
+        );
 
         try {
           const response = await fetch(url, {
@@ -793,7 +931,9 @@ async function executeNode(
               body && ["POST", "PUT", "PATCH"].includes(config.method)
                 ? body
                 : undefined,
+            signal: controller.signal,
           });
+          clearTimeout(timeoutId);
 
           let responseData: unknown;
           const contentType = response.headers.get("content-type");
@@ -827,6 +967,7 @@ async function executeNode(
             `[meta-bot] HTTP ${config.method} ${url} - ${response.status}`
           );
         } catch (error) {
+          clearTimeout(timeoutId);
           console.error(`[meta-bot] HTTP request failed:`, error);
 
           // Store error in variable if specified
@@ -868,11 +1009,14 @@ async function executeNode(
           console.log(`[meta-bot] Goto node: ${config.targetNodeId}`);
 
           // Execute the target node immediately (with any collected responses)
+          // Pass depth+1 and visitedNodes to detect circular references
           const gotoResult = await executeNode(
             targetNode,
             state,
             flow,
-            flowContext
+            flowContext,
+            depth + 1,
+            visitedNodes
           );
 
           // Combine responses if the goto target also has responses

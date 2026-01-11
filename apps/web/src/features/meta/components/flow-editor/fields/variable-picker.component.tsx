@@ -47,8 +47,8 @@ function extractVariablesFromNodes(
   const variables: AvailableVariable[] = [];
   const seen = new Set<string>();
 
-  // System variables (always available)
-  variables.push(
+  // System variables (always available) - these names are reserved
+  const systemVars: AvailableVariable[] = [
     {
       name: "userMessage",
       category: "system",
@@ -58,8 +58,14 @@ function extractVariablesFromNodes(
       name: "timestamp",
       category: "system",
       description: "Current timestamp",
-    }
-  );
+    },
+  ];
+
+  // Add system variables to both the array and the seen set
+  for (const sysVar of systemVars) {
+    variables.push(sysVar);
+    seen.add(sysVar.name);
+  }
 
   for (const node of nodes) {
     const action = node.data.actions[0];

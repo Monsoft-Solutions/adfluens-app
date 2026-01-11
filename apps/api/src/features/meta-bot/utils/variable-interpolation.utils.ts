@@ -5,10 +5,25 @@
  * Used by flow action handlers to resolve variable references.
  */
 
+// Maximum recursion depth for object interpolation
+const MAX_INTERPOLATION_DEPTH = 100;
+
 export type InterpolationContext = {
   variables: Record<string, unknown>;
   collectedInputs: Record<string, string>;
 };
+
+/**
+ * Safely stringify a value, handling circular references.
+ */
+function safeStringify(value: unknown): string {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    // Handle circular references or other stringify errors
+    return "[Object]";
+  }
+}
 
 /**
  * Interpolates variable placeholders in a string.
@@ -34,9 +49,9 @@ export function interpolateVariables(
     // Then check variables
     if (varName in context.variables) {
       const value = context.variables[varName];
-      // Handle objects/arrays by stringifying
+      // Handle objects/arrays by stringifying (with circular reference protection)
       if (typeof value === "object" && value !== null) {
-        return JSON.stringify(value);
+        return safeStringify(value);
       }
       return String(value);
     }
@@ -51,26 +66,33 @@ export function interpolateVariables(
  *
  * @param obj - Object, array, or primitive to interpolate
  * @param context - Context containing variables and collectedInputs
+ * @param depth - Current recursion depth (for protection against deep/circular structures)
  * @returns Object with all string values interpolated
  */
 export function interpolateObjectVariables<T>(
   obj: T,
-  context: InterpolationContext
+  context: InterpolationContext,
+  depth: number = 0
 ): T {
+  // Protection against infinite recursion from deep/circular structures
+  if (depth > MAX_INTERPOLATION_DEPTH) {
+    return obj;
+  }
+
   if (typeof obj === "string") {
     return interpolateVariables(obj, context) as T;
   }
 
   if (Array.isArray(obj)) {
     return obj.map((item) =>
-      interpolateObjectVariables(item, context)
+      interpolateObjectVariables(item, context, depth + 1)
     ) as unknown as T;
   }
 
   if (obj !== null && typeof obj === "object") {
     const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
-      result[key] = interpolateObjectVariables(value, context);
+      result[key] = interpolateObjectVariables(value, context, depth + 1);
     }
     return result as T;
   }

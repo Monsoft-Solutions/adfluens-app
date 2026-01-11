@@ -196,14 +196,29 @@ export async function processScheduledExecutions(): Promise<void> {
  * Process a single scheduled execution
  */
 async function processExecution(executionId: string): Promise<void> {
-  // Mark as processing
-  await db
+  // Atomically claim the execution by updating status to "processing"
+  // Only if current status is "pending" (prevents race condition with multiple workers)
+  const [claimed] = await db
     .update(metaFlowScheduledExecutionTable)
     .set({
       status: "processing",
       attempts: 1, // TODO: Implement retry logic
     })
-    .where(eq(metaFlowScheduledExecutionTable.id, executionId));
+    .where(
+      and(
+        eq(metaFlowScheduledExecutionTable.id, executionId),
+        eq(metaFlowScheduledExecutionTable.status, "pending")
+      )
+    )
+    .returning({ id: metaFlowScheduledExecutionTable.id });
+
+  // If no rows were updated, another worker already claimed this execution
+  if (!claimed) {
+    console.log(
+      `[scheduled-execution] Execution ${executionId} already claimed by another worker or not pending`
+    );
+    return;
+  }
 
   const execution = await db.query.metaFlowScheduledExecutionTable.findFirst({
     where: eq(metaFlowScheduledExecutionTable.id, executionId),

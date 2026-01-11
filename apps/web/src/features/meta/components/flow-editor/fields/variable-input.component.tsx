@@ -125,7 +125,7 @@ export function VariableTextarea({
         ref={textareaRef}
         value={value}
         onChange={(e) => onValueChange(e.target.value)}
-        className={className}
+        className={cn(showPickerButton && "pr-10", className)}
         {...props}
       />
       {showPickerButton && (

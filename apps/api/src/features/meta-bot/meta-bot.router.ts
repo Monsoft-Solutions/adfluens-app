@@ -140,7 +140,11 @@ export const metaBotRouter = router({
   getSettings: organizationProcedure
     .input(z.object({ pageId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      let config = await getConversationConfig(input.pageId);
+      // Pass organizationId for authorization check
+      let config = await getConversationConfig(
+        input.pageId,
+        ctx.organization.id
+      );
 
       // Create default config if doesn't exist
       if (!config) {
@@ -206,8 +210,8 @@ export const metaBotRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { pageId, ...updates } = input;
 
-      // Ensure config exists
-      let config = await getConversationConfig(pageId);
+      // Ensure config exists - pass organizationId for authorization check
+      let config = await getConversationConfig(pageId, ctx.organization.id);
       if (!config) {
         config = await createDefaultConversationConfig(
           pageId,
@@ -252,7 +256,11 @@ export const metaBotRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const config = await getConversationConfig(input.pageId);
+      // Pass organizationId for authorization check
+      const config = await getConversationConfig(
+        input.pageId,
+        ctx.organization.id
+      );
 
       const response = await testAiResponse(
         ctx.organization.id,
@@ -674,9 +682,12 @@ export const metaBotRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { pageId, ...updates } = input;
 
-      // Check if config exists
+      // Check if config exists - include organizationId for authorization
       const existing = await db.query.metaAppointmentConfigTable.findFirst({
-        where: eq(metaAppointmentConfigTable.metaPageId, pageId),
+        where: and(
+          eq(metaAppointmentConfigTable.metaPageId, pageId),
+          eq(metaAppointmentConfigTable.organizationId, ctx.organization.id)
+        ),
       });
 
       if (existing) {

@@ -111,14 +111,25 @@ export async function handleOAuthCallback(
   code: string,
   state: string
 ): Promise<{ setupCode: string; redirectPath: string }> {
-  // Decode state
-  const stateData = JSON.parse(
-    Buffer.from(state, "base64").toString("utf8")
-  ) as {
+  // Decode state with error handling for malformed input
+  let stateData: {
     organizationId: string;
     userId: string;
     redirectPath: string;
   };
+
+  try {
+    stateData = JSON.parse(
+      Buffer.from(state, "base64").toString("utf8")
+    ) as typeof stateData;
+  } catch {
+    throw new Error("Invalid OAuth state parameter");
+  }
+
+  // Validate required fields
+  if (!stateData.organizationId || !stateData.userId) {
+    throw new Error("Invalid OAuth state: missing required fields");
+  }
 
   const redirectUri = `${env.BETTER_AUTH_URL}/api/auth/meta/callback`;
 

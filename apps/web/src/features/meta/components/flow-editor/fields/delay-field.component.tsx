@@ -32,19 +32,22 @@ export function DelayNodeFields({
             type="number"
             min={1}
             value={delayAmount}
-            onChange={(e) =>
+            onChange={(e) => {
+              // Parse with radix 10 and ensure minimum value of 1
+              const parsed = parseInt(e.target.value, 10);
+              const validAmount = Math.max(1, isNaN(parsed) ? 1 : parsed);
               onUpdate({
                 actions: [
                   {
                     type: "delay",
                     config: {
-                      delayAmount: parseInt(e.target.value) || 1,
+                      delayAmount: validAmount,
                       delayUnit,
                     },
                   },
                 ],
-              })
-            }
+              });
+            }}
             className="w-20"
           />
           <Select
