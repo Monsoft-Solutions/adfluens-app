@@ -133,7 +133,7 @@ export function MetaBotSettings({ pageId }: MetaBotSettingsProps) {
             responseLength: "auto",
             useEmojis: false,
           },
-          aiTemperature: data.aiTemperature ?? 0.7,
+          aiTemperature: parseFloat(data.aiTemperature) || 0.7,
           welcomeMessage: data.welcomeMessage || "",
           awayMessage: data.awayMessage || "",
           businessHours: (data.businessHours as BusinessHours) || {

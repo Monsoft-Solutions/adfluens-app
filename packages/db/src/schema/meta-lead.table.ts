@@ -9,6 +9,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { metaPageTable } from "./meta-page.table";
+import { leadStatusEnum } from "./meta-enums";
 
 /**
  * Lead field data from Meta Lead Ads form submission
@@ -75,7 +76,7 @@ export const metaLeadTable = pgTable(
     fieldData: jsonb("field_data").$type<MetaLeadFieldData[]>(),
 
     /** Processing status: new, contacted, qualified, converted, lost */
-    status: text("status").notNull().default("new"),
+    status: leadStatusEnum("status").notNull().default("new"),
 
     /** Notes added by user */
     notes: text("notes"),

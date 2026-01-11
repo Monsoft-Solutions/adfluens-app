@@ -15,6 +15,9 @@ export * from "./social-media-post.table";
 // GMB (Google Business Profile) tables
 export * from "./gmb-connection.table";
 
+// Meta (Facebook/Instagram) enums
+export * from "./meta-enums";
+
 // Meta (Facebook/Instagram) tables
 export * from "./meta-connection.table";
 export * from "./meta-page.table";

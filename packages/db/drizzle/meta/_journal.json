@@ -36,6 +36,13 @@
       "when": 1768081824940,
       "tag": "0004_little_master_chief",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1768096660623,
+      "tag": "0005_overconfident_blizzard",
+      "breakpoints": true
     }
   ]
 }

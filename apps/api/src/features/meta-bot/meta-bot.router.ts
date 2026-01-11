@@ -215,8 +215,18 @@ export const metaBotRouter = router({
       }
 
       // Build update object - filter out undefined values
+      // Convert aiTemperature from number to string for database storage
+      const processedUpdates = {
+        ...updates,
+        aiTemperature:
+          updates.aiTemperature !== undefined
+            ? updates.aiTemperature.toFixed(2)
+            : undefined,
+      };
       const updateData = Object.fromEntries(
-        Object.entries(updates).filter(([_, value]) => value !== undefined)
+        Object.entries(processedUpdates).filter(
+          ([_, value]) => value !== undefined
+        )
       );
 
       await db

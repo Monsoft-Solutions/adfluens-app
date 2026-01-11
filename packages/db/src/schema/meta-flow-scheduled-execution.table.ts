@@ -12,16 +12,7 @@ import { metaConversationTable } from "./meta-conversation.table";
 import { metaBotFlowTable } from "./meta-bot-flow.table";
 import { metaPageTable } from "./meta-page.table";
 import type { MetaConversationContext } from "./meta-conversation-state.table";
-
-/**
- * Scheduled execution status
- */
-export type ScheduledExecutionStatus =
-  | "pending"
-  | "processing"
-  | "completed"
-  | "failed"
-  | "cancelled";
+import { scheduledExecutionStatusEnum } from "./meta-enums";
 
 /**
  * Meta Flow Scheduled Execution table
@@ -66,10 +57,7 @@ export const metaFlowScheduledExecutionTable = pgTable(
     ).$type<MetaConversationContext>(),
 
     /** Execution status */
-    status: text("status")
-      .$type<ScheduledExecutionStatus>()
-      .default("pending")
-      .notNull(),
+    status: scheduledExecutionStatusEnum("status").default("pending").notNull(),
 
     /** Number of execution attempts */
     attempts: integer("attempts").default(0).notNull(),

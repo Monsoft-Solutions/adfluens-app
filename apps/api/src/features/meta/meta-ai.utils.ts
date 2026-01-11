@@ -284,7 +284,7 @@ ${conversationHistory ? `CONVERSATION HISTORY:\n${conversationHistory}\n` : ""}`
     const result = await coreGenerateText({
       system: systemPrompt,
       prompt: `Customer message: "${newMessage}"\n\nRespond to this message:`,
-      temperature: config.aiTemperature,
+      temperature: parseFloat(config.aiTemperature),
     });
 
     return result.text.trim();
@@ -308,7 +308,7 @@ export async function testAiResponse(
     organizationId,
     aiEnabled: true,
     aiPersonality: config.aiPersonality || null,
-    aiTemperature: config.aiTemperature ?? 0.7,
+    aiTemperature: config.aiTemperature ?? "0.70",
     welcomeMessage: config.welcomeMessage || null,
     awayMessage: config.awayMessage || null,
     businessHours: config.businessHours || null,

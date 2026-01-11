@@ -10,6 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { metaPageTable } from "./meta-page.table";
 import { metaConversationTable } from "./meta-conversation.table";
+import { appointmentStatusEnum } from "./meta-enums";
 
 /**
  * Meta Appointment table
@@ -62,7 +63,7 @@ export const metaAppointmentTable = pgTable(
     customerNotes: text("customer_notes"),
 
     /** Appointment status */
-    status: text("status").notNull().default("scheduled"),
+    status: appointmentStatusEnum("status").notNull().default("scheduled"),
 
     /** Whether reminder was sent */
     reminderSent: boolean("reminder_sent").default(false).notNull(),
@@ -93,6 +94,8 @@ export const metaAppointmentTable = pgTable(
     index("meta_appt_scheduled_idx").on(table.scheduledAt),
     index("meta_appt_status_idx").on(table.status),
     index("meta_appt_customer_email_idx").on(table.customerEmail),
+    // Composite index for upcoming appointments by status
+    index("meta_appt_status_scheduled_idx").on(table.status, table.scheduledAt),
   ]
 );
 

@@ -264,7 +264,7 @@ export async function createDefaultConversationConfig(
       metaPageId: pageId,
       organizationId,
       aiEnabled: true,
-      aiTemperature: 0.7,
+      aiTemperature: "0.70",
       useOrganizationContext: true,
       useWebsiteContext: true,
       customerSupportEnabled: true,
@@ -466,14 +466,17 @@ async function findTriggeredFlow(
   message: string
 ): Promise<MetaBotFlowRow | null> {
   const flows = await db.query.metaBotFlowTable.findMany({
-    where: eq(metaBotFlowTable.metaPageId, pageId),
+    where: and(
+      eq(metaBotFlowTable.metaPageId, pageId),
+      eq(metaBotFlowTable.isActive, true)
+    ),
     orderBy: (flows, { desc }) => [desc(flows.priority)],
   });
 
   const lowerMessage = message.toLowerCase();
 
   for (const flow of flows) {
-    if (!flow.isActive || !flow.globalTriggers?.length) continue;
+    if (!flow.globalTriggers?.length) continue;
 
     for (const trigger of flow.globalTriggers) {
       let matches = false;

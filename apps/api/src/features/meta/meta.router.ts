@@ -418,10 +418,15 @@ export const metaRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       // Convert null to undefined for the service
+      // Convert aiTemperature from number to string for database storage
       const config = {
         ...input.config,
         handoffNotificationEmail:
           input.config.handoffNotificationEmail ?? undefined,
+        aiTemperature:
+          input.config.aiTemperature !== undefined
+            ? input.config.aiTemperature.toFixed(2)
+            : undefined,
       };
       await updateConversationConfig(input.pageId, ctx.organization.id, config);
       return { success: true };
@@ -453,9 +458,19 @@ export const metaRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Convert aiTemperature from number to string for database types
+      const config = input.config
+        ? {
+            ...input.config,
+            aiTemperature:
+              input.config.aiTemperature !== undefined
+                ? input.config.aiTemperature.toFixed(2)
+                : undefined,
+          }
+        : {};
       const response = await testAiResponse(
         ctx.organization.id,
-        input.config || {},
+        config,
         input.testMessage
       );
       return { response };

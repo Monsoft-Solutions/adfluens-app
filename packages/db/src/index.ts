@@ -176,8 +176,20 @@ export type {
 export type {
   MetaFlowScheduledExecutionInsert,
   MetaFlowScheduledExecutionRow,
-  ScheduledExecutionStatus,
 } from "./schema/meta-flow-scheduled-execution.table";
+
+// Re-export Meta enum types
+export type {
+  LeadStatus,
+  AppointmentStatus,
+  InboxPriority,
+  InboxStatus,
+  BotMode,
+  QualificationStatus,
+  ConnectionStatus,
+  PageStatus,
+  ScheduledExecutionStatus,
+} from "./schema/meta-enums";
 
 // Re-export Notification types
 export type {

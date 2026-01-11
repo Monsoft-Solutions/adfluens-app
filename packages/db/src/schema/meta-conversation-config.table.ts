@@ -6,7 +6,7 @@ import {
   jsonb,
   index,
   boolean,
-  real,
+  numeric,
   uuid,
 } from "drizzle-orm/pg-core";
 import { metaPageTable } from "./meta-page.table";
@@ -92,7 +92,9 @@ export const metaConversationConfigTable = pgTable(
     aiPersonality: jsonb("ai_personality").$type<MetaAiPersonality>(),
 
     /** AI temperature (creativity) 0.0-1.0 */
-    aiTemperature: real("ai_temperature").default(0.7).notNull(),
+    aiTemperature: numeric("ai_temperature", { precision: 3, scale: 2 })
+      .default("0.70")
+      .notNull(),
 
     /** Custom greeting message for new conversations */
     welcomeMessage: text("welcome_message"),

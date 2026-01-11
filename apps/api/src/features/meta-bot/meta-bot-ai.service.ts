@@ -526,7 +526,7 @@ export async function generateAiResponse(
     const result = await coreGenerateText({
       system: systemPrompt,
       messages: [...conversationHistory, { role: "user", content: message }],
-      temperature: config.aiTemperature,
+      temperature: parseFloat(config.aiTemperature),
     });
 
     return {
@@ -683,7 +683,7 @@ export async function testAiResponse(
     organizationId,
     aiEnabled: true,
     aiPersonality: config.aiPersonality || null,
-    aiTemperature: config.aiTemperature ?? 0.7,
+    aiTemperature: config.aiTemperature ?? "0.70",
     welcomeMessage: config.welcomeMessage || null,
     awayMessage: config.awayMessage || null,
     businessHours: config.businessHours || null,

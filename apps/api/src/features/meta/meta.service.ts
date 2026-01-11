@@ -24,6 +24,7 @@ import type {
   MetaLeadInsert,
   MetaConversationInsert,
   MetaPageData,
+  LeadStatus,
 } from "@repo/db";
 import { env } from "@repo/env";
 import {
@@ -938,7 +939,7 @@ export async function getLeads(
   organizationId: string,
   options?: {
     pageId?: string;
-    status?: string;
+    status?: LeadStatus;
     limit?: number;
     cursor?: string;
   }
@@ -966,7 +967,7 @@ export async function getLeads(
 export async function updateLeadStatus(
   leadId: string,
   organizationId: string,
-  status: string,
+  status: LeadStatus,
   notes?: string
 ) {
   const updateData: Partial<MetaLeadInsert> = { status };
@@ -1208,7 +1209,7 @@ export async function updateConversationConfig(
       useEmojis: boolean;
       customInstructions?: string;
     };
-    aiTemperature: number;
+    aiTemperature: string;
     welcomeMessage: string;
     awayMessage: string;
     businessHours: {

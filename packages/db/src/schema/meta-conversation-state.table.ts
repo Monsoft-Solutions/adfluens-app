@@ -9,6 +9,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { metaConversationTable } from "./meta-conversation.table";
+import { botModeEnum, qualificationStatusEnum } from "./meta-enums";
 
 /**
  * Sales qualification context
@@ -105,13 +106,13 @@ export const metaConversationStateTable = pgTable(
     context: jsonb("context").$type<MetaConversationContext>().notNull(),
 
     /** Current bot mode */
-    botMode: text("bot_mode").notNull().default("ai"),
+    botMode: botModeEnum("bot_mode").notNull().default("ai"),
 
     /** Lead score (0-100) */
     leadScore: integer("lead_score").default(0),
 
     /** Qualification status */
-    qualificationStatus: text("qualification_status"),
+    qualificationStatus: qualificationStatusEnum("qualification_status"),
 
     /** When bot last responded */
     lastBotResponseAt: timestamp("last_bot_response_at"),
@@ -131,6 +132,10 @@ export const metaConversationStateTable = pgTable(
     index("meta_conv_state_org_idx").on(table.organizationId),
     index("meta_conv_state_mode_idx").on(table.botMode),
     index("meta_conv_state_qual_idx").on(table.qualificationStatus),
+    // Index for sales sorting by lead score
+    index("meta_conv_state_lead_score_idx").on(table.leadScore),
+    // Index for activity queries
+    index("meta_conv_state_last_activity_idx").on(table.lastBotResponseAt),
   ]
 );
 

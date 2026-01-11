@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp, index, uuid } from "drizzle-orm/pg-core";
+import { connectionStatusEnum } from "./meta-enums";
 
 /**
  * Meta Connection table
@@ -36,7 +37,7 @@ export const metaConnectionTable = pgTable(
     scopes: text("scopes"),
 
     /** Connection status: active, pending, disconnected, or error */
-    status: text("status").notNull().default("active"),
+    status: connectionStatusEnum("status").notNull().default("active"),
 
     /** Last error message if status is error */
     lastError: text("last_error"),

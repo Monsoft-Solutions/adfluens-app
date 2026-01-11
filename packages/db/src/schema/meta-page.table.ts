@@ -9,6 +9,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { metaConnectionTable } from "./meta-connection.table";
+import { pageStatusEnum } from "./meta-enums";
 
 /**
  * Page-specific data cached from Meta API
@@ -84,7 +85,7 @@ export const metaPageTable = pgTable(
     webhookSubscribed: boolean("webhook_subscribed").default(false).notNull(),
 
     /** Page status: active, disconnected, or error */
-    status: text("status").notNull().default("active"),
+    status: pageStatusEnum("status").notNull().default("active"),
 
     /** Last error if status is error */
     lastError: text("last_error"),

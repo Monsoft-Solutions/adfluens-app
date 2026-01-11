@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp, index, uuid } from "drizzle-orm/pg-core";
 import { metaConversationTable } from "./meta-conversation.table";
+import { inboxPriorityEnum, inboxStatusEnum } from "./meta-enums";
 
 /**
  * Meta Team Inbox table
@@ -29,10 +30,10 @@ export const metaTeamInboxTable = pgTable(
     assignedAt: timestamp("assigned_at"),
 
     /** Priority level */
-    priority: text("priority").notNull().default("normal"),
+    priority: inboxPriorityEnum("priority").notNull().default("normal"),
 
     /** Status of the inbox item */
-    status: text("status").notNull().default("open"),
+    status: inboxStatusEnum("status").notNull().default("open"),
 
     /** Reason for handoff (e.g., "keyword: refund", "sentiment: negative") */
     handoffReason: text("handoff_reason"),
@@ -66,6 +67,12 @@ export const metaTeamInboxTable = pgTable(
     index("meta_inbox_status_idx").on(table.status),
     index("meta_inbox_priority_idx").on(table.priority),
     index("meta_inbox_created_idx").on(table.createdAt),
+    // Composite indexes for common query patterns
+    index("meta_inbox_org_status_idx").on(table.organizationId, table.status),
+    index("meta_inbox_assignee_status_idx").on(
+      table.assignedToUserId,
+      table.status
+    ),
   ]
 );
 
