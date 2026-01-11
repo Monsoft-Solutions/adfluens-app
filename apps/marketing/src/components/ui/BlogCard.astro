@@ -1,0 +1,111 @@
+---
+type Props = {
+  title: string;
+  excerpt: string;
+  href: string;
+  image?: string;
+  category: string;
+  categoryColor?: "primary" | "accent" | "secondary";
+  date: string;
+  readTime: string;
+  featured?: boolean;
+  class?: string;
+};
+
+const {
+  title,
+  excerpt,
+  href,
+  image,
+  category,
+  categoryColor = "primary",
+  date,
+  readTime,
+  featured = false,
+  class: className,
+} = Astro.props;
+
+const categoryClasses = {
+  primary: "bg-primary/10 text-primary border-primary/20",
+  accent: "bg-accent/10 text-accent-foreground border-accent/20",
+  secondary: "bg-secondary/10 text-secondary border-secondary/20",
+};
+---
+
+<a
+  href={href}
+  class:list={[
+    "group block rounded-lg border border-border bg-card gradient-border overflow-hidden transition-all hover:-translate-y-1",
+    featured && "md:flex md:items-stretch",
+    className,
+  ]}
+>
+  <!-- Image -->
+  <div
+    class:list={[
+      "relative overflow-hidden bg-muted/30",
+      featured ? "md:w-1/2 aspect-video md:aspect-auto" : "aspect-video",
+    ]}
+  >
+    {
+      image ? (
+        <img
+          src={image}
+          alt=""
+          class="w-full h-full object-cover transition-transform group-hover:scale-105"
+        />
+      ) : (
+        <div class="w-full h-full flex items-center justify-center">
+          <svg
+            class="w-12 h-12 text-muted-foreground/30"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
+            />
+          </svg>
+        </div>
+      )
+    }
+  </div>
+
+  <!-- Content -->
+  <div class:list={["p-5", featured && "md:w-1/2 md:p-6 md:flex md:flex-col md:justify-center"]}>
+    <!-- Category badge -->
+    <span
+      class:list={[
+        "inline-flex items-center px-2 py-1 rounded text-xs font-medium border mb-3",
+        categoryClasses[categoryColor],
+      ]}
+    >
+      {category}
+    </span>
+
+    <!-- Title -->
+    <h3
+      class:list={[
+        "font-display font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors",
+        featured ? "text-xl md:text-2xl" : "text-lg",
+      ]}
+    >
+      {title}
+    </h3>
+
+    <!-- Excerpt -->
+    <p class="text-sm text-muted-foreground line-clamp-2 mb-4">
+      {excerpt}
+    </p>
+
+    <!-- Meta -->
+    <div class="flex items-center gap-3 text-xs text-muted-foreground">
+      <time datetime={date}>{date}</time>
+      <span class="w-1 h-1 rounded-full bg-muted-foreground/50"></span>
+      <span>{readTime}</span>
+    </div>
+  </div>
+</a>

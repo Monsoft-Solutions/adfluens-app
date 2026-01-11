@@ -1,0 +1,243 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+
+const lastUpdated = "January 1, 2026";
+
+const sections = [
+  { id: "acceptance", title: "Acceptance of Terms" },
+  { id: "description", title: "Description of Service" },
+  { id: "account", title: "Account Terms" },
+  { id: "acceptable-use", title: "Acceptable Use" },
+  { id: "payment", title: "Payment Terms" },
+  { id: "intellectual-property", title: "Intellectual Property" },
+  { id: "termination", title: "Termination" },
+  { id: "disclaimers", title: "Disclaimers" },
+  { id: "limitation", title: "Limitation of Liability" },
+  { id: "indemnification", title: "Indemnification" },
+  { id: "governing-law", title: "Governing Law" },
+  { id: "changes", title: "Changes to Terms" },
+  { id: "contact", title: "Contact Us" },
+];
+---
+
+<Layout
+  title="Terms of Service - Adfluens"
+  description="Read the terms and conditions that govern your use of Adfluens services."
+>
+  <Header />
+  <main class="min-h-screen">
+    <!-- Hero -->
+    <section class="relative py-16 bg-background border-b border-border">
+      <div class="container-marketing">
+        <a
+          href="/"
+          class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="m15 18-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          Back to Home
+        </a>
+        <h1 class="font-display text-4xl md:text-5xl font-bold text-foreground mb-4">Terms of Service</h1>
+        <p class="text-muted-foreground">
+          Last updated: <time datetime="2026-01-01">{lastUpdated}</time>
+        </p>
+      </div>
+    </section>
+
+    <!-- Content -->
+    <section class="relative section-padding bg-background">
+      <div class="container-marketing">
+        <div class="grid lg:grid-cols-[250px_1fr] gap-12">
+          <!-- Table of Contents -->
+          <aside class="hidden lg:block">
+            <div class="sticky top-8">
+              <h2 class="text-sm font-semibold text-foreground mb-4">On this page</h2>
+              <nav class="space-y-2">
+                {
+                  sections.map((section) => (
+                    <a
+                      href={`#${section.id}`}
+                      class="block text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {section.title}
+                    </a>
+                  ))
+                }
+              </nav>
+            </div>
+          </aside>
+
+          <!-- Main Content -->
+          <article class="prose prose-invert max-w-none">
+            <p class="text-lg text-muted-foreground leading-relaxed">
+              These Terms of Service ("Terms") govern your access to and use of Adfluens services, including our
+              website, applications, and any related services (collectively, the "Service"). Please read these Terms
+              carefully before using the Service.
+            </p>
+
+            <section id="acceptance" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Acceptance of Terms</h2>
+              <p class="text-muted-foreground">
+                By accessing or using the Service, you agree to be bound by these Terms. If you disagree with any part
+                of the Terms, you may not access the Service. If you are using the Service on behalf of an organization,
+                you are agreeing to these Terms on behalf of that organization and represent that you have the authority
+                to bind that organization to these Terms.
+              </p>
+            </section>
+
+            <section id="description" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Description of Service</h2>
+              <p class="text-muted-foreground">
+                Adfluens provides an AI-powered social media management platform that enables users to create, schedule,
+                publish, and analyze content across multiple social media platforms including Google My Business,
+                Instagram, Facebook, and Threads. The Service includes features such as AI content generation, review
+                management, analytics, and automated conversation flows.
+              </p>
+            </section>
+
+            <section id="account" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Account Terms</h2>
+              <ul class="list-disc pl-6 space-y-2 text-muted-foreground">
+                <li>You must be at least 18 years old to use the Service</li>
+                <li>You must provide accurate and complete registration information</li>
+                <li>You are responsible for maintaining the security of your account credentials</li>
+                <li>You are responsible for all activities that occur under your account</li>
+                <li>You must notify us immediately of any unauthorized use of your account</li>
+                <li>You may not use the Service for any illegal or unauthorized purpose</li>
+              </ul>
+            </section>
+
+            <section id="acceptable-use" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Acceptable Use</h2>
+              <p class="text-muted-foreground mb-4">You agree not to use the Service to:</p>
+              <ul class="list-disc pl-6 space-y-2 text-muted-foreground">
+                <li>Violate any laws, regulations, or third-party rights</li>
+                <li>Post or transmit harmful, threatening, or objectionable content</li>
+                <li>Attempt to gain unauthorized access to the Service or its systems</li>
+                <li>Interfere with or disrupt the Service or servers</li>
+                <li>Transmit viruses, malware, or other harmful code</li>
+                <li>Engage in spamming, phishing, or other deceptive practices</li>
+                <li>Circumvent any usage limits or access restrictions</li>
+                <li>Scrape, crawl, or use automated means to access the Service without permission</li>
+              </ul>
+            </section>
+
+            <section id="payment" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Payment Terms</h2>
+              <ul class="list-disc pl-6 space-y-2 text-muted-foreground">
+                <li>
+                  <strong class="text-foreground">Billing:</strong> You agree to pay all fees associated with your subscription
+                  plan
+                </li>
+                <li>
+                  <strong class="text-foreground">Recurring Charges:</strong> Subscriptions are billed in advance on a monthly
+                  or annual basis
+                </li>
+                <li>
+                  <strong class="text-foreground">Price Changes:</strong> We may change prices with 30 days' notice
+                </li>
+                <li>
+                  <strong class="text-foreground">Refunds:</strong> Refunds are provided at our discretion
+                </li>
+                <li>
+                  <strong class="text-foreground">Taxes:</strong> You are responsible for all applicable taxes
+                </li>
+              </ul>
+            </section>
+
+            <section id="intellectual-property" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Intellectual Property</h2>
+              <p class="text-muted-foreground mb-4">
+                The Service and its original content, features, and functionality are owned by Adfluens and are
+                protected by international copyright, trademark, and other intellectual property laws.
+              </p>
+              <p class="text-muted-foreground">
+                You retain ownership of any content you create or upload through the Service. By using the Service,
+                you grant us a limited license to use, store, and process your content solely to provide the Service
+                to you.
+              </p>
+            </section>
+
+            <section id="termination" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Termination</h2>
+              <p class="text-muted-foreground mb-4">
+                We may terminate or suspend your account immediately, without prior notice or liability, for any
+                reason, including without limitation if you breach the Terms.
+              </p>
+              <p class="text-muted-foreground">
+                Upon termination, your right to use the Service will cease immediately. If you wish to terminate
+                your account, you may do so by contacting us or through your account settings.
+              </p>
+            </section>
+
+            <section id="disclaimers" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Disclaimers</h2>
+              <p class="text-muted-foreground">
+                THE SERVICE IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS WITHOUT WARRANTIES OF ANY KIND, EITHER
+                EXPRESS OR IMPLIED. WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, SECURE, OR ERROR-FREE.
+                WE DO NOT WARRANT THE ACCURACY OR COMPLETENESS OF ANY INFORMATION PROVIDED THROUGH THE SERVICE.
+              </p>
+            </section>
+
+            <section id="limitation" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Limitation of Liability</h2>
+              <p class="text-muted-foreground">
+                TO THE MAXIMUM EXTENT PERMITTED BY LAW, ADFLUENS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL,
+                SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING WITHOUT LIMITATION, LOSS OF PROFITS, DATA, USE,
+                OR OTHER INTANGIBLE LOSSES, RESULTING FROM YOUR USE OR INABILITY TO USE THE SERVICE. OUR TOTAL
+                LIABILITY SHALL NOT EXCEED THE AMOUNTS YOU HAVE PAID TO US IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM.
+              </p>
+            </section>
+
+            <section id="indemnification" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Indemnification</h2>
+              <p class="text-muted-foreground">
+                You agree to indemnify, defend, and hold harmless Adfluens and its officers, directors, employees,
+                and agents from and against any claims, liabilities, damages, losses, and expenses arising out of or
+                in any way connected with your use of the Service or violation of these Terms.
+              </p>
+            </section>
+
+            <section id="governing-law" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Governing Law</h2>
+              <p class="text-muted-foreground">
+                These Terms shall be governed by and construed in accordance with the laws of the State of California,
+                without regard to its conflict of law provisions. Any disputes arising from these Terms shall be
+                resolved in the courts of San Francisco County, California.
+              </p>
+            </section>
+
+            <section id="changes" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Changes to Terms</h2>
+              <p class="text-muted-foreground">
+                We reserve the right to modify these Terms at any time. We will provide notice of any material changes
+                by posting the new Terms on this page and updating the "Last updated" date. Your continued use of the
+                Service after such changes constitutes acceptance of the new Terms.
+              </p>
+            </section>
+
+            <section id="contact" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Contact Us</h2>
+              <p class="text-muted-foreground">
+                If you have any questions about these Terms, please contact us at:
+              </p>
+              <ul class="list-none space-y-2 text-muted-foreground mt-4">
+                <li>
+                  <strong class="text-foreground">Email:</strong> legal@adfluens.com
+                </li>
+                <li>
+                  <strong class="text-foreground">Address:</strong> Adfluens, Inc., 123 Innovation Way, San Francisco, CA
+                  94107
+                </li>
+              </ul>
+            </section>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>

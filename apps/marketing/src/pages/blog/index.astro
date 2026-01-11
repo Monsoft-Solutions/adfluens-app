@@ -1,0 +1,202 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import BlogCard from "../../components/ui/BlogCard.astro";
+import Button from "../../components/ui/Button.astro";
+import GridPattern from "../../components/effects/GridPattern.astro";
+
+// Placeholder blog posts for launch
+const featuredPost = {
+  title: "The Complete Guide to AI-Powered Social Media Management in 2026",
+  excerpt:
+    "Learn how AI is transforming social media management and how businesses are using intelligent automation to grow faster while spending less time on manual tasks.",
+  href: "/blog/ai-social-media-guide",
+  category: "Strategy",
+  categoryColor: "primary" as const,
+  date: "January 10, 2026",
+  readTime: "12 min read",
+  featured: true,
+};
+
+const posts = [
+  {
+    title: "5 Ways to Improve Your Google My Business Ranking",
+    excerpt:
+      "Discover proven strategies to boost your local search visibility and attract more customers through your GMB profile.",
+    href: "/blog/improve-gmb-ranking",
+    category: "GMB",
+    categoryColor: "accent" as const,
+    date: "January 8, 2026",
+    readTime: "6 min read",
+  },
+  {
+    title: "Instagram Reels vs. TikTok: Which Platform is Right for Your Business?",
+    excerpt:
+      "A comprehensive comparison of two major short-form video platforms to help you decide where to focus your efforts.",
+    href: "/blog/reels-vs-tiktok",
+    category: "Social Media",
+    categoryColor: "secondary" as const,
+    date: "January 5, 2026",
+    readTime: "8 min read",
+  },
+  {
+    title: "How to Respond to Negative Reviews (With Templates)",
+    excerpt:
+      "Turn negative reviews into opportunities with our proven response frameworks and real-world examples.",
+    href: "/blog/negative-review-responses",
+    category: "GMB",
+    categoryColor: "accent" as const,
+    date: "January 3, 2026",
+    readTime: "5 min read",
+  },
+  {
+    title: "The Ultimate Content Calendar Template for Social Media",
+    excerpt:
+      "Download our free content calendar template and learn how to plan a month of social media content in one sitting.",
+    href: "/blog/content-calendar-template",
+    category: "Strategy",
+    categoryColor: "primary" as const,
+    date: "December 28, 2025",
+    readTime: "7 min read",
+  },
+  {
+    title: "Understanding Social Media Analytics: Metrics That Matter",
+    excerpt:
+      "Stop drowning in data. Learn which metrics actually indicate success and how to track them effectively.",
+    href: "/blog/social-media-metrics",
+    category: "Analytics",
+    categoryColor: "secondary" as const,
+    date: "December 22, 2025",
+    readTime: "9 min read",
+  },
+  {
+    title: "Building Your Brand Voice: A Step-by-Step Guide",
+    excerpt:
+      "Create a consistent, recognizable brand voice across all your social platforms with this practical guide.",
+    href: "/blog/brand-voice-guide",
+    category: "Strategy",
+    categoryColor: "primary" as const,
+    date: "December 18, 2025",
+    readTime: "10 min read",
+  },
+];
+
+const categories = [
+  { name: "All", count: 7 },
+  { name: "Strategy", count: 3 },
+  { name: "GMB", count: 2 },
+  { name: "Social Media", count: 1 },
+  { name: "Analytics", count: 1 },
+];
+---
+
+<Layout
+  title="Blog - Adfluens"
+  description="Tips, strategies, and insights for social media growth. Learn how to amplify your social presence with AI-powered tools."
+>
+  <Header />
+  <main>
+    <!-- Hero Section -->
+    <section class="relative section-padding bg-background overflow-hidden">
+      <GridPattern class="opacity-[0.02]" />
+
+      <div class="relative z-10 container-marketing text-center">
+        <h1
+          class="font-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-6"
+          data-reveal
+        >
+          The Adfluens
+          <span class="text-gradient-primary">Blog</span>
+        </h1>
+        <p class="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto" data-reveal data-delay="1">
+          Tips, strategies, and insights for social media growth. Learn how to amplify your presence with AI.
+        </p>
+      </div>
+    </section>
+
+    <!-- Categories -->
+    <section class="relative py-8 bg-background border-t border-border">
+      <div class="container-marketing">
+        <div class="flex flex-wrap gap-2 justify-center" data-reveal>
+          {
+            categories.map((cat, index) => (
+              <button
+                type="button"
+                class:list={[
+                  "px-4 py-2 rounded-md text-sm font-medium transition-colors",
+                  index === 0
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                ]}
+              >
+                {cat.name}
+                <span class="ml-1.5 text-xs opacity-70">({cat.count})</span>
+              </button>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Post -->
+    <section class="relative py-12 bg-background">
+      <div class="container-marketing">
+        <h2 class="font-display text-lg font-semibold text-muted-foreground mb-6" data-reveal>Featured</h2>
+        <div data-reveal data-delay="1">
+          <BlogCard {...featuredPost} />
+        </div>
+      </div>
+    </section>
+
+    <!-- Post Grid -->
+    <section class="relative section-padding bg-muted/10 border-t border-border">
+      <div class="container-marketing">
+        <h2 class="font-display text-lg font-semibold text-muted-foreground mb-8" data-reveal>Latest Articles</h2>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {
+            posts.map((post, index) => (
+              <div data-reveal data-delay={index + 1}>
+                <BlogCard {...post} />
+              </div>
+            ))
+          }
+        </div>
+
+        <!-- Load More (placeholder) -->
+        <div class="text-center mt-12" data-reveal>
+          <Button variant="outline" size="lg">
+            Load More Articles
+          </Button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="relative section-padding bg-background border-t border-border">
+      <div class="container-marketing max-w-2xl text-center">
+        <h2 class="font-display text-2xl md:text-3xl font-bold text-foreground mb-4" data-reveal>
+          Get weekly social media tips
+        </h2>
+        <p class="text-muted-foreground mb-8" data-reveal data-delay="1">
+          Join 5,000+ marketers getting actionable insights delivered to their inbox every week.
+        </p>
+
+        <form class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto" data-reveal data-delay="2">
+          <input
+            type="email"
+            placeholder="Enter your email"
+            class="flex-1 px-4 py-3 rounded-md border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+          />
+          <Button variant="primary" type="submit">Subscribe</Button>
+        </form>
+
+        <p class="text-xs text-muted-foreground mt-4" data-reveal data-delay="3">
+          No spam. Unsubscribe anytime.
+        </p>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>

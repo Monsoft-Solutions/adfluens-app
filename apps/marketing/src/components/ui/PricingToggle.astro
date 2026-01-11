@@ -1,0 +1,95 @@
+---
+type Props = {
+  class?: string;
+};
+
+const { class: className } = Astro.props;
+---
+
+<div
+  class:list={[
+    "inline-flex items-center gap-3 p-1 rounded-lg border border-border bg-muted/30",
+    className,
+  ]}
+  data-pricing-toggle
+>
+  <button
+    type="button"
+    class="px-4 py-2 rounded-md text-sm font-medium transition-all bg-card text-foreground shadow-sm"
+    data-toggle-monthly
+    aria-pressed="true"
+  >
+    Monthly
+  </button>
+  <button
+    type="button"
+    class="px-4 py-2 rounded-md text-sm font-medium transition-all text-muted-foreground hover:text-foreground"
+    data-toggle-annual
+    aria-pressed="false"
+  >
+    Annual
+    <span
+      class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full bg-accent/20 text-accent-foreground text-xs font-semibold"
+    >
+      -20%
+    </span>
+  </button>
+</div>
+
+<script>
+  function initPricingToggle() {
+    const toggle = document.querySelector("[data-pricing-toggle]");
+    const monthlyBtn = toggle?.querySelector("[data-toggle-monthly]");
+    const annualBtn = toggle?.querySelector("[data-toggle-annual]");
+    const cards = document.querySelectorAll("[data-pricing-card]");
+
+    if (!toggle || !monthlyBtn || !annualBtn) return;
+
+    function updatePrices(isAnnual: boolean) {
+      cards.forEach((card) => {
+        const priceEl = card.querySelector("[data-price]");
+        const periodEl = card.querySelector("[data-period]");
+        const monthlyPrice = card.getAttribute("data-monthly-price");
+        const annualPrice = card.getAttribute("data-annual-price");
+
+        if (priceEl && monthlyPrice) {
+          if (isAnnual && annualPrice) {
+            priceEl.textContent = `$${annualPrice}`;
+            if (periodEl) periodEl.textContent = "/mo";
+          } else {
+            priceEl.textContent = `$${monthlyPrice}`;
+            if (periodEl) periodEl.textContent = "/mo";
+          }
+        }
+      });
+
+      // Update button states
+      if (isAnnual) {
+        monthlyBtn.classList.remove("bg-card", "text-foreground", "shadow-sm");
+        monthlyBtn.classList.add("text-muted-foreground");
+        monthlyBtn.setAttribute("aria-pressed", "false");
+
+        annualBtn.classList.add("bg-card", "text-foreground", "shadow-sm");
+        annualBtn.classList.remove("text-muted-foreground");
+        annualBtn.setAttribute("aria-pressed", "true");
+      } else {
+        monthlyBtn.classList.add("bg-card", "text-foreground", "shadow-sm");
+        monthlyBtn.classList.remove("text-muted-foreground");
+        monthlyBtn.setAttribute("aria-pressed", "true");
+
+        annualBtn.classList.remove("bg-card", "text-foreground", "shadow-sm");
+        annualBtn.classList.add("text-muted-foreground");
+        annualBtn.setAttribute("aria-pressed", "false");
+      }
+    }
+
+    monthlyBtn.addEventListener("click", () => updatePrices(false));
+    annualBtn.addEventListener("click", () => updatePrices(true));
+  }
+
+  // Initialize on page load
+  initPricingToggle();
+
+  // Re-initialize on Astro page transitions
+  document.addEventListener("astro:page-load", initPricingToggle);
+</script>

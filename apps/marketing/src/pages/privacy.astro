@@ -1,0 +1,204 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+
+const lastUpdated = "January 1, 2026";
+
+const sections = [
+  { id: "information-we-collect", title: "Information We Collect" },
+  { id: "how-we-use", title: "How We Use Your Information" },
+  { id: "data-sharing", title: "Data Sharing and Disclosure" },
+  { id: "data-security", title: "Data Security" },
+  { id: "your-rights", title: "Your Rights" },
+  { id: "cookies", title: "Cookies and Tracking" },
+  { id: "third-party", title: "Third-Party Services" },
+  { id: "changes", title: "Changes to This Policy" },
+  { id: "contact", title: "Contact Us" },
+];
+---
+
+<Layout
+  title="Privacy Policy - Adfluens"
+  description="Learn how Adfluens collects, uses, and protects your personal information."
+>
+  <Header />
+  <main class="min-h-screen">
+    <!-- Hero -->
+    <section class="relative py-16 bg-background border-b border-border">
+      <div class="container-marketing">
+        <a
+          href="/"
+          class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="m15 18-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          Back to Home
+        </a>
+        <h1 class="font-display text-4xl md:text-5xl font-bold text-foreground mb-4">Privacy Policy</h1>
+        <p class="text-muted-foreground">
+          Last updated: <time datetime="2026-01-01">{lastUpdated}</time>
+        </p>
+      </div>
+    </section>
+
+    <!-- Content -->
+    <section class="relative section-padding bg-background">
+      <div class="container-marketing">
+        <div class="grid lg:grid-cols-[250px_1fr] gap-12">
+          <!-- Table of Contents -->
+          <aside class="hidden lg:block">
+            <div class="sticky top-8">
+              <h2 class="text-sm font-semibold text-foreground mb-4">On this page</h2>
+              <nav class="space-y-2">
+                {
+                  sections.map((section) => (
+                    <a
+                      href={`#${section.id}`}
+                      class="block text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {section.title}
+                    </a>
+                  ))
+                }
+              </nav>
+            </div>
+          </aside>
+
+          <!-- Main Content -->
+          <article class="prose prose-invert max-w-none">
+            <p class="text-lg text-muted-foreground leading-relaxed">
+              At Adfluens ("we," "our," or "us"), we take your privacy seriously. This Privacy Policy explains how we
+              collect, use, disclose, and safeguard your information when you use our platform and services.
+            </p>
+
+            <section id="information-we-collect" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Information We Collect</h2>
+              <p class="text-muted-foreground mb-4">We collect information that you provide directly to us, including:</p>
+              <ul class="list-disc pl-6 space-y-2 text-muted-foreground">
+                <li>Account information (name, email address, password)</li>
+                <li>Payment and billing information</li>
+                <li>Social media account credentials and data (when you connect your accounts)</li>
+                <li>Content you create, upload, or share through our platform</li>
+                <li>Communications with us (support tickets, emails)</li>
+                <li>Usage data and analytics about how you interact with our services</li>
+              </ul>
+              <p class="text-muted-foreground mt-4">
+                We also automatically collect certain information when you use our platform, including device
+                information, IP addresses, browser type, and usage patterns.
+              </p>
+            </section>
+
+            <section id="how-we-use" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">How We Use Your Information</h2>
+              <p class="text-muted-foreground mb-4">We use the information we collect to:</p>
+              <ul class="list-disc pl-6 space-y-2 text-muted-foreground">
+                <li>Provide, maintain, and improve our services</li>
+                <li>Process transactions and send related information</li>
+                <li>Send you technical notices, updates, and support messages</li>
+                <li>Respond to your comments, questions, and requests</li>
+                <li>Analyze usage patterns to improve user experience</li>
+                <li>Develop new features and services</li>
+                <li>Protect against fraud and unauthorized access</li>
+              </ul>
+            </section>
+
+            <section id="data-sharing" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Data Sharing and Disclosure</h2>
+              <p class="text-muted-foreground mb-4">
+                We do not sell your personal information. We may share your information in the following circumstances:
+              </p>
+              <ul class="list-disc pl-6 space-y-2 text-muted-foreground">
+                <li>
+                  <strong class="text-foreground">Service Providers:</strong> With third-party vendors who help us operate
+                  our platform
+                </li>
+                <li>
+                  <strong class="text-foreground">Legal Requirements:</strong> When required by law or to protect our rights
+                </li>
+                <li>
+                  <strong class="text-foreground">Business Transfers:</strong> In connection with any merger, acquisition,
+                  or sale of assets
+                </li>
+                <li>
+                  <strong class="text-foreground">With Your Consent:</strong> When you explicitly agree to share information
+                </li>
+              </ul>
+            </section>
+
+            <section id="data-security" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Data Security</h2>
+              <p class="text-muted-foreground">
+                We implement appropriate technical and organizational measures to protect your personal information
+                against unauthorized access, alteration, disclosure, or destruction. This includes encryption,
+                access controls, and regular security assessments. However, no method of transmission over the
+                Internet is 100% secure, and we cannot guarantee absolute security.
+              </p>
+            </section>
+
+            <section id="your-rights" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Your Rights</h2>
+              <p class="text-muted-foreground mb-4">Depending on your location, you may have the right to:</p>
+              <ul class="list-disc pl-6 space-y-2 text-muted-foreground">
+                <li>Access the personal information we hold about you</li>
+                <li>Request correction of inaccurate information</li>
+                <li>Request deletion of your personal information</li>
+                <li>Object to or restrict certain processing activities</li>
+                <li>Export your data in a portable format</li>
+                <li>Withdraw consent where processing is based on consent</li>
+              </ul>
+              <p class="text-muted-foreground mt-4">
+                To exercise these rights, please contact us at privacy@adfluens.com.
+              </p>
+            </section>
+
+            <section id="cookies" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Cookies and Tracking</h2>
+              <p class="text-muted-foreground">
+                We use cookies and similar tracking technologies to collect information about your browsing
+                activities. You can control cookies through your browser settings. For more information, please
+                see our <a href="/cookies" class="text-primary hover:underline">Cookie Policy</a>.
+              </p>
+            </section>
+
+            <section id="third-party" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Third-Party Services</h2>
+              <p class="text-muted-foreground">
+                Our platform integrates with third-party services like Google, Meta (Facebook, Instagram), and
+                others. When you connect these accounts, those services have their own privacy policies that govern
+                their use of your data. We encourage you to review their privacy policies.
+              </p>
+            </section>
+
+            <section id="changes" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Changes to This Policy</h2>
+              <p class="text-muted-foreground">
+                We may update this Privacy Policy from time to time. We will notify you of any changes by posting
+                the new Privacy Policy on this page and updating the "Last updated" date. You are advised to review
+                this Privacy Policy periodically for any changes.
+              </p>
+            </section>
+
+            <section id="contact" class="mt-12">
+              <h2 class="font-display text-2xl font-bold text-foreground mb-4">Contact Us</h2>
+              <p class="text-muted-foreground">
+                If you have any questions about this Privacy Policy, please contact us at:
+              </p>
+              <ul class="list-none space-y-2 text-muted-foreground mt-4">
+                <li>
+                  <strong class="text-foreground">Email:</strong> privacy@adfluens.com
+                </li>
+                <li>
+                  <strong class="text-foreground">Address:</strong> Adfluens, Inc., 123 Innovation Way, San Francisco, CA
+                  94107
+                </li>
+              </ul>
+            </section>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
