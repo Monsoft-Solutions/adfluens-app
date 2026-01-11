@@ -1308,19 +1308,26 @@ function buildSchemaFromFields(fields: MetaExtractedField[]): z.ZodType {
  * Build Zod schema from JSON schema definition (simplified)
  */
 function buildSchemaFromJson(jsonSchema: Record<string, unknown>): z.ZodType {
-  const properties = jsonSchema.properties as Record<
-    string,
-    { type: string; description?: string }
-  >;
+  const properties = jsonSchema.properties;
   const required = (jsonSchema.required as string[]) || [];
 
-  if (!properties) {
+  // Validate properties is a plain object
+  if (
+    !properties ||
+    typeof properties !== "object" ||
+    Array.isArray(properties)
+  ) {
     return z.object({});
   }
 
+  const typedProperties = properties as Record<
+    string,
+    { type: string; description?: string }
+  >;
+
   const shape: Record<string, z.ZodType> = {};
 
-  for (const [key, prop] of Object.entries(properties)) {
+  for (const [key, prop] of Object.entries(typedProperties)) {
     let fieldSchema: z.ZodType;
 
     switch (prop.type) {
