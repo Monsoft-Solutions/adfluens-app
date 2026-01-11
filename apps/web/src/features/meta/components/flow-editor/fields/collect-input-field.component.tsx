@@ -8,6 +8,13 @@ import { Input, Label, Textarea } from "@repo/ui";
 import type { NodeFieldProps } from "./field.types";
 import { getCollectInputConfig } from "../nodes/node.utils";
 
+/**
+ * Render form fields for editing a collect_input node's prompt and target variable name.
+ *
+ * @param data - Node data used to derive the current `prompt` and `inputName` values
+ * @param onUpdate - Callback invoked when either field changes; called with an object containing `actions: [{ type: "collect_input", config: { prompt, inputName } }]`
+ * @returns The JSX element containing the Question textarea and Save response as input
+ */
 export function CollectInputNodeFields({ data, onUpdate }: NodeFieldProps) {
   const { prompt, inputName } = getCollectInputConfig(data);
 

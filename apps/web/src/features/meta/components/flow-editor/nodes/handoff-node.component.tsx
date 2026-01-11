@@ -15,6 +15,16 @@ import {
   NODE_STYLES,
 } from "./node.utils";
 
+/**
+ * Render a flow node that transfers the conversation to a human agent.
+ *
+ * Displays a titled BaseNode using `data.name` (fallback "Handoff"), a short descriptive label, and—when configured—a small badge showing the handoff reason.
+ *
+ * @param id - Node identifier from FlowNodeProps
+ * @param data - Node data containing configuration and display name
+ * @param selected - Whether the node is currently selected
+ * @returns A React element representing the configured handoff node
+ */
 export function HandoffNode({ id, data, selected }: FlowNodeProps) {
   const { reason } = getHandoffConfig(data);
 

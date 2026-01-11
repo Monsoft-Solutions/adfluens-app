@@ -164,7 +164,10 @@ export const MetaConversationsList: React.FC = () => {
 };
 
 /**
- * Format relative time (e.g., "2h ago", "Yesterday")
+ * Converts a Date into a human-friendly relative time string.
+ *
+ * @param date - The date to format
+ * @returns `Just now` if the date is less than 1 minute ago, `<Xm ago>` if under 60 minutes, `<Xh ago>` if under 24 hours, `<Xd ago>` if under 7 days, or the locale-formatted date string otherwise
  */
 function formatRelativeTime(date: Date): string {
   const now = new Date();

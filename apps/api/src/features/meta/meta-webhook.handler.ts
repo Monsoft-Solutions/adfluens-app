@@ -18,7 +18,15 @@ import { notifyNewLead } from "./meta-notification.service";
 import { processIncomingMessage } from "../meta-bot/meta-bot.service";
 
 /**
- * Verify webhook signature from Meta
+ * Validate the incoming request's X-Hub-Signature-256 header using the configured Facebook app secret.
+ *
+ * Throws if the required header is missing, the verification token is not configured, or the computed HMAC does not match the header.
+ *
+ * @param req - The Express request containing the `X-Hub-Signature-256` header to validate
+ * @param buf - Raw request body buffer used to compute the HMAC-SHA256 signature
+ * @throws Error when `X-Hub-Signature-256` header is missing
+ * @throws Error when `META_WEBHOOK_VERIFY_TOKEN` is not configured
+ * @throws Error when the provided signature does not match the expected signature
  */
 export function verifyWebhookSignature(req: Request, buf: Buffer): void {
   const signature = req.headers["x-hub-signature-256"] as string;
@@ -50,7 +58,9 @@ export function verifyWebhookSignature(req: Request, buf: Buffer): void {
 }
 
 /**
- * Handle webhook verification challenge (GET request)
+ * Validate a Meta webhook verification request and respond with the provided challenge when the `hub.verify_token` matches the configured `META_WEBHOOK_VERIFY_TOKEN`.
+ *
+ * Reads `hub.mode`, `hub.verify_token`, and `hub.challenge` from the query string; responds with HTTP 200 and the challenge on successful verification, or HTTP 403 on failure.
  */
 export function handleVerification(req: Request, res: Response): void {
   const mode = req.query["hub.mode"] as string;
@@ -70,7 +80,12 @@ export function handleVerification(req: Request, res: Response): void {
 }
 
 /**
- * Process incoming webhook events (POST request)
+ * Acknowledge Meta webhook POSTs and dispatch their events for asynchronous processing.
+ *
+ * Sends an immediate 200 response to avoid retries, then processes the request body off the
+ * request-response path: for `object === "page"` it handles Messenger `messaging` events and
+ * `leadgen` changes; for `object === "instagram"` it handles Instagram messaging events.
+ * Processing errors are caught and logged and do not change the HTTP response.
  */
 export async function handleWebhook(
   req: Request,
@@ -126,7 +141,10 @@ export async function handleWebhook(
 }
 
 /**
- * Process a Messenger message event
+ * Handle an incoming Messenger webhook event by recording the message, invoking bot processing, and sending any bot reply.
+ *
+ * @param pageId - The Meta Page ID that received the event
+ * @param event - The Messenger event payload containing `sender`, `recipient`, `timestamp`, and an optional `message` or `postback`
  */
 async function processMessengerEvent(
   pageId: string,
@@ -213,7 +231,11 @@ async function processMessengerEvent(
 }
 
 /**
- * Process an Instagram DM event
+ * Handle a single Instagram Direct Message event by recording it in the conversation
+ * and routing the message to the bot processor, sending any bot response.
+ *
+ * @param igAccountId - Instagram account ID associated with the receiving page
+ * @param event - Event payload containing `sender` and `recipient` IDs, `timestamp`, and `message` (text and optional attachments)
  */
 async function processInstagramEvent(
   igAccountId: string,
@@ -295,7 +317,16 @@ async function processInstagramEvent(
 }
 
 /**
- * Process a lead generation event
+ * Handle a Meta lead generation webhook event and notify the associated organization when a lead is created.
+ *
+ * @param pageId - The Meta page ID that received the lead event
+ * @param value - The lead event payload, containing:
+ *   - `leadgen_id`: The unique lead identifier
+ *   - `page_id`: The Meta page ID (may duplicate `pageId`)
+ *   - `form_id`: The form identifier used to collect the lead
+ *   - `ad_id` (optional): The associated ad identifier
+ *   - `adgroup_id` (optional): The associated ad group identifier
+ *   - `created_time`: UNIX timestamp (in seconds or milliseconds) when the lead was created
  */
 async function processLeadgenEvent(
   pageId: string,

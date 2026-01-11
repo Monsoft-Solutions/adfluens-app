@@ -8,6 +8,13 @@ import { Input, Label } from "@repo/ui";
 import type { NodeFieldProps } from "./field.types";
 import { getHandoffConfig } from "../nodes/node.utils";
 
+/**
+ * Renders form fields for viewing and editing a handoff node's reason.
+ *
+ * @param data - Node data used to derive the current handoff configuration
+ * @param onUpdate - Callback invoked with an `actions` array when the reason changes
+ * @returns The rendered fields for editing the handoff reason
+ */
 export function HandoffNodeFields({ data, onUpdate }: NodeFieldProps) {
   const { reason } = getHandoffConfig(data);
 

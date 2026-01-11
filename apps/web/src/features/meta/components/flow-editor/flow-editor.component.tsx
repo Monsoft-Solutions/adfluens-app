@@ -47,10 +47,25 @@ import type {
 
 let nodeIdCounter = 0;
 
+/**
+ * Generate a new unique node identifier.
+ *
+ * @returns A unique node id string in the format `node-<counter>-<timestamp>`
+ */
 function generateNodeId(): string {
   return `node-${++nodeIdCounter}-${Date.now()}`;
 }
 
+/**
+ * Convert an array of API flow nodes into editor-ready nodes and edges for the visual flow editor.
+ *
+ * Maps each ApiFlowNode to a FlowEditorNode (deriving editor node type, position, and data including an `onDelete` callback)
+ * and constructs FlowEditorEdge entries from each node's `nextNodes` (including condition branch handles for condition nodes).
+ *
+ * @param apiNodes - API node definitions to convert into editor nodes and edges
+ * @param onDelete - Callback invoked when an editor node is deleted; injected into each node's data
+ * @returns An object with `nodes` (array of FlowEditorNode) and `edges` (array of FlowEditorEdge) suitable for the editor state
+ */
 function convertApiToEditorNodes(
   apiNodes: ApiFlowNode[],
   onDelete: (nodeId: string) => void
@@ -98,6 +113,13 @@ function convertApiToEditorNodes(
   return { nodes, edges };
 }
 
+/**
+ * Convert editor nodes and edges into API-compatible flow node definitions.
+ *
+ * @param nodes - Editor nodes to convert; each node's id, position, and data fields are used to build the API node
+ * @param edges - Editor edges used to derive each node's `nextNodes` from outgoing connections
+ * @returns An array of ApiFlowNode objects where each entry preserves `id`, `name`, `actions`, `triggers`, `conditions`, and `position`; `nextNodes` is built from outgoing edges and `type` is derived from the editor node type (e.g., `entry`, `condition`, `ai_node`, `action`, or `message`)
+ */
 function convertEditorToApiNodes(
   nodes: FlowEditorNode[],
   edges: FlowEditorEdge[]
@@ -129,7 +151,14 @@ function convertEditorToApiNodes(
 
 // ============================================================================
 // Component
-// ============================================================================
+/**
+ * Render the flow editor UI with toolbar, node palette, canvas, and a properties panel for editing flows.
+ *
+ * Supports creating nodes via drag-and-drop, connecting and deleting nodes, selecting nodes to edit properties,
+ * and saving the current editor state (converted to API format) via the provided `onSave` callback.
+ *
+ * @returns The React element for the flow editor UI
+ */
 
 function FlowEditorInner({
   initialNodes,
@@ -462,6 +491,14 @@ type NodePropertiesPanelProps = {
   onClose: () => void;
 };
 
+/**
+ * Render the properties panel for a selected flow node, allowing editing of its name and type-specific fields.
+ *
+ * @param node - The editor node whose properties are being edited.
+ * @param onUpdate - Callback invoked with a partial update to the node's data when a field changes.
+ * @param onClose - Callback invoked to close the properties panel.
+ * @returns The properties panel element for the given node.
+ */
 function NodePropertiesPanel({
   node,
   onUpdate,
@@ -515,7 +552,11 @@ function NodePropertiesPanel({
 
 // ============================================================================
 // Export with Provider
-// ============================================================================
+/**
+ * Wraps FlowEditorInner with the required ReactFlowProvider and exposes the FlowEditor component.
+ *
+ * @returns A React element that renders the flow editor with its provider context.
+ */
 
 export function FlowEditor(props: FlowEditorProps) {
   return (

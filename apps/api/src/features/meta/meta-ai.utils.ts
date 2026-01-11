@@ -15,7 +15,17 @@ import {
 import type { MetaConversationConfigRow } from "@repo/db";
 
 /**
- * Build AI context from organization profile and scraped data
+ * Assemble a textual business context from an organization's scraped profile data.
+ *
+ * Includes available fields such as business name, description, services, products,
+ * contact email/phone, location, and value propositions; each present field becomes
+ * a separate line in the resulting text.
+ *
+ * @param organizationId - The ID of the organization whose profile to read
+ * @param config - Conversation config; context is only built when `useOrganizationContext`
+ *                 or `useWebsiteContext` is enabled on this config
+ * @returns The assembled business context as newline-separated lines, or an empty string
+ *          if context usage is disabled or no scraped data is available
  */
 async function buildBusinessContext(
   organizationId: string,
@@ -76,7 +86,10 @@ async function buildBusinessContext(
 }
 
 /**
- * Get conversation history for context
+ * Assemble a compact text snapshot of the most recent messages from a conversation for use as context.
+ *
+ * @param conversationId - The conversation identifier to retrieve messages for
+ * @returns A newline-separated string of up to the last 8 messages, each prefixed with `Assistant:` or `Customer:` and using `[attachment]` when a message has no text; returns an empty string if there are no recent messages
  */
 async function getConversationHistory(conversationId: string): Promise<string> {
   const conversation = await db.query.metaConversationTable.findFirst({
@@ -97,7 +110,10 @@ async function getConversationHistory(conversationId: string): Promise<string> {
 }
 
 /**
- * Get tone instructions based on personality config
+ * Compose a single instruction string that conveys tone, preferred response length, emoji usage, and any custom directives for the AI.
+ *
+ * @param personality - Optional AI personality settings. Recognized fields: `tone` ("professional" | "friendly" | "casual" | "formal"), `responseLength` ("concise" | "detailed" | "auto"), `useEmojis` (boolean), and `customInstructions` (string).
+ * @returns A combined instruction string describing tone, length guidance, emoji policy, and appended custom instructions when provided.
  */
 function getToneInstructions(
   personality?: MetaConversationConfigRow["aiPersonality"]
@@ -138,7 +154,10 @@ function getToneInstructions(
 }
 
 /**
- * Check if current time is within business hours
+ * Determine whether the current time (in the configured timezone) falls within the provided business hours schedule.
+ *
+ * @param businessHours - Business hours configuration with `enabled`, optional `timezone`, and a `schedule` array of entries `{ day, startTime, endTime }` where `day` is 0 = Sunday.
+ * @returns `true` if business hours are not enabled or if the current time (adjusted to `timezone` or UTC) is between today's `startTime` and `endTime`; `false` otherwise.
  */
 function isWithinBusinessHours(
   businessHours?: MetaConversationConfigRow["businessHours"]
@@ -188,7 +207,11 @@ function isWithinBusinessHours(
 }
 
 /**
- * Check if message should trigger human handoff
+ * Determine whether an incoming message contains any handoff keywords signaling a human handoff.
+ *
+ * @param message - The incoming message text to inspect
+ * @param handoffKeywords - Array of keywords that should trigger a handoff when present in `message`
+ * @returns `true` if any keyword from `handoffKeywords` appears in `message` (case-insensitive), `false` otherwise
  */
 export async function shouldTriggerHandoff(
   message: string,
@@ -205,7 +228,13 @@ export async function shouldTriggerHandoff(
 }
 
 /**
- * Check custom response rules for a match
+ * Finds the highest-priority active response rule whose trigger is contained in the message.
+ *
+ * Performs a case-insensitive substring match against each rule's triggers; rules are filtered to active ones and evaluated by descending priority.
+ *
+ * @param message - Incoming customer message to evaluate.
+ * @param rules - Optional array of configured response rules to check.
+ * @returns The response text from the first matching rule, or `null` if none match.
  */
 function checkResponseRules(
   message: string,
@@ -234,7 +263,14 @@ function checkResponseRules(
 }
 
 /**
- * Generate AI response for an incoming message
+ * Generate an AI-powered customer service reply for an incoming message using organization and conversation context.
+ *
+ * @param organizationId - Organization ID used to load business profile and scraped data for context
+ * @param config - Conversation configuration that controls business hours, AI personality, temperature, response rules, additional context, and away message
+ * @param newMessage - The incoming customer message to respond to
+ * @param platform - The messaging platform ("messenger" or "instagram") used to tailor the system prompt
+ * @param conversationId - Optional conversation ID to include recent conversation history in the prompt
+ * @returns The generated response text (trimmed). Returns the configured away message when outside business hours if present, otherwise `null` when no response can be produced or generation fails.
  */
 export async function generateAiResponse(
   organizationId: string,
@@ -295,7 +331,12 @@ ${conversationHistory ? `CONVERSATION HISTORY:\n${conversationHistory}\n` : ""}`
 }
 
 /**
- * Test AI response generation (for preview in settings)
+ * Generate a preview AI response using the provided partial configuration.
+ *
+ * @param organizationId - The organization ID to scope the configuration and context
+ * @param config - Partial conversation configuration used to build a complete test configuration (missing fields will be filled with sensible defaults)
+ * @param testMessage - The customer message to send to the AI for generating the preview
+ * @returns The generated response text, or the fallback string "Unable to generate response" if no response could be produced
  */
 export async function testAiResponse(
   organizationId: string,

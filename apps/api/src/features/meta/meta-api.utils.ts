@@ -66,7 +66,13 @@ export const META_SCOPES = [
 // ============================================================================
 
 /**
- * Generic fetch wrapper for Meta Graph API calls with authentication
+ * Performs an authenticated HTTP request to the Meta Graph API and returns the parsed JSON response.
+ *
+ * @param url - Graph API endpoint; `access_token` will be appended to the query string.
+ * @param accessToken - OAuth access token used for the request.
+ * @param options - Optional fetch options to merge with defaults (a JSON Content-Type header is added).
+ * @returns The parsed response as `T`, or an empty object if the response body is empty.
+ * @throws Error when the HTTP response is not OK; the error message will prefer any message returned by the API.
  */
 async function metaFetch<T>(
   url: string,
@@ -110,7 +116,12 @@ async function metaFetch<T>(
 // ============================================================================
 
 /**
- * Generate the OAuth authorization URL for Meta
+ * Builds the Facebook OAuth authorization URL containing the requested scopes, redirect URI, and state.
+ *
+ * @param appId - The Facebook App ID
+ * @param redirectUri - The redirect URI where Facebook will send the authorization code
+ * @param state - Opaque value returned to the redirect URI to maintain request state (e.g., CSRF token)
+ * @returns The URL to initiate the OAuth authorization flow
  */
 export function getMetaAuthUrl(
   appId: string,
@@ -129,7 +140,10 @@ export function getMetaAuthUrl(
 }
 
 /**
- * Exchange authorization code for short-lived access token
+ * Exchange an OAuth authorization code for a short-lived Meta access token.
+ *
+ * @returns An object containing `accessToken`, `tokenType`, optional `expiresIn` (seconds), and optional `expiresAt` (Date when the token expires)
+ * @throws {Error} If the token exchange request fails; the error message includes the response body
  */
 export async function exchangeCodeForToken(
   code: string,
@@ -169,7 +183,10 @@ export async function exchangeCodeForToken(
 }
 
 /**
- * Exchange short-lived token for long-lived token (~60 days)
+ * Exchange a short-lived Facebook access token for a long-lived access token.
+ *
+ * @returns An object with `accessToken`, `tokenType`, optional `expiresIn` (seconds) and an optional `expiresAt` Date when the expiration is provided by the API.
+ * @throws Error if the token exchange fails (non-OK HTTP response).
  */
 export async function exchangeForLongLivedToken(
   shortLivedToken: string,
@@ -208,7 +225,9 @@ export async function exchangeForLongLivedToken(
 }
 
 /**
- * Refresh a long-lived token (extends expiration)
+ * Extend the expiration of a long-lived Meta access token.
+ *
+ * @returns Refreshed OAuth tokens including `accessToken`, `tokenType`, `expiresIn`, and `expiresAt`
  */
 export async function refreshLongLivedToken(
   longLivedToken: string,
@@ -224,7 +243,9 @@ export async function refreshLongLivedToken(
 // ============================================================================
 
 /**
- * Get user info from access token
+ * Retrieves the user's Facebook profile id and name associated with the given access token.
+ *
+ * @returns An object with `id` (the user ID) and `name` (the user's full name)
  */
 export async function fetchUserInfo(accessToken: string): Promise<{
   id: string;
@@ -235,7 +256,12 @@ export async function fetchUserInfo(accessToken: string): Promise<{
 }
 
 /**
- * Fetch Facebook Pages the user manages
+ * Retrieve the Facebook Pages the current user manages.
+ *
+ * Maps the Graph API response into an array of MetaAvailablePage objects. Each entry includes the page's id, name, category, the page access token, and an optional instagramBusinessAccount with id and username when available.
+ *
+ * @param accessToken - The user's access token used to query the Graph API
+ * @returns An array of MetaAvailablePage objects for pages the user manages
  */
 export async function fetchUserPages(
   accessToken: string
@@ -270,7 +296,11 @@ export async function fetchUserPages(
 }
 
 /**
- * Fetch detailed page info
+ * Retrieve detailed metadata for a Facebook Page and normalize selected fields.
+ *
+ * @param pageId - The Page's Graph API ID
+ * @param pageAccessToken - A valid Page access token with permissions to read page fields
+ * @returns An object containing the page's id, name, optional contact and profile fields, counts, and resolved cover/profile image URLs
  */
 export async function fetchPageDetails(
   pageId: string,
@@ -356,7 +386,12 @@ export async function fetchPageDetails(
 // ============================================================================
 
 /**
- * Subscribe a page to webhook events
+ * Subscribe a Facebook Page to the app's webhook events.
+ *
+ * @param pageId - The Page ID to subscribe
+ * @param pageAccessToken - A Page access token with manage_pages/webhooks permissions
+ * @param subscribedFields - List of webhook fields to subscribe the page to (e.g., "messages", "messaging_postbacks", "leadgen")
+ * @returns `true` if the subscription request succeeded, `false` otherwise
  */
 export async function subscribePageToWebhooks(
   pageId: string,
@@ -376,7 +411,9 @@ export async function subscribePageToWebhooks(
 }
 
 /**
- * Unsubscribe a page from webhook events
+ * Unsubscribes a Facebook Page from all subscribed webhook events.
+ *
+ * @returns `true` if the page was successfully unsubscribed, `false` otherwise.
  */
 export async function unsubscribePageFromWebhooks(
   pageId: string,
@@ -396,7 +433,11 @@ export async function unsubscribePageFromWebhooks(
 // ============================================================================
 
 /**
- * Fetch lead data by lead ID
+ * Retrieve a lead's details from the Meta Graph API by lead ID.
+ *
+ * @param leadId - The Meta lead ID to fetch.
+ * @param pageAccessToken - A Page access token with permission to read lead data.
+ * @returns An object containing lead fields: `id`, `created_time`, `form_id`, `ad_id`, `ad_name`, `campaign_id`, `campaign_name`, and `field_data`.
  */
 export async function fetchLeadData(
   leadId: string,
@@ -419,7 +460,11 @@ export async function fetchLeadData(
 }
 
 /**
- * Fetch lead form info
+ * Retrieve metadata for a lead generation form.
+ *
+ * @param formId - The Graph API ID of the lead form to fetch
+ * @param pageAccessToken - A page access token with permission to read the page's leadgen forms
+ * @returns The lead form object containing `id`, `name`, `status`, and `page_id`
  */
 export async function fetchLeadForm(
   formId: string,
@@ -434,11 +479,15 @@ export async function fetchLeadForm(
 // ============================================================================
 
 /**
- * Send a message via Messenger or Instagram
+ * Sends a text message from a Page to a recipient on Messenger or Instagram.
  *
- * Uses HUMAN_AGENT message tag to extend the messaging window from 24 hours to 7 days.
- * This is required for human agent responses outside the standard 24-hour window.
- * @see https://developers.facebook.com/docs/messenger-platform/send-messages/message-tags
+ * Uses the `HUMAN_AGENT` message tag to extend the messaging window up to seven days.
+ *
+ * @param pageId - The Facebook Page ID sending the message
+ * @param pageAccessToken - A Page access token with messaging permissions
+ * @param recipientId - The recipient's ID (PSID or Instagram user ID)
+ * @param messageText - The text content to send
+ * @returns An object with `recipient_id` and `message_id` as returned by the Graph API
  */
 export async function sendMessage(
   pageId: string,
@@ -460,7 +509,9 @@ export async function sendMessage(
 }
 
 /**
- * Get user profile for a conversation participant
+ * Fetches a user's public profile (id, name, profile picture) using a page access token.
+ *
+ * @returns The profile object containing `id` and, when available, `name` and `profile_pic`. If the profile cannot be retrieved (for example due to privacy settings), returns an object with only `id`.
  */
 export async function fetchUserProfile(
   userId: string,
@@ -481,7 +532,12 @@ export async function fetchUserProfile(
 }
 
 /**
- * Get conversation thread messages
+ * Retrieves messages for a conversation thread.
+ *
+ * @param conversationId - The conversation (thread) ID to fetch messages from.
+ * @param pageAccessToken - Page access token with permissions to read the conversation.
+ * @param limit - Maximum number of messages to return (default 10).
+ * @returns An object containing `data`, an array of message objects (each with `id`, `created_time`, `from`, `to`, optional `message`, and optional `attachments`), and an optional `paging` object with `next` and `previous` links.
  */
 export async function fetchConversationMessages(
   conversationId: string,
@@ -512,7 +568,13 @@ export async function fetchConversationMessages(
 }
 
 /**
- * Get page conversations (Messenger)
+ * Retrieve conversations for a page from Messenger or Instagram.
+ *
+ * @param pageId - The page ID to query
+ * @param pageAccessToken - Page access token with permissions to read conversations
+ * @param platform - Which platform to query: `"messenger"` (default) or `"instagram"`
+ * @param limit - Maximum number of conversations to request
+ * @returns An object with a `data` array of conversations (each with `id`, `updated_time`, `participants`, and optional `messages`) and an optional `paging.next` URL
  */
 export async function fetchPageConversations(
   pageId: string,
@@ -548,7 +610,12 @@ export async function fetchPageConversations(
 }
 
 /**
- * Get Instagram conversations using Instagram Account ID
+ * Retrieve conversations for the specified Instagram account.
+ *
+ * @param instagramAccountId - The Instagram account ID to query (typically the account linked to a Page)
+ * @param pageAccessToken - Page access token with permissions to read conversations
+ * @param limit - Maximum number of conversations to return
+ * @returns An object with `data` containing conversation summaries (each has `id`, `updated_time`, `participants`, and an optional `messages` preview) and an optional `paging.next` URL
  */
 export async function fetchInstagramConversations(
   instagramAccountId: string,
@@ -582,7 +649,11 @@ export async function fetchInstagramConversations(
 // ============================================================================
 
 /**
- * Debug/inspect an access token
+ * Inspect a Meta access token's validity and metadata.
+ *
+ * @param tokenToInspect - The access token to inspect
+ * @param appAccessToken - An app access token used to authorize the debug request
+ * @returns An object with a `data` property containing `app_id`, optional `user_id`, `is_valid`, optional `expires_at` (UNIX timestamp in seconds), and optional `scopes` array
  */
 export async function debugToken(
   tokenToInspect: string,
@@ -601,7 +672,10 @@ export async function debugToken(
 }
 
 /**
- * Get app access token for API calls
+ * Obtain the app access token using the app credentials.
+ *
+ * @returns The app access token string.
+ * @throws If the Graph API response is not OK.
  */
 export async function getAppAccessToken(
   appId: string,
@@ -623,7 +697,9 @@ export async function getAppAccessToken(
 // ============================================================================
 
 /**
- * Fetch all lead forms for a page
+ * Retrieve lead form metadata for a Facebook Page.
+ *
+ * @returns An object containing `data`, an array of lead forms (each with `id`, `name`, and optional `status` and `leads_count`), and an optional `paging.next` URL for pagination.
  */
 export async function fetchPageLeadForms(
   pageId: string,
@@ -642,7 +718,12 @@ export async function fetchPageLeadForms(
 }
 
 /**
- * Fetch leads from a specific form
+ * Retrieve leads submitted to a specific Facebook lead form.
+ *
+ * @param formId - The ID of the lead form to fetch leads from
+ * @param pageAccessToken - A page access token with permission to read lead data
+ * @param limit - Maximum number of leads to return (default 50)
+ * @returns An object containing `data`, an array of lead records (each including `id`, `created_time`, `form_id`, `ad_id`, `ad_name`, `campaign_id`, `campaign_name`, and `field_data`), and an optional `paging` object with `next` and cursor `after` values
  */
 export async function fetchFormLeads(
   formId: string,
@@ -667,7 +748,15 @@ export async function fetchFormLeads(
 }
 
 /**
- * Fetch leads from a page directly (alternative method)
+ * Retrieve lead entries from all lead forms on a page and consolidate them into a single list.
+ *
+ * Fetches each leadgen form for the given page and aggregates the leads from each form into `data`.
+ * If the fetch fails, the function returns an empty `data` array instead of throwing.
+ *
+ * @param pageId - Facebook Page ID to query for leadgen forms
+ * @param pageAccessToken - Page access token with permission to read lead forms and leads
+ * @param limit - Maximum number of leads to request per form (default: 50)
+ * @returns An object with `data` containing the collected leads; `paging` may include a `next` URL if available
  */
 export async function fetchPageLeads(
   pageId: string,

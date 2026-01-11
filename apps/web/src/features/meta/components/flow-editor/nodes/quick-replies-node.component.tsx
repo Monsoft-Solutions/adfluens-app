@@ -15,6 +15,14 @@ import {
 } from "./node.utils";
 import { BadgeList } from "./badge-list.component";
 
+/**
+ * Renders the UI for a "Quick Replies" node inside the flow editor.
+ *
+ * Displays the node title (or "Quick Replies" when unnamed), the configured message
+ * (or an italic placeholder when absent), and up to three reply badges.
+ *
+ * @returns A React element representing the Quick Replies node.
+ */
 export function QuickRepliesNode({ id, data, selected }: FlowNodeProps) {
   const { message, replies } = getQuickRepliesConfig(data);
 

@@ -24,6 +24,23 @@ type BaseNodeProps = {
   onDelete?: () => void;
 };
 
+/**
+ * Renders a styled flow-editor node card with a draggable header, icon, title/subtitle, optional delete action, content area, and input/output handles.
+ *
+ * @param children - Content rendered inside the node body.
+ * @param selected - When true, applies selected ring/border styling to the card.
+ * @param icon - Icon node displayed in the header.
+ * @param iconColor - CSS class applied to the icon container.
+ * @param bgColor - CSS class applied to the card background.
+ * @param borderColor - Optional CSS class used for the selection ring when `selected` is true.
+ * @param title - Header title text.
+ * @param subtitle - Optional header subtitle text shown beneath the title.
+ * @param hasTargetHandle - When true, renders a top input handle (default: true).
+ * @param hasSourceHandle - When true, renders a bottom output handle (default: true).
+ * @param hasMultipleSources - When true, renders two bottom source handles for conditional branches positioned at ~30% ("true") and ~70% ("false") (default: false).
+ * @param onDelete - Optional callback invoked when the header delete button is clicked; the click event propagation is stopped.
+ * @returns A JSX element representing the configured node card with header, content, and handles.
+ */
 export function BaseNode({
   children,
   selected,

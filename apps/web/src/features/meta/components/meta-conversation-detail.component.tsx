@@ -323,7 +323,9 @@ const MessageBubble: React.FC<{ message: MetaMessage }> = ({ message }) => {
 };
 
 /**
- * Format message timestamp
+ * Format a Date into a concise, human-friendly timestamp.
+ *
+ * @returns A short, human-readable timestamp: `HH:MM` for dates today, `Yesterday HH:MM` for dates yesterday, or `Mon D, HH:MM` (locale-aware) for older dates.
  */
 function formatMessageTime(date: Date): string {
   const now = new Date();

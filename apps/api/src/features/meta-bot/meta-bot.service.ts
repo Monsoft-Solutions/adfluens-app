@@ -69,7 +69,16 @@ export type FlowExecutionContext = {
 // =============================================================================
 
 /**
- * Process an incoming message and generate a bot response
+ * Process an incoming user message and determine the bot's next action.
+ *
+ * May run response rules, continue or start flows, detect intent, evaluate handoff triggers,
+ * generate an AI response, update conversation state, cancel or schedule flow executions,
+ * and initiate human handoff notifications when required.
+ *
+ * @returns A BotResponse describing the outcome:
+ * - `handled: true` when the message produced a bot/flow/rule/away/handoff response (includes `response` and optional `updatedContext`).
+ * - `shouldHandoff: true` when a human handoff was initiated; `handoffReason` contains the trigger reason.
+ * - `handled: false` when processing was bypassed or failed (e.g., AI disabled, human handling, outside business hours, or AI error); `reason` indicates the cause.
  */
 export async function processIncomingMessage(
   options: ProcessMessageOptions
@@ -232,7 +241,11 @@ export async function processIncomingMessage(
 // =============================================================================
 
 /**
- * Get conversation config for a page
+ * Retrieve the conversation configuration for a page, optionally scoped to a specific organization.
+ *
+ * @param pageId - The meta page ID to look up the configuration for
+ * @param organizationId - Optional organization ID to restrict the lookup to an organization-specific config
+ * @returns The configuration row for the page if found, otherwise `null`
  */
 export async function getConversationConfig(
   pageId: string,
@@ -252,7 +265,12 @@ export async function getConversationConfig(
 }
 
 /**
- * Create default conversation config for a page
+ * Creates and persists a default conversation configuration for the given page and organization.
+ *
+ * @param pageId - ID of the page to associate the configuration with
+ * @param organizationId - ID of the organization that owns the page
+ * @returns The newly inserted conversation configuration row
+ * @throws Error if the configuration could not be created
  */
 export async function createDefaultConversationConfig(
   pageId: string,
@@ -287,7 +305,12 @@ export async function createDefaultConversationConfig(
 // =============================================================================
 
 /**
- * Get or create conversation state
+ * Retrieve the conversation state for a conversation, creating a new initial state if none exists.
+ *
+ * @param conversationId - The meta conversation identifier to look up or initialize
+ * @param organizationId - Organization ID to associate with a newly created state
+ * @returns The existing or newly created conversation state row
+ * @throws Error if inserting a new conversation state fails
  */
 export async function getOrCreateConversationState(
   conversationId: string,
@@ -323,7 +346,10 @@ export async function getOrCreateConversationState(
 }
 
 /**
- * Update conversation state
+ * Apply partial updates to a conversation state record identified by `stateId`.
+ *
+ * @param stateId - The ID of the conversation state to update
+ * @param updates - Partial fields to persist to the conversation state row
  */
 export async function updateConversationState(
   stateId: string,
@@ -336,7 +362,9 @@ export async function updateConversationState(
 }
 
 /**
- * Set conversation to human handling mode
+ * Mark the conversation as being handled by a human operator.
+ *
+ * @param conversationId - The meta conversation ID to mark as human-handled
  */
 export async function setHumanHandlingMode(
   conversationId: string
@@ -354,7 +382,9 @@ export async function setHumanHandlingMode(
 }
 
 /**
- * Return conversation to bot handling
+ * Set a conversation back to bot handling mode and clear any active flow pointers.
+ *
+ * @param conversationId - The meta conversation ID to update
  */
 export async function returnToBotMode(conversationId: string): Promise<void> {
   const state = await db.query.metaConversationStateTable.findFirst({
@@ -381,7 +411,12 @@ export async function returnToBotMode(conversationId: string): Promise<void> {
 // =============================================================================
 
 /**
- * Initiate human handoff for a conversation
+ * Mark a conversation for human handling and notify the team.
+ *
+ * Updates the conversation state to human mode with a recorded handoff reason, creates or reopens a team inbox item for the conversation with the appropriate handoff trigger, and sends a handoff notification for the conversation's page.
+ *
+ * @param reason - The reason for initiating the handoff (e.g., "user_request", contains "keyword" for keyword-triggered handoffs, or other descriptors such as "sentiment")
+ * @param _participantName - Optional participant name for the handoff; may be unused by the current implementation
  */
 async function initiateHandoff(
   conversationId: string,
@@ -459,7 +494,11 @@ async function initiateHandoff(
 // =============================================================================
 
 /**
- * Find a flow that matches the message triggers
+ * Selects the highest-priority active flow for a page whose global triggers match the message.
+ *
+ * Matching supports keyword triggers (match modes: `exact`, `starts_with`, `ends_with`, `contains`) and regex triggers; keyword matching respects each trigger's case sensitivity. If a flow matches, its `triggerCount` is incremented.
+ *
+ * @returns The matching flow row, or `null` if no flow matched the message
  */
 async function findTriggeredFlow(
   pageId: string,
@@ -533,7 +572,13 @@ async function findTriggeredFlow(
 }
 
 /**
- * Start a flow for a conversation
+ * Sets the conversation into flow mode, records the flow's entry node in state, and executes that entry node.
+ *
+ * @param state - Current conversation state to update (will be set to flow mode and annotated with flow/node IDs)
+ * @param flow - Flow to start; its entry node will be executed
+ * @param _message - Incoming message that triggered the flow (currently unused)
+ * @param context - Execution context for flow node execution
+ * @returns A BotResponse produced by executing the flow's entry node, or `{ handled: false, reason: "invalid_flow" }` if the entry node is missing
  */
 async function startFlow(
   state: MetaConversationStateRow,
@@ -561,7 +606,15 @@ async function startFlow(
 }
 
 /**
- * Execute a flow node
+ * Advance and execute the current flow node for a conversation, resolving conditional or default transitions.
+ *
+ * Updates conversation state as it advances nodes, may switch bot mode when the flow exits, and increments the flow's completion count when finished.
+ *
+ * @param state - Current conversation state containing flow and node identifiers
+ * @param message - Incoming message text used for condition evaluation
+ * @param config - Conversation configuration that controls fallback behavior when the flow ends
+ * @param flowContext - Execution context used for scheduling or delayed node execution
+ * @returns A BotResponse describing whether the flow produced a handled response, requested a handoff, scheduled a delay, or did not handle the message (`handled: false`)
  */
 async function executeFlowNode(
   state: MetaConversationStateRow,
@@ -652,7 +705,17 @@ async function executeFlowNode(
 }
 
 /**
- * Execute a single node and return response
+ * Execute a single flow node's actions and produce the resulting BotResponse.
+ *
+ * Executes the node's actions in order, collecting any messages to return, scheduling delayed transitions,
+ * and signalling handoff or AI fallback when applicable.
+ *
+ * @param node - The flow node to execute (contains actions, type, and nextNodes)
+ * @param state - Current conversation state and context; used when scheduling delayed executions
+ * @param flow - The parent flow containing the node (used to identify flow and nodes for scheduling)
+ * @param flowContext - Execution context with organizationId, metaPageId, and conversationId
+ * @returns A BotResponse describing whether the node produced messages (`response`), whether it was handled,
+ *          and any special signals: `shouldHandoff`/`handoffReason` for handoff, or `reason: "ai_fallback"` for AI fallback.
  */
 async function executeNode(
   node: MetaBotFlowRow["nodes"][0],
@@ -735,7 +798,17 @@ async function executeNode(
 }
 
 /**
- * Simple condition evaluation
+ * Evaluate a simple matching expression against an incoming message and conversation state.
+ *
+ * Supported expression formats:
+ * - `contains:keyword` — case-insensitive substring match against `message`
+ * - `equals:value` — case-insensitive equality match against `message`
+ * - `variable:name:value` — strict equality check of `state.context.variables[name]` to `value`
+ *
+ * @param expression - The match expression to evaluate (see supported formats)
+ * @param message - The incoming message text to test for `contains`/`equals` expressions
+ * @param state - Conversation state used for `variable` lookups
+ * @returns `true` if the expression matches the message or state, `false` otherwise.
  */
 function evaluateCondition(
   expression: string,

@@ -210,7 +210,10 @@ export const nodeTypeToApiType: Record<FlowNodeType, ApiFlowNode["type"]> = {
 };
 
 /**
- * Map backend node type to our visual node type based on action
+ * Determine the visual FlowNodeType that corresponds to a backend ApiFlowNode.
+ *
+ * @param apiNode - The backend node to map
+ * @returns The visual FlowNodeType matching `apiNode`: returns `"entry"` for `type === "entry"`, `"condition"` for `type === "condition"`, and `"ai-response"` for `type === "ai_node"`. If none of those apply, infers the node type from the first action (`"send_quick_replies"` -> `"quick-replies"`, `"collect_input"` -> `"collect-input"`, `"handoff"` -> `"handoff"`, `"ai_response"` -> `"ai-response"`, `"delay"` -> `"delay"`). Defaults to `"message"` when no specific mapping is found.
  */
 export function apiTypeToNodeType(apiNode: ApiFlowNode): FlowNodeType {
   const action = apiNode.actions[0];
