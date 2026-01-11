@@ -42,6 +42,30 @@ export type MetaAppointmentContext = {
 };
 
 /**
+ * User memory for cross-session context
+ */
+export type MetaUserMemory = {
+  name?: string;
+  email?: string;
+  phone?: string;
+  preferences?: Record<string, string>;
+  pastPurchases?: Array<{ product: string; date: string }>;
+  pastIssues?: Array<{ issue: string; resolved: boolean; date: string }>;
+  customData?: Record<string, unknown>;
+  lastInteraction?: string;
+};
+
+/**
+ * Detected language info
+ */
+export type MetaDetectedLanguage = {
+  code: string;
+  name: string;
+  confidence: number;
+  detectedAt: string;
+};
+
+/**
  * Full conversation context for AI and flow state
  */
 export type MetaConversationContext = {
@@ -79,6 +103,12 @@ export type MetaConversationContext = {
 
   /** Appointment booking context */
   appointmentContext?: MetaAppointmentContext;
+
+  /** Detected user language for auto-translation */
+  detectedLanguage?: MetaDetectedLanguage;
+
+  /** User memory for cross-session personalization */
+  userMemory?: MetaUserMemory;
 };
 
 /**

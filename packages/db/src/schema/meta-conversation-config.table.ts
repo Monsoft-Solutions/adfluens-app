@@ -156,6 +156,23 @@ export const metaConversationConfigTable = pgTable(
     /** Customer support configuration */
     supportConfig: jsonb("support_config").$type<MetaSupportConfig>(),
 
+    // =====================================================================
+    // Language & Translation Settings
+    // =====================================================================
+
+    /** Whether auto-translation is enabled */
+    autoTranslateEnabled: boolean("auto_translate_enabled")
+      .default(false)
+      .notNull(),
+
+    /** Supported languages for auto-translation (ISO 639-1 codes) */
+    supportedLanguages: jsonb("supported_languages")
+      .$type<string[]>()
+      .default(["en"]),
+
+    /** Default language for responses when translation is disabled */
+    defaultLanguage: text("default_language").default("en"),
+
     /** Record timestamps */
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")

@@ -437,6 +437,7 @@ export type GenerateResponseOptions = {
   conversationId?: string;
   intent: DetectedIntent;
   conversationState?: MetaConversationStateRow;
+  memoryContext?: string;
 };
 
 /**
@@ -456,6 +457,7 @@ export async function generateAiResponse(
     conversationId,
     intent,
     conversationState,
+    memoryContext,
   } = options;
 
   // Build context
@@ -464,6 +466,11 @@ export async function generateAiResponse(
     ? await getConversationHistory(conversationId)
     : [];
   const toneInstructions = getToneInstructions(config.aiPersonality);
+
+  // Include memory context if available (for returning customers)
+  const fullBusinessContext = memoryContext
+    ? `${businessContext}${memoryContext}`
+    : businessContext;
 
   // Determine which prompt to use based on intent and enabled capabilities
   let systemPrompt: string;
@@ -475,7 +482,7 @@ export async function generateAiResponse(
   ) {
     const servicesInfo = await getAppointmentServices(config.metaPageId);
     systemPrompt = buildAppointmentPrompt(
-      businessContext,
+      fullBusinessContext,
       servicesInfo,
       toneInstructions,
       conversationState?.context?.appointmentContext,
@@ -483,7 +490,7 @@ export async function generateAiResponse(
     );
   } else if (intent.category === "sales" && config.salesAssistantEnabled) {
     systemPrompt = buildSalesPrompt(
-      businessContext,
+      fullBusinessContext,
       toneInstructions,
       conversationState?.context?.salesContext,
       config.additionalContext || undefined
@@ -507,13 +514,13 @@ export async function generateAiResponse(
     config.customerSupportEnabled
   ) {
     systemPrompt = buildSupportPrompt(
-      businessContext,
+      fullBusinessContext,
       toneInstructions,
       config.additionalContext || undefined
     );
   } else {
     systemPrompt = buildGeneralPrompt(
-      businessContext,
+      fullBusinessContext,
       toneInstructions,
       config.additionalContext || undefined
     );
@@ -665,6 +672,103 @@ export function isWithinBusinessHours(
 }
 
 // =============================================================================
+// Language Detection & Translation
+// =============================================================================
+
+/**
+ * Detected language result
+ */
+export type DetectedLanguage = {
+  code: string;
+  name: string;
+  confidence: number;
+};
+
+const languageSchema = z.object({
+  code: z.string().length(2),
+  name: z.string(),
+  confidence: z.number().min(0).max(1),
+});
+
+/**
+ * Detect the language of a message
+ */
+export async function detectLanguage(
+  message: string
+): Promise<DetectedLanguage> {
+  try {
+    const result = await coreGenerateObject({
+      schema: languageSchema,
+      system: `You are a language detection expert. Analyze the message and identify the language.
+Return the ISO 639-1 two-letter language code (e.g., "en", "es", "fr", "de", "pt", "zh", "ja", "ko").
+Common codes: en=English, es=Spanish, fr=French, de=German, pt=Portuguese, it=Italian,
+zh=Chinese, ja=Japanese, ko=Korean, ar=Arabic, ru=Russian, hi=Hindi, nl=Dutch.`,
+      prompt: `Detect the language of this message: "${message}"`,
+      temperature: 0.1,
+    });
+
+    return result.object;
+  } catch (error) {
+    console.error("[meta-bot-ai] Language detection failed:", error);
+    // Default to English on error
+    return {
+      code: "en",
+      name: "English",
+      confidence: 0.5,
+    };
+  }
+}
+
+/**
+ * Translate a message to the target language
+ */
+export async function translateMessage(
+  text: string,
+  targetLanguage: string,
+  targetLanguageName?: string
+): Promise<string> {
+  // Skip translation if already in English or target is English
+  if (targetLanguage === "en") {
+    return text;
+  }
+
+  const langName = targetLanguageName || targetLanguage;
+
+  try {
+    const result = await coreGenerateText({
+      system: `You are a professional translator. Translate the text to ${langName}.
+Rules:
+- Preserve the original tone and meaning
+- Keep any placeholders/variables like {{name}} or {product} unchanged
+- Preserve markdown formatting if present
+- Keep emojis unchanged
+- Do not add any explanations, just return the translated text`,
+      prompt: text,
+      temperature: 0.3,
+    });
+
+    return result.text.trim();
+  } catch (error) {
+    console.error("[meta-bot-ai] Translation failed:", error);
+    // Return original text on error
+    return text;
+  }
+}
+
+/**
+ * Check if a language code is supported
+ */
+export function isLanguageSupported(
+  languageCode: string,
+  supportedLanguages?: string[]
+): boolean {
+  if (!supportedLanguages || supportedLanguages.length === 0) {
+    return true; // If no list specified, support all
+  }
+  return supportedLanguages.includes(languageCode);
+}
+
+// =============================================================================
 // Test Response (for settings preview)
 // =============================================================================
 
@@ -700,6 +804,9 @@ export async function testAiResponse(
     fallbackToAi: config.fallbackToAi ?? true,
     salesConfig: config.salesConfig || null,
     supportConfig: config.supportConfig || null,
+    autoTranslateEnabled: config.autoTranslateEnabled ?? false,
+    supportedLanguages: config.supportedLanguages ?? ["en"],
+    defaultLanguage: config.defaultLanguage ?? "en",
     createdAt: new Date(),
     updatedAt: new Date(),
   };

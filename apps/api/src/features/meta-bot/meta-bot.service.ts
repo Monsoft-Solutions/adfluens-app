@@ -30,6 +30,9 @@ import {
   checkResponseRules,
   isWithinBusinessHours,
   buildBusinessContext,
+  detectLanguage,
+  translateMessage,
+  isLanguageSupported,
 } from "./meta-bot-ai.service";
 import { notifyHandoffRequest } from "../meta/meta-notification.service";
 import {
@@ -40,6 +43,11 @@ import {
   interpolateVariables,
   createInterpolationContext,
 } from "./utils/variable-interpolation.utils";
+import {
+  recallUserMemory,
+  extractMemoryFromConversation,
+  buildMemoryPrompt,
+} from "./meta-bot-memory.service";
 
 // =============================================================================
 // Constants
@@ -142,6 +150,7 @@ export type ProcessMessageOptions = {
   organizationId: string;
   message: string;
   platform: "messenger" | "instagram";
+  participantId?: string;
   participantName?: string;
 };
 
@@ -178,6 +187,90 @@ export async function processIncomingMessage(
   // 2.5. Cancel any pending scheduled executions (user sent a new message during delay)
   await cancelPendingExecutions(conversationId);
 
+  // 2.6. Detect language if auto-translate is enabled and not already detected
+  let userLanguage = state.context.detectedLanguage;
+  if (config.autoTranslateEnabled && !userLanguage) {
+    const detected = await detectLanguage(message);
+    userLanguage = {
+      code: detected.code,
+      name: detected.name,
+      confidence: detected.confidence,
+      detectedAt: new Date().toISOString(),
+    };
+    // Store detected language in state
+    await updateConversationState(state.id, {
+      context: {
+        ...state.context,
+        detectedLanguage: userLanguage,
+      },
+    });
+    state.context.detectedLanguage = userLanguage;
+    console.log(
+      `[meta-bot] Detected language: ${detected.name} (${detected.code}) with confidence ${detected.confidence}`
+    );
+  }
+
+  // 2.7. Recall and update user memory for personalization
+  let memoryContext = "";
+  if (options.participantId) {
+    // Recall past memory if this is a new or recent conversation
+    if (!state.context.userMemory) {
+      const recalledMemory = await recallUserMemory(
+        options.participantId,
+        pageId,
+        { recallTypes: ["all"], lookbackDays: 90 }
+      );
+      if (recalledMemory) {
+        state.context.userMemory = recalledMemory;
+        memoryContext = buildMemoryPrompt(recalledMemory);
+        await updateConversationState(state.id, {
+          context: {
+            ...state.context,
+            userMemory: recalledMemory,
+          },
+        });
+        console.log(
+          `[meta-bot] Recalled memory for returning customer: ${recalledMemory.name || "unnamed"}`
+        );
+      }
+    } else {
+      memoryContext = buildMemoryPrompt(state.context.userMemory);
+    }
+
+    // Auto-extract memory from current message
+    const updatedMemory = await extractMemoryFromConversation(
+      message,
+      state.context.userMemory
+    );
+    if (
+      JSON.stringify(updatedMemory) !== JSON.stringify(state.context.userMemory)
+    ) {
+      state.context.userMemory = updatedMemory;
+      await updateConversationState(state.id, {
+        context: {
+          ...state.context,
+          userMemory: updatedMemory,
+        },
+      });
+    }
+  }
+
+  // Helper to translate response if needed
+  const maybeTranslate = async (response: string): Promise<string> => {
+    if (
+      !config.autoTranslateEnabled ||
+      !userLanguage ||
+      userLanguage.code === "en" ||
+      !isLanguageSupported(
+        userLanguage.code,
+        config.supportedLanguages ?? undefined
+      )
+    ) {
+      return response;
+    }
+    return translateMessage(response, userLanguage.code, userLanguage.name);
+  };
+
   // 3. Check if human is handling (bypass bot)
   if (state.botMode === "human") {
     return { handled: false, reason: "human_handling" };
@@ -186,9 +279,10 @@ export async function processIncomingMessage(
   // 4. Check business hours
   if (!isWithinBusinessHours(config.businessHours)) {
     if (config.awayMessage) {
+      const translatedAway = await maybeTranslate(config.awayMessage);
       return {
         handled: true,
-        response: config.awayMessage,
+        response: translatedAway,
         reason: "away_message",
       };
     }
@@ -198,7 +292,8 @@ export async function processIncomingMessage(
   // 5. Check custom response rules (highest priority)
   const ruleResponse = checkResponseRules(message, config.responseRules);
   if (ruleResponse) {
-    return { handled: true, response: ruleResponse, reason: "response_rule" };
+    const translatedRule = await maybeTranslate(ruleResponse);
+    return { handled: true, response: translatedRule, reason: "response_rule" };
   }
 
   // Flow execution context for delay scheduling
@@ -217,6 +312,10 @@ export async function processIncomingMessage(
       flowContext
     );
     if (flowResult.handled) {
+      // Translate flow response if needed
+      if (flowResult.response) {
+        flowResult.response = await maybeTranslate(flowResult.response);
+      }
       return flowResult;
     }
     // If flow didn't handle, fall through to AI
@@ -233,6 +332,10 @@ export async function processIncomingMessage(
         flowContext
       );
       if (flowResult.handled) {
+        // Translate flow response if needed
+        if (flowResult.response) {
+          flowResult.response = await maybeTranslate(flowResult.response);
+        }
         return flowResult;
       }
     }
@@ -253,12 +356,14 @@ export async function processIncomingMessage(
       handoffCheck.reason || "triggered",
       options.participantName
     );
+    const handoffMessage = await maybeTranslate(
+      "I'll connect you with a team member who can help you better. Someone will be with you shortly!"
+    );
     return {
       handled: true,
       shouldHandoff: true,
       handoffReason: handoffCheck.reason,
-      response:
-        "I'll connect you with a team member who can help you better. Someone will be with you shortly!",
+      response: handoffMessage,
     };
   }
 
@@ -272,7 +377,11 @@ export async function processIncomingMessage(
       conversationId,
       intent,
       conversationState: state,
+      memoryContext,
     });
+
+    // Translate AI response if needed
+    const translatedResponse = await maybeTranslate(aiResult.response);
 
     // Update conversation state if needed
     if (aiResult.updatedContext) {
@@ -281,7 +390,7 @@ export async function processIncomingMessage(
           ...state.context,
           ...aiResult.updatedContext,
           lastUserMessage: message,
-          lastAiResponse: aiResult.response,
+          lastAiResponse: translatedResponse,
         },
         lastUserMessageAt: new Date(),
         lastBotResponseAt: new Date(),
@@ -291,7 +400,7 @@ export async function processIncomingMessage(
         context: {
           ...state.context,
           lastUserMessage: message,
-          lastAiResponse: aiResult.response,
+          lastAiResponse: translatedResponse,
           intentHistory: [
             ...(state.context.intentHistory || []),
             intent.category,
@@ -304,7 +413,7 @@ export async function processIncomingMessage(
 
     return {
       handled: true,
-      response: aiResult.response,
+      response: translatedResponse,
       reason: `ai_${intent.category}`,
       updatedContext: aiResult.updatedContext,
     };
@@ -359,6 +468,9 @@ export async function createDefaultConversationConfig(
       appointmentSchedulingEnabled: false,
       flowsEnabled: false,
       fallbackToAi: true,
+      autoTranslateEnabled: false,
+      supportedLanguages: ["en", "es", "fr", "de", "pt", "it"],
+      defaultLanguage: "en",
     })
     .returning();
 

@@ -325,6 +325,9 @@ export async function testAiResponse(
     fallbackToAi: config.fallbackToAi ?? true,
     salesConfig: config.salesConfig || null,
     supportConfig: config.supportConfig || null,
+    autoTranslateEnabled: config.autoTranslateEnabled ?? false,
+    supportedLanguages: config.supportedLanguages ?? ["en"],
+    defaultLanguage: config.defaultLanguage ?? "en",
     createdAt: new Date(),
     updatedAt: new Date(),
   };

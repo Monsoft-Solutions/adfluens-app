@@ -176,6 +176,9 @@ export const metaBotRouter = router({
         fallbackToAi: config.fallbackToAi,
         salesConfig: config.salesConfig,
         supportConfig: config.supportConfig,
+        autoTranslateEnabled: config.autoTranslateEnabled,
+        supportedLanguages: config.supportedLanguages,
+        defaultLanguage: config.defaultLanguage,
       };
     }),
 
@@ -205,6 +208,9 @@ export const metaBotRouter = router({
         fallbackToAi: z.boolean().optional(),
         salesConfig: salesConfigSchema.nullable().optional(),
         supportConfig: supportConfigSchema.nullable().optional(),
+        autoTranslateEnabled: z.boolean().optional(),
+        supportedLanguages: z.array(z.string()).optional(),
+        defaultLanguage: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

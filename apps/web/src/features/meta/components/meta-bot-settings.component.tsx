@@ -44,6 +44,8 @@ import {
   Sparkles,
   UserCog,
   Volume2,
+  Languages,
+  X,
 } from "lucide-react";
 
 type MetaBotSettingsProps = {
@@ -94,6 +96,22 @@ const TIMEZONES = [
   "UTC",
 ];
 
+const SUPPORTED_LANGUAGES = [
+  { code: "en", name: "English" },
+  { code: "es", name: "Spanish" },
+  { code: "fr", name: "French" },
+  { code: "de", name: "German" },
+  { code: "pt", name: "Portuguese" },
+  { code: "it", name: "Italian" },
+  { code: "nl", name: "Dutch" },
+  { code: "ru", name: "Russian" },
+  { code: "zh", name: "Chinese" },
+  { code: "ja", name: "Japanese" },
+  { code: "ko", name: "Korean" },
+  { code: "ar", name: "Arabic" },
+  { code: "hi", name: "Hindi" },
+];
+
 export function MetaBotSettings({ pageId }: MetaBotSettingsProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -118,6 +136,9 @@ export function MetaBotSettings({ pageId }: MetaBotSettingsProps) {
     salesAssistantEnabled: boolean;
     customerSupportEnabled: boolean;
     appointmentSchedulingEnabled: boolean;
+    autoTranslateEnabled: boolean;
+    supportedLanguages: string[];
+    defaultLanguage: string;
   } | null>(null);
 
   // Fetch current settings
@@ -150,6 +171,9 @@ export function MetaBotSettings({ pageId }: MetaBotSettingsProps) {
           customerSupportEnabled: data.customerSupportEnabled ?? true,
           appointmentSchedulingEnabled:
             data.appointmentSchedulingEnabled ?? false,
+          autoTranslateEnabled: data.autoTranslateEnabled ?? false,
+          supportedLanguages: (data.supportedLanguages as string[]) || ["en"],
+          defaultLanguage: data.defaultLanguage || "en",
         });
       }
       return data;
@@ -193,6 +217,9 @@ export function MetaBotSettings({ pageId }: MetaBotSettingsProps) {
       salesAssistantEnabled: localSettings.salesAssistantEnabled,
       customerSupportEnabled: localSettings.customerSupportEnabled,
       appointmentSchedulingEnabled: localSettings.appointmentSchedulingEnabled,
+      autoTranslateEnabled: localSettings.autoTranslateEnabled,
+      supportedLanguages: localSettings.supportedLanguages,
+      defaultLanguage: localSettings.defaultLanguage,
     });
   };
 
@@ -277,6 +304,10 @@ export function MetaBotSettings({ pageId }: MetaBotSettingsProps) {
           <TabsTrigger value="personality" className="gap-2">
             <Sparkles className="w-4 h-4" />
             Personality
+          </TabsTrigger>
+          <TabsTrigger value="language" className="gap-2">
+            <Languages className="w-4 h-4" />
+            Language
           </TabsTrigger>
           <TabsTrigger value="hours" className="gap-2">
             <Clock className="w-4 h-4" />
@@ -576,6 +607,152 @@ export function MetaBotSettings({ pageId }: MetaBotSettingsProps) {
                   rows={4}
                 />
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Language Settings */}
+        <TabsContent value="language" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Auto-Translation</CardTitle>
+              <CardDescription>
+                Automatically detect customer language and translate responses
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Enable Auto-Translation</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Detect user language and automatically translate bot
+                    responses
+                  </p>
+                </div>
+                <Switch
+                  checked={localSettings.autoTranslateEnabled}
+                  onCheckedChange={(checked) =>
+                    updateSetting("autoTranslateEnabled", checked)
+                  }
+                />
+              </div>
+
+              {localSettings.autoTranslateEnabled && (
+                <>
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <Label>Default Language</Label>
+                    <Select
+                      value={localSettings.defaultLanguage}
+                      onValueChange={(value) =>
+                        updateSetting("defaultLanguage", value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SUPPORTED_LANGUAGES.map((lang) => (
+                          <SelectItem key={lang.code} value={lang.code}>
+                            {lang.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      The primary language for your bot responses before
+                      translation
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Supported Languages</Label>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Select which languages the bot should support for
+                      auto-translation
+                    </p>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {localSettings.supportedLanguages.map((langCode) => {
+                        const lang = SUPPORTED_LANGUAGES.find(
+                          (l) => l.code === langCode
+                        );
+                        return (
+                          <Badge
+                            key={langCode}
+                            variant="secondary"
+                            className="gap-1"
+                          >
+                            {lang?.name || langCode}
+                            <button
+                              type="button"
+                              className="ml-1 hover:text-destructive"
+                              onClick={() => {
+                                const newLangs =
+                                  localSettings.supportedLanguages.filter(
+                                    (c) => c !== langCode
+                                  );
+                                updateSetting("supportedLanguages", newLangs);
+                              }}
+                              disabled={langCode === "en"}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                    <Select
+                      value=""
+                      onValueChange={(value) => {
+                        if (!localSettings.supportedLanguages.includes(value)) {
+                          updateSetting("supportedLanguages", [
+                            ...localSettings.supportedLanguages,
+                            value,
+                          ]);
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Add a language..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SUPPORTED_LANGUAGES.filter(
+                          (l) =>
+                            !localSettings.supportedLanguages.includes(l.code)
+                        ).map((lang) => (
+                          <SelectItem key={lang.code} value={lang.code}>
+                            {lang.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="p-4 bg-muted/50 rounded-lg">
+                    <h4 className="font-medium mb-2 flex items-center gap-2">
+                      <Languages className="w-4 h-4" />
+                      How it works
+                    </h4>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>
+                        - Language is detected from the first customer message
+                      </li>
+                      <li>
+                        - All bot responses are automatically translated to
+                        their language
+                      </li>
+                      <li>
+                        - Human agents see messages in the original language
+                      </li>
+                      <li>
+                        - Translation is powered by AI for natural-sounding
+                        responses
+                      </li>
+                    </ul>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
