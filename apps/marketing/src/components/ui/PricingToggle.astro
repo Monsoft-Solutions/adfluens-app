@@ -63,23 +63,23 @@ const { class: className } = Astro.props;
         }
       });
 
-      // Update button states
+      // Update button states (monthlyBtn and annualBtn are validated above)
       if (isAnnual) {
-        monthlyBtn.classList.remove("bg-card", "text-foreground", "shadow-sm");
-        monthlyBtn.classList.add("text-muted-foreground");
-        monthlyBtn.setAttribute("aria-pressed", "false");
+        monthlyBtn!.classList.remove("bg-card", "text-foreground", "shadow-sm");
+        monthlyBtn!.classList.add("text-muted-foreground");
+        monthlyBtn!.setAttribute("aria-pressed", "false");
 
-        annualBtn.classList.add("bg-card", "text-foreground", "shadow-sm");
-        annualBtn.classList.remove("text-muted-foreground");
-        annualBtn.setAttribute("aria-pressed", "true");
+        annualBtn!.classList.add("bg-card", "text-foreground", "shadow-sm");
+        annualBtn!.classList.remove("text-muted-foreground");
+        annualBtn!.setAttribute("aria-pressed", "true");
       } else {
-        monthlyBtn.classList.add("bg-card", "text-foreground", "shadow-sm");
-        monthlyBtn.classList.remove("text-muted-foreground");
-        monthlyBtn.setAttribute("aria-pressed", "true");
+        monthlyBtn!.classList.add("bg-card", "text-foreground", "shadow-sm");
+        monthlyBtn!.classList.remove("text-muted-foreground");
+        monthlyBtn!.setAttribute("aria-pressed", "true");
 
-        annualBtn.classList.remove("bg-card", "text-foreground", "shadow-sm");
-        annualBtn.classList.add("text-muted-foreground");
-        annualBtn.setAttribute("aria-pressed", "false");
+        annualBtn!.classList.remove("bg-card", "text-foreground", "shadow-sm");
+        annualBtn!.classList.add("text-muted-foreground");
+        annualBtn!.setAttribute("aria-pressed", "false");
       }
     }
 

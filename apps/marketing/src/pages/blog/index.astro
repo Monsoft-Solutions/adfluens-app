@@ -1,4 +1,5 @@
 ---
+import { getCollection, type CollectionEntry } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 import Header from "../../components/Header.astro";
 import Footer from "../../components/Footer.astro";
@@ -6,88 +7,53 @@ import BlogCard from "../../components/ui/BlogCard.astro";
 import Button from "../../components/ui/Button.astro";
 import GridPattern from "../../components/effects/GridPattern.astro";
 
-// Placeholder blog posts for launch
-const featuredPost = {
-  title: "The Complete Guide to AI-Powered Social Media Management in 2026",
-  excerpt:
-    "Learn how AI is transforming social media management and how businesses are using intelligent automation to grow faster while spending less time on manual tasks.",
-  href: "/blog/ai-social-media-guide",
-  category: "Strategy",
-  categoryColor: "primary" as const,
-  date: "January 10, 2026",
-  readTime: "12 min read",
-  featured: true,
+// Fetch all blog posts sorted by date (newest first)
+const allPosts = await getCollection("blog");
+const sortedPosts = allPosts.sort(
+  (a: CollectionEntry<"blog">, b: CollectionEntry<"blog">) =>
+    b.data.publishedAt.getTime() - a.data.publishedAt.getTime()
+);
+
+// Get featured post (first featured or most recent)
+const featuredPost = sortedPosts.find((post: CollectionEntry<"blog">) => post.data.featured) || sortedPosts[0];
+const otherPosts = sortedPosts.filter((post: CollectionEntry<"blog">) => post.slug !== featuredPost?.slug);
+
+// Format date helper
+const formatDate = (date: Date) =>
+  date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+// Calculate read time (200 words per minute)
+const getReadTime = (body: string) => {
+  const wordCount = body.split(/\s+/).length;
+  const minutes = Math.max(1, Math.ceil(wordCount / 200));
+  return `${minutes} min read`;
 };
 
-const posts = [
-  {
-    title: "5 Ways to Improve Your Google My Business Ranking",
-    excerpt:
-      "Discover proven strategies to boost your local search visibility and attract more customers through your GMB profile.",
-    href: "/blog/improve-gmb-ranking",
-    category: "GMB",
-    categoryColor: "accent" as const,
-    date: "January 8, 2026",
-    readTime: "6 min read",
+// Map category to color
+const categoryColors: Record<string, "primary" | "accent" | "secondary"> = {
+  Strategy: "primary",
+  GMB: "accent",
+  "Social Media": "secondary",
+  Analytics: "secondary",
+  AI: "primary",
+};
+
+// Build categories with counts
+const categoryCounts = sortedPosts.reduce(
+  (acc: Record<string, number>, post: CollectionEntry<"blog">) => {
+    acc[post.data.category] = (acc[post.data.category] || 0) + 1;
+    return acc;
   },
-  {
-    title: "Instagram Reels vs. TikTok: Which Platform is Right for Your Business?",
-    excerpt:
-      "A comprehensive comparison of two major short-form video platforms to help you decide where to focus your efforts.",
-    href: "/blog/reels-vs-tiktok",
-    category: "Social Media",
-    categoryColor: "secondary" as const,
-    date: "January 5, 2026",
-    readTime: "8 min read",
-  },
-  {
-    title: "How to Respond to Negative Reviews (With Templates)",
-    excerpt:
-      "Turn negative reviews into opportunities with our proven response frameworks and real-world examples.",
-    href: "/blog/negative-review-responses",
-    category: "GMB",
-    categoryColor: "accent" as const,
-    date: "January 3, 2026",
-    readTime: "5 min read",
-  },
-  {
-    title: "The Ultimate Content Calendar Template for Social Media",
-    excerpt:
-      "Download our free content calendar template and learn how to plan a month of social media content in one sitting.",
-    href: "/blog/content-calendar-template",
-    category: "Strategy",
-    categoryColor: "primary" as const,
-    date: "December 28, 2025",
-    readTime: "7 min read",
-  },
-  {
-    title: "Understanding Social Media Analytics: Metrics That Matter",
-    excerpt:
-      "Stop drowning in data. Learn which metrics actually indicate success and how to track them effectively.",
-    href: "/blog/social-media-metrics",
-    category: "Analytics",
-    categoryColor: "secondary" as const,
-    date: "December 22, 2025",
-    readTime: "9 min read",
-  },
-  {
-    title: "Building Your Brand Voice: A Step-by-Step Guide",
-    excerpt:
-      "Create a consistent, recognizable brand voice across all your social platforms with this practical guide.",
-    href: "/blog/brand-voice-guide",
-    category: "Strategy",
-    categoryColor: "primary" as const,
-    date: "December 18, 2025",
-    readTime: "10 min read",
-  },
-];
+  {} as Record<string, number>
+);
 
 const categories = [
-  { name: "All", count: 7 },
-  { name: "Strategy", count: 3 },
-  { name: "GMB", count: 2 },
-  { name: "Social Media", count: 1 },
-  { name: "Analytics", count: 1 },
+  { name: "All", count: sortedPosts.length },
+  ...Object.entries(categoryCounts).map(([name, count]) => ({ name, count })),
 ];
 ---
 
@@ -140,38 +106,79 @@ const categories = [
     </section>
 
     <!-- Featured Post -->
-    <section class="relative py-12 bg-background">
-      <div class="container-marketing">
-        <h2 class="font-display text-lg font-semibold text-muted-foreground mb-6" data-reveal>Featured</h2>
-        <div data-reveal data-delay="1">
-          <BlogCard {...featuredPost} />
-        </div>
-      </div>
-    </section>
+    {
+      featuredPost && (
+        <section class="relative py-12 bg-background">
+          <div class="container-marketing">
+            <h2 class="font-display text-lg font-semibold text-muted-foreground mb-6" data-reveal>
+              Featured
+            </h2>
+            <div data-reveal data-delay="1">
+              <BlogCard
+                title={featuredPost.data.title}
+                excerpt={featuredPost.data.excerpt}
+                href={`/blog/${featuredPost.slug}`}
+                image={featuredPost.data.image}
+                category={featuredPost.data.category}
+                categoryColor={categoryColors[featuredPost.data.category] || "primary"}
+                date={formatDate(featuredPost.data.publishedAt)}
+                readTime={getReadTime(featuredPost.body)}
+                featured={true}
+              />
+            </div>
+          </div>
+        </section>
+      )
+    }
 
     <!-- Post Grid -->
-    <section class="relative section-padding bg-muted/10 border-t border-border">
-      <div class="container-marketing">
-        <h2 class="font-display text-lg font-semibold text-muted-foreground mb-8" data-reveal>Latest Articles</h2>
+    {
+      otherPosts.length > 0 && (
+        <section class="relative section-padding bg-muted/10 border-t border-border">
+          <div class="container-marketing">
+            <h2 class="font-display text-lg font-semibold text-muted-foreground mb-8" data-reveal>
+              Latest Articles
+            </h2>
 
-        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {
-            posts.map((post, index) => (
-              <div data-reveal data-delay={index + 1}>
-                <BlogCard {...post} />
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {otherPosts.map((post: CollectionEntry<"blog">, index: number) => (
+                <div data-reveal data-delay={index + 1}>
+                  <BlogCard
+                    title={post.data.title}
+                    excerpt={post.data.excerpt}
+                    href={`/blog/${post.slug}`}
+                    image={post.data.image}
+                    category={post.data.category}
+                    categoryColor={categoryColors[post.data.category] || "primary"}
+                    date={formatDate(post.data.publishedAt)}
+                    readTime={getReadTime(post.body)}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {otherPosts.length > 6 && (
+              <div class="text-center mt-12" data-reveal>
+                <Button variant="outline" size="lg">
+                  Load More Articles
+                </Button>
               </div>
-            ))
-          }
-        </div>
+            )}
+          </div>
+        </section>
+      )
+    }
 
-        <!-- Load More (placeholder) -->
-        <div class="text-center mt-12" data-reveal>
-          <Button variant="outline" size="lg">
-            Load More Articles
-          </Button>
-        </div>
-      </div>
-    </section>
+    <!-- Empty State -->
+    {
+      sortedPosts.length === 0 && (
+        <section class="relative section-padding bg-muted/10 border-t border-border">
+          <div class="container-marketing text-center">
+            <p class="text-muted-foreground">No blog posts yet. Check back soon!</p>
+          </div>
+        </section>
+      )
+    }
 
     <!-- Newsletter Section -->
     <section class="relative section-padding bg-background border-t border-border">
