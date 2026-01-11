@@ -5,15 +5,15 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   server: {
-    port: 3000,
+    port: Number(process.env.VITE_PORT) || 3000,
     host: "0.0.0.0",
     proxy: {
       "/trpc": {
-        target: "http://localhost:3001",
+        target: process.env.VITE_API_URL || "http://localhost:3001",
         changeOrigin: true,
       },
       "/api/auth": {
-        target: "http://localhost:3001",
+        target: process.env.VITE_API_URL || "http://localhost:3001",
         changeOrigin: true,
       },
     },

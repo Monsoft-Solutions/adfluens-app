@@ -47,7 +47,7 @@ if (isDev) {
 // CORS Middleware - must be before auth handler
 app.use(
   cors({
-    origin: isDev ? "http://localhost:3000" : true,
+    origin: isDev ? env.APP_URL : true,
     credentials: true,
   })
 );
