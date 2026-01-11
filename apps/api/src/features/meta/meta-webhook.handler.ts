@@ -6,6 +6,7 @@
 
 import crypto from "crypto";
 import type { Request, Response } from "express";
+import type { IncomingMessage, ServerResponse } from "http";
 import { env } from "@repo/env";
 import { db, eq, metaPageTable, metaConversationTable } from "@repo/db";
 import {
@@ -20,7 +21,12 @@ import { processIncomingMessage } from "../meta-bot/meta-bot.service";
 /**
  * Verify webhook signature from Meta
  */
-export function verifyWebhookSignature(req: Request, buf: Buffer): void {
+export function verifyWebhookSignature(
+  req: IncomingMessage,
+  _res: ServerResponse,
+  buf: Buffer,
+  _encoding: string
+): void {
   const signature = req.headers["x-hub-signature-256"] as string;
 
   if (!signature) {
