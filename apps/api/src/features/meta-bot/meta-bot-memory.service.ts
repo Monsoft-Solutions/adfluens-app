@@ -10,6 +10,7 @@ import {
   eq,
   and,
   desc,
+  inArray,
   metaConversationTable,
   metaConversationStateTable,
 } from "@repo/db";
@@ -84,16 +85,13 @@ export async function recallUserMemory(
         eq(
           metaConversationStateTable.organizationId,
           conversations[0]!.organizationId
-        )
+        ),
+        inArray(metaConversationStateTable.metaConversationId, conversationIds)
       ),
     });
 
     // Create a map of conversation ID to state
-    const stateMap = new Map(
-      states
-        .filter((s) => conversationIds.includes(s.metaConversationId))
-        .map((s) => [s.metaConversationId, s])
-    );
+    const stateMap = new Map(states.map((s) => [s.metaConversationId, s]));
 
     // Aggregate memory from all conversations
     const memory: RecalledMemory = {
