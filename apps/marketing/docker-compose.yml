@@ -8,10 +8,10 @@ services:
       dockerfile: apps/marketing/Dockerfile
     container_name: adfluens-marketing
     ports:
-      - "4000:80"
+      - "4000:8080"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
