@@ -1,6 +1,6 @@
 # ==========================================
-# Adfluens Marketing Site - Dockerfile
-# Independent deployment for Dokploy
+# Adfluens Marketing Site - Production Dockerfile
+# To be used with monorepo root as build context
 # ==========================================
 
 # ==========================================
@@ -27,7 +27,7 @@ COPY packages/tailwind-config/package.json ./packages/tailwind-config/
 COPY packages/eslint-config/package.json ./packages/eslint-config/
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --filter=@repo/marketing...
 
 # ==========================================
 # Stage 3: Build the Astro site
@@ -87,3 +87,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
+
