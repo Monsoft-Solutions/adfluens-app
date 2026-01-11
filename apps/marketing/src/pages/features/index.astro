@@ -1,0 +1,329 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import Button from "../../components/ui/Button.astro";
+import GlowOrb from "../../components/effects/GlowOrb.astro";
+import GridPattern from "../../components/effects/GridPattern.astro";
+
+const features = [
+  {
+    slug: "ai-content",
+    name: "AI Content Engine",
+    tagline: "Create in seconds, not hours",
+    description:
+      "Generate platform-perfect posts with AI that learns your brand voice. From trending topics to caption variations, let AI handle the heavy lifting.",
+    icon: `<path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>`,
+    color: "orange",
+    highlights: [
+      "Multi-platform generation",
+      "Brand voice learning",
+      "Trending topic suggestions",
+      "Caption variations",
+    ],
+  },
+  {
+    slug: "gmb",
+    name: "GMB Command Center",
+    tagline: "Own your local presence",
+    description:
+      "Take full control of your Google Business Profile. Manage posts, respond to reviews with AI assistance, and track your local SEO performance.",
+    icon: `<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>`,
+    color: "lime",
+    highlights: [
+      "Post scheduling",
+      "AI review responses",
+      "Multi-location support",
+      "Local SEO insights",
+    ],
+  },
+  {
+    slug: "meta",
+    name: "Meta Unified",
+    tagline: "One dashboard, all platforms",
+    description:
+      "Manage Facebook, Instagram, and Threads from a single unified dashboard. Cross-post, schedule, and analyze all your Meta content in one place.",
+    icon: `<path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>`,
+    color: "emerald",
+    highlights: [
+      "Cross-platform posting",
+      "Unified inbox",
+      "Story scheduling",
+      "Engagement tracking",
+    ],
+  },
+  {
+    slug: "analytics",
+    name: "Smart Analytics",
+    tagline: "Insights that drive growth",
+    description:
+      "Go beyond vanity metrics with AI-powered analytics. Understand what's working, identify opportunities, and make data-driven decisions.",
+    icon: `<path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>`,
+    color: "orange",
+    highlights: [
+      "Cross-platform reports",
+      "AI-powered insights",
+      "Competitor analysis",
+      "Custom dashboards",
+    ],
+  },
+];
+
+const colorClasses: Record<string, { bg: string; border: string; text: string; iconBg: string }> = {
+  orange: {
+    bg: "bg-primary/5",
+    border: "border-primary/20 hover:border-primary/40",
+    text: "text-primary",
+    iconBg: "bg-primary/10 border-primary/30",
+  },
+  lime: {
+    bg: "bg-secondary/5",
+    border: "border-secondary/20 hover:border-secondary/40",
+    text: "text-secondary",
+    iconBg: "bg-secondary/10 border-secondary/30",
+  },
+  emerald: {
+    bg: "bg-accent/5",
+    border: "border-accent/20 hover:border-accent/40",
+    text: "text-accent-foreground",
+    iconBg: "bg-accent/10 border-accent/30",
+  },
+};
+
+const capabilities = [
+  {
+    title: "AI-First Design",
+    description: "Every feature is powered by AI, not bolted on as an afterthought.",
+    icon: `<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>`,
+  },
+  {
+    title: "Unified Dashboard",
+    description: "All your social channels in one place. No more tab switching.",
+    icon: `<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>`,
+  },
+  {
+    title: "Time-Saving Automation",
+    description: "Automate repetitive tasks and focus on strategy.",
+    icon: `<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>`,
+  },
+  {
+    title: "Enterprise Security",
+    description: "Bank-level encryption and SOC 2 compliance included.",
+    icon: `<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>`,
+  },
+];
+---
+
+<Layout
+  title="Features - Adfluens"
+  description="Explore Adfluens features: AI Content Engine, GMB Command Center, Meta Unified, and Smart Analytics. Everything you need to grow your social presence."
+>
+  <Header />
+  <main>
+    <!-- Hero Section -->
+    <section class="relative section-padding bg-background overflow-hidden">
+      <GridPattern class="opacity-[0.02]" />
+      <GlowOrb color="lime" position="top-left" size="xl" animation="slow" class="opacity-15" />
+      <GlowOrb color="orange" position="bottom-right" size="lg" animation="medium" class="opacity-10" />
+
+      <div class="relative z-10 container-marketing text-center">
+        <p class="text-primary font-medium mb-4" data-reveal>Platform Features</p>
+        <h1
+          class="font-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-6"
+          data-reveal
+          data-delay="1"
+        >
+          Everything you need to
+          <span class="text-gradient-primary">amplify</span> your presence
+        </h1>
+        <p class="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8" data-reveal data-delay="2">
+          From AI-powered content creation to unified analytics, Adfluens gives you the tools to manage and grow your
+          social presence across every platform.
+        </p>
+        <div class="flex flex-wrap justify-center gap-4" data-reveal data-delay="3">
+          <Button variant="primary" size="lg" href="/signup">
+            Start Free Trial
+          </Button>
+          <Button variant="outline" size="lg" href="/pricing">
+            View Pricing
+          </Button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature Cards -->
+    <section class="relative section-padding bg-background">
+      <div class="container-marketing">
+        <div class="grid md:grid-cols-2 gap-6">
+          {
+            features.map((feature, index) => {
+              const colors = colorClasses[feature.color] || colorClasses.orange;
+              return (
+                <a
+                  href={`/features/${feature.slug}`}
+                  class={`group relative p-8 rounded-xl border ${colors.border} ${colors.bg} transition-all hover:shadow-lg`}
+                  data-reveal
+                  data-delay={index + 1}
+                >
+                  {/* Icon */}
+                  <div
+                    class={`w-14 h-14 rounded-xl border ${colors.iconBg} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}
+                  >
+                    <svg
+                      class={`w-7 h-7 ${colors.text}`}
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      viewBox="0 0 24 24"
+                      set:html={feature.icon}
+                    />
+                  </div>
+
+                  {/* Content */}
+                  <div class="mb-6">
+                    <h2 class="font-display text-2xl font-bold text-foreground mb-2">{feature.name}</h2>
+                    <p class={`text-sm font-medium ${colors.text} mb-3`}>{feature.tagline}</p>
+                    <p class="text-muted-foreground leading-relaxed">{feature.description}</p>
+                  </div>
+
+                  {/* Highlights */}
+                  <ul class="space-y-2 mb-6">
+                    {feature.highlights.map((highlight) => (
+                      <li class="flex items-center gap-2 text-sm text-muted-foreground">
+                        <svg
+                          class={`w-4 h-4 ${colors.text} flex-shrink-0`}
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          viewBox="0 0 24 24"
+                        >
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        {highlight}
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* Learn More Link */}
+                  <div class="flex items-center gap-2 text-sm font-medium text-foreground group-hover:gap-3 transition-all">
+                    Learn more
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </a>
+              );
+            })
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Capabilities Section -->
+    <section class="relative section-padding bg-muted/10 border-t border-border">
+      <div class="container-marketing">
+        <div class="text-center mb-12">
+          <h2 class="font-display text-2xl md:text-3xl font-bold text-foreground mb-4" data-reveal>
+            Built for modern marketing
+          </h2>
+          <p class="text-muted-foreground max-w-2xl mx-auto" data-reveal data-delay="1">
+            Every feature is designed with efficiency, security, and scalability in mind.
+          </p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {
+            capabilities.map((capability, index) => (
+              <div
+                class="p-6 rounded-lg border border-border bg-card"
+                data-reveal
+                data-delay={index + 1}
+              >
+                <div class="w-10 h-10 rounded-md border border-border bg-muted/30 flex items-center justify-center mb-4">
+                  <svg
+                    class="w-5 h-5 text-foreground"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    viewBox="0 0 24 24"
+                    set:html={capability.icon}
+                  />
+                </div>
+                <h3 class="font-semibold text-foreground mb-2">{capability.title}</h3>
+                <p class="text-sm text-muted-foreground">{capability.description}</p>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Comparison Section -->
+    <section class="relative section-padding bg-background border-t border-border">
+      <div class="container-marketing">
+        <div class="text-center mb-12">
+          <h2 class="font-display text-2xl md:text-3xl font-bold text-foreground mb-4" data-reveal>
+            Why choose Adfluens?
+          </h2>
+          <p class="text-muted-foreground max-w-2xl mx-auto" data-reveal data-delay="1">
+            See how we compare to the tools you're currently juggling.
+          </p>
+        </div>
+
+        <div class="max-w-3xl mx-auto" data-reveal data-delay="2">
+          <div class="grid gap-4">
+            <div class="grid grid-cols-3 gap-4 text-sm font-medium text-muted-foreground pb-4 border-b border-border">
+              <div></div>
+              <div class="text-center">Traditional Tools</div>
+              <div class="text-center text-primary">Adfluens</div>
+            </div>
+
+            {
+              [
+                { feature: "AI content generation", traditional: "Extra cost", adfluens: "Included" },
+                { feature: "Multi-platform management", traditional: "Multiple tools", adfluens: "One dashboard" },
+                { feature: "GMB integration", traditional: "Separate tool", adfluens: "Built-in" },
+                { feature: "Review management", traditional: "Manual", adfluens: "AI-assisted" },
+                { feature: "Brand voice learning", traditional: "Not available", adfluens: "Automatic" },
+                { feature: "Cross-platform analytics", traditional: "Limited", adfluens: "Comprehensive" },
+              ].map((row) => (
+                <div class="grid grid-cols-3 gap-4 py-4 border-b border-border/50 text-sm">
+                  <div class="text-foreground">{row.feature}</div>
+                  <div class="text-center text-muted-foreground">{row.traditional}</div>
+                  <div class="text-center text-secondary font-medium">{row.adfluens}</div>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="relative section-padding bg-background overflow-hidden border-t border-border">
+      <GlowOrb color="orange" position="center" size="2xl" animation="none" class="opacity-15" />
+
+      <div class="relative z-10 container-marketing text-center">
+        <h2 class="font-display text-3xl md:text-4xl font-bold text-foreground mb-6" data-reveal>
+          Ready to see it in action?
+        </h2>
+        <p class="text-lg text-muted-foreground max-w-xl mx-auto mb-8" data-reveal data-delay="1">
+          Start your free 14-day trial and experience all features with no limitations.
+        </p>
+        <div class="flex flex-wrap justify-center gap-4" data-reveal data-delay="2">
+          <Button variant="primary" size="lg" href="/signup">
+            Start Free Trial
+          </Button>
+          <Button variant="outline" size="lg" href="/contact">
+            Talk to Sales
+          </Button>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>

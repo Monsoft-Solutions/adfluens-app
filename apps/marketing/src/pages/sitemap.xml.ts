@@ -22,6 +22,7 @@ export async function GET(context: APIContext) {
     { path: "contact", priority: "0.7" },
     { path: "privacy", priority: "0.3" },
     { path: "terms", priority: "0.3" },
+    { path: "features", priority: "0.9" },
     { path: "features/ai-content", priority: "0.8" },
     { path: "features/gmb", priority: "0.8" },
     { path: "features/meta", priority: "0.8" },
