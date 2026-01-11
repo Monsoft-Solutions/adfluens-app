@@ -22,6 +22,7 @@ import type {
   MetaConversationStateRow,
   MetaConversationContext,
   MetaBotFlowRow,
+  MetaAiNodeActionConfig,
 } from "@repo/db";
 import {
   detectIntent,
@@ -33,6 +34,7 @@ import {
   detectLanguage,
   translateMessage,
   isLanguageSupported,
+  executeAiNodeOperation,
 } from "./meta-bot-ai.service";
 import { notifyHandoffRequest } from "../meta/meta-notification.service";
 import {
@@ -910,9 +912,68 @@ async function executeNode(
           response: responses.join("\n") || undefined,
         };
       }
-      case "ai_response": {
-        // Signal to fall back to AI
-        return { handled: false, reason: "ai_fallback" };
+      case "ai_node": {
+        const aiConfig = action.config as MetaAiNodeActionConfig;
+        const operation = aiConfig.operation || "generate_response";
+
+        // For generate_response with no custom config, fall back to existing AI response
+        if (
+          operation === "generate_response" &&
+          !aiConfig.customSystemPrompt &&
+          !aiConfig.customUserPrompt
+        ) {
+          return { handled: false, reason: "ai_fallback" };
+        }
+
+        // Execute AI node operation
+        const aiResult = await executeAiNodeOperation(aiConfig, {
+          message: state.context.lastUserMessage || "",
+          organizationId: flowContext.organizationId,
+          conversationId: flowContext.conversationId,
+          variables: state.context.variables,
+          collectedInputs: state.context.collectedInputs,
+        });
+
+        if (!aiResult.success) {
+          console.error(
+            `[meta-bot] AI node operation failed: ${aiResult.error}`
+          );
+          // Continue execution on error (don't block flow)
+          break;
+        }
+
+        // Store result in variable if specified
+        if (aiConfig.outputVariable && aiResult.result !== undefined) {
+          const updatedVariables = {
+            ...state.context.variables,
+            [aiConfig.outputVariable]: aiResult.result,
+          };
+
+          await updateConversationState(state.id, {
+            context: {
+              ...state.context,
+              variables: updatedVariables,
+            },
+          });
+
+          state.context.variables = updatedVariables;
+          console.log(
+            `[meta-bot] AI node stored result in variable: ${aiConfig.outputVariable}`
+          );
+        }
+
+        // Send as message if specified (default true for generate operations)
+        const shouldSendAsMessage =
+          aiConfig.sendAsMessage ??
+          (operation === "generate_response" ||
+            operation === "generate_content" ||
+            operation === "custom");
+
+        if (shouldSendAsMessage && aiResult.textResult) {
+          responses.push(aiResult.textResult);
+        }
+
+        break;
       }
       case "delay": {
         // Schedule the next node for later execution

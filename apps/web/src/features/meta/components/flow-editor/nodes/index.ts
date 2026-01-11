@@ -9,7 +9,7 @@ export { MessageNode } from "./message-node.component";
 export { QuickRepliesNode } from "./quick-replies-node.component";
 export { CollectInputNode } from "./collect-input-node.component";
 export { ConditionNode } from "./condition-node.component";
-export { AiResponseNode } from "./ai-response-node.component";
+export { AiNode } from "./ai-node.component";
 export { HandoffNode } from "./handoff-node.component";
 export { DelayNode } from "./delay-node.component";
 export { HttpRequestNode } from "./http-request-node.component";
@@ -21,7 +21,7 @@ import { MessageNode } from "./message-node.component";
 import { QuickRepliesNode } from "./quick-replies-node.component";
 import { CollectInputNode } from "./collect-input-node.component";
 import { ConditionNode } from "./condition-node.component";
-import { AiResponseNode } from "./ai-response-node.component";
+import { AiNode } from "./ai-node.component";
 import { HandoffNode } from "./handoff-node.component";
 import { DelayNode } from "./delay-node.component";
 import { HttpRequestNode } from "./http-request-node.component";
@@ -38,7 +38,7 @@ export const nodeTypes = {
   "quick-replies": QuickRepliesNode,
   "collect-input": CollectInputNode,
   condition: ConditionNode,
-  "ai-response": AiResponseNode,
+  "ai-node": AiNode,
   handoff: HandoffNode,
   delay: DelayNode,
   "http-request": HttpRequestNode,

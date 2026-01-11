@@ -86,7 +86,7 @@ const flowActionSchema = z.object({
     "set_variable",
     "handoff",
     "goto_node",
-    "ai_response",
+    "ai_node",
     "delay",
     "http_request",
   ]),

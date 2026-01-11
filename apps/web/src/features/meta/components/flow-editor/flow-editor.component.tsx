@@ -33,6 +33,7 @@ import {
   HttpRequestNodeFields,
   SetVariableNodeFields,
   GotoNodeFields,
+  AiNodeFields,
 } from "./fields";
 import {
   apiTypeToNodeType,
@@ -525,6 +526,9 @@ function NodePropertiesPanel({
         )}
         {type === "goto" && (
           <GotoNodeFields data={data} onUpdate={onUpdate} nodes={nodes} />
+        )}
+        {type === "ai-node" && (
+          <AiNodeFields data={data} onUpdate={onUpdate} nodes={nodes} />
         )}
         {type === "entry" && <EntryNodeFields />}
       </div>

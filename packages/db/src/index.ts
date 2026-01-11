@@ -141,6 +141,10 @@ export type {
   MetaBotFlowTrigger,
   MetaBotFlowAction,
   MetaBotFlowNode,
+  MetaAiNodeOperation,
+  MetaAiNodeModel,
+  MetaExtractedField,
+  MetaAiNodeActionConfig,
 } from "./schema/meta-bot-flow.table";
 
 // Re-export Meta conversation state types

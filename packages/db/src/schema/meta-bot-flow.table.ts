@@ -22,6 +22,56 @@ export type MetaBotFlowTrigger = {
 };
 
 /**
+ * AI Node operation types
+ */
+export type MetaAiNodeOperation =
+  | "generate_response" // Conversational response (default)
+  | "generate_content" // Generate text with custom prompt
+  | "extract_data" // Extract structured data to variables
+  | "classify_intent" // Classify message with custom categories
+  | "analyze_sentiment" // Analyze sentiment
+  | "summarize" // Summarize text
+  | "translate" // Translate content
+  | "custom"; // Full custom prompt with schema
+
+/**
+ * Available AI models
+ */
+export type MetaAiNodeModel =
+  | "gpt-4o"
+  | "gpt-4o-mini"
+  | "gpt-4.1"
+  | "gpt-4.1-mini"
+  | "gpt-4.1-nano";
+
+/**
+ * Field definition for extract_data operation
+ */
+export type MetaExtractedField = {
+  name: string;
+  type: "string" | "number" | "boolean" | "array";
+  description: string;
+  required?: boolean;
+};
+
+/**
+ * AI Node action configuration
+ */
+export type MetaAiNodeActionConfig = {
+  operation?: MetaAiNodeOperation;
+  outputVariable?: string;
+  sendAsMessage?: boolean;
+  customSystemPrompt?: string;
+  customUserPrompt?: string;
+  model?: MetaAiNodeModel;
+  temperature?: number;
+  extractionSchema?: MetaExtractedField[];
+  extractionSchemaJson?: string;
+  classificationCategories?: string[];
+  targetLanguage?: string;
+};
+
+/**
  * Action to perform in a flow node
  */
 export type MetaBotFlowAction = {
@@ -32,7 +82,7 @@ export type MetaBotFlowAction = {
     | "set_variable"
     | "handoff"
     | "goto_node"
-    | "ai_response"
+    | "ai_node"
     | "delay"
     | "http_request";
   config: Record<string, unknown>;
