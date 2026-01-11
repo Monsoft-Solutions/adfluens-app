@@ -8,6 +8,10 @@ build/
 .next/
 out/
 
+# Astro auto-generated
+.astro/
+**/.astro/
+
 # Turbo
 .turbo/
 
