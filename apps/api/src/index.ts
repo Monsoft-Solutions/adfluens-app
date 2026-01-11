@@ -15,6 +15,14 @@ import {
   handleOAuthCallback,
   createPendingGMBConnection,
 } from "./features/gmb/gmb.service";
+import { handleOAuthCallback as handleMetaOAuthCallback } from "./features/meta/meta.service";
+import {
+  handleVerification as handleMetaWebhookVerification,
+  handleWebhook as handleMetaWebhook,
+  verifyWebhookSignature,
+} from "./features/meta/meta-webhook.handler";
+import cron from "node-cron";
+import { processScheduledExecutions } from "./features/meta-bot/scheduled-execution.service";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -108,6 +116,73 @@ app.get("/api/auth/gmb/callback", async (req, res) => {
 });
 
 /**
+ * Meta (Facebook/Instagram) OAuth callback
+ * Handles the redirect from Meta after user grants access
+ * Exchanges the code for long-lived tokens and creates a pending connection.
+ */
+app.get("/api/auth/meta/callback", async (req, res) => {
+  const { code, state, error: oauthError, error_description } = req.query;
+  const appUrl = env.APP_URL;
+
+  // Handle OAuth errors
+  if (oauthError) {
+    const errorMessage = encodeURIComponent(
+      typeof error_description === "string"
+        ? error_description
+        : typeof oauthError === "string"
+          ? oauthError
+          : "OAuth authorization failed"
+    );
+    return res.redirect(`${appUrl}/settings?meta_error=${errorMessage}`);
+  }
+
+  // Validate required parameters
+  if (typeof code !== "string" || typeof state !== "string") {
+    return res.redirect(
+      `${appUrl}/settings?meta_error=${encodeURIComponent("Missing required OAuth parameters")}`
+    );
+  }
+
+  try {
+    // Handle OAuth callback and create pending connection
+    const { setupCode, redirectPath } = await handleMetaOAuthCallback(
+      code,
+      state
+    );
+
+    // Redirect to frontend with setup code
+    const params = new URLSearchParams({
+      meta_setup_code: setupCode,
+    });
+
+    return res.redirect(`${appUrl}${redirectPath}?${params.toString()}`);
+  } catch (err) {
+    console.error("[Meta OAuth] Callback error:", err);
+    const errorMessage = encodeURIComponent(
+      err instanceof Error ? err.message : "Failed to complete OAuth flow"
+    );
+    return res.redirect(`${appUrl}/settings?meta_error=${errorMessage}`);
+  }
+});
+
+/**
+ * Meta Webhook Verification (GET)
+ * Called by Meta when setting up webhooks to verify the endpoint
+ */
+app.get("/api/webhooks/meta", handleMetaWebhookVerification);
+
+/**
+ * Meta Webhook Handler (POST)
+ * Receives webhook events for leads and messages
+ * Verifies X-Hub-Signature-256 header to ensure request authenticity
+ */
+app.post(
+  "/api/webhooks/meta",
+  express.json({ verify: verifyWebhookSignature }),
+  handleMetaWebhook
+);
+
+/**
  * Better Auth handler
  * IMPORTANT: Must be mounted BEFORE express.json() middleware
  * Handles all auth routes at /api/auth/*
@@ -156,6 +231,7 @@ if (!isDev) {
   const distPath = path.join(__dirname, "..", "..", "web", "dist");
   app.use(express.static(distPath));
 
+  // eslint-disable-next-line no-console
   console.info(`Serving static files from ${distPath}`);
 
   // Handle client-side routing
@@ -166,9 +242,27 @@ if (!isDev) {
 }
 
 app.listen(PORT, () => {
+  // eslint-disable-next-line no-console
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   if (isDev) {
+    // eslint-disable-next-line no-console
     console.log(`📦 tRPC API available at http://localhost:${PORT}/trpc`);
+    // eslint-disable-next-line no-console
     console.log(`🔐 Auth API available at http://localhost:${PORT}/api/auth`);
   }
 });
+
+// Schedule cron job for processing delayed flow executions
+// Runs every minute to check for due scheduled executions
+cron.schedule("* * * * *", async () => {
+  try {
+    await processScheduledExecutions();
+  } catch (error) {
+    console.error("[cron] Failed to process scheduled executions:", error);
+  }
+});
+
+// eslint-disable-next-line no-console
+console.log(
+  "⏰ Scheduled execution processor cron job started (runs every minute)"
+);

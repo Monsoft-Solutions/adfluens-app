@@ -14,10 +14,47 @@ export {
   socialMediaPostTableRelations,
   gmbConnectionTable,
   gmbConnectionTableRelations,
+  // Meta tables
+  metaConnectionTable,
+  metaConnectionTableRelations,
+  metaPageTable,
+  metaPageTableRelations,
+  metaLeadTable,
+  metaLeadTableRelations,
+  metaConversationTable,
+  metaConversationTableRelations,
+  metaConversationConfigTable,
+  metaConversationConfigTableRelations,
+  // Meta bot tables
+  metaBotFlowTable,
+  metaBotFlowTableRelations,
+  metaConversationStateTable,
+  metaConversationStateTableRelations,
+  metaTeamInboxTable,
+  metaTeamInboxTableRelations,
+  metaAppointmentConfigTable,
+  metaAppointmentConfigTableRelations,
+  metaAppointmentTable,
+  metaAppointmentTableRelations,
+  metaFlowScheduledExecutionTable,
+  metaFlowScheduledExecutionTableRelations,
+  // Notification table
+  notificationTable,
 } from "./schema";
 
 // Re-export drizzle-orm utilities for convenience
-export { eq, and, or, desc, asc, sql, inArray, count } from "drizzle-orm";
+export {
+  eq,
+  and,
+  or,
+  desc,
+  asc,
+  sql,
+  inArray,
+  count,
+  lte,
+  gte,
+} from "drizzle-orm";
 
 // Inferred types from schema
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
@@ -58,3 +95,105 @@ export type {
   GmbConnectionInsert,
   GmbConnectionRow,
 } from "./schema/gmb-connection.table";
+
+// Re-export Meta connection types
+export type {
+  MetaConnectionInsert,
+  MetaConnectionRow,
+} from "./schema/meta-connection.table";
+
+// Re-export Meta page types
+export type {
+  MetaPageInsert,
+  MetaPageRow,
+  MetaPageData,
+} from "./schema/meta-page.table";
+
+// Re-export Meta lead types
+export type {
+  MetaLeadInsert,
+  MetaLeadRow,
+  MetaLeadFieldData,
+} from "./schema/meta-lead.table";
+
+// Re-export Meta conversation types
+export type {
+  MetaConversationInsert,
+  MetaConversationRow,
+  MetaMessage,
+} from "./schema/meta-conversation.table";
+
+// Re-export Meta conversation config types
+export type {
+  MetaConversationConfigInsert,
+  MetaConversationConfigRow,
+  MetaResponseRule,
+  MetaAiPersonality,
+  MetaBusinessHours,
+  MetaSalesConfig,
+  MetaSupportConfig,
+} from "./schema/meta-conversation-config.table";
+
+// Re-export Meta bot flow types
+export type {
+  MetaBotFlowInsert,
+  MetaBotFlowRow,
+  MetaBotFlowTrigger,
+  MetaBotFlowAction,
+  MetaBotFlowNode,
+} from "./schema/meta-bot-flow.table";
+
+// Re-export Meta conversation state types
+export type {
+  MetaConversationStateInsert,
+  MetaConversationStateRow,
+  MetaConversationContext,
+  MetaSalesContext,
+  MetaAppointmentContext,
+} from "./schema/meta-conversation-state.table";
+
+// Re-export Meta team inbox types
+export type {
+  MetaTeamInboxInsert,
+  MetaTeamInboxRow,
+} from "./schema/meta-team-inbox.table";
+
+// Re-export Meta appointment config types
+export type {
+  MetaAppointmentConfigInsert,
+  MetaAppointmentConfigRow,
+  MetaAppointmentSlot,
+  MetaAppointmentService,
+} from "./schema/meta-appointment-config.table";
+
+// Re-export Meta appointment types
+export type {
+  MetaAppointmentInsert,
+  MetaAppointmentRow,
+} from "./schema/meta-appointment.table";
+
+// Re-export Meta flow scheduled execution types
+export type {
+  MetaFlowScheduledExecutionInsert,
+  MetaFlowScheduledExecutionRow,
+} from "./schema/meta-flow-scheduled-execution.table";
+
+// Re-export Meta enum types
+export type {
+  LeadStatus,
+  AppointmentStatus,
+  InboxPriority,
+  InboxStatus,
+  BotMode,
+  QualificationStatus,
+  ConnectionStatus,
+  PageStatus,
+  ScheduledExecutionStatus,
+} from "./schema/meta-enums";
+
+// Re-export Notification types
+export type {
+  NotificationInsert,
+  NotificationRow,
+  NotificationPayload,
+} from "./schema/notification.table";

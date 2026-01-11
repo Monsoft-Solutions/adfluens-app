@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm dev:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm type-check:*)",
+      "Bash(pnpm format:*)",
+      "Bash(pnpm db:*)",
+      "Bash(pnpm dlx shadcn@latest add:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(ls:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm remove:*)",
+      "Read(packages/**)",
+      "Read(apps/**)",
+      "Glob",
+      "Grep",
+      "WebSearch",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:developers.google.com)",
+      "WebFetch(domain:tanstack.com)",
+      "WebFetch(domain:trpc.io)",
+      "WebFetch(domain:orm.drizzle.team)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/secrets/**)",
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)"
+    ]
+  }
+}

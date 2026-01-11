@@ -4,6 +4,8 @@ import { aiRouter } from "../features/ai/ai.router";
 import { organizationRouter } from "../features/organization/organization.router";
 import { socialMediaRouter } from "../features/social-media/social-media.router";
 import { gmbRouter } from "../features/gmb/gmb.router";
+import { metaRouter } from "../features/meta/meta.router";
+import { metaBotRouter } from "../features/meta-bot/meta-bot.router";
 
 export const appRouter = router({
   youtube: youtubeRouter,
@@ -11,6 +13,8 @@ export const appRouter = router({
   organization: organizationRouter,
   socialMedia: socialMediaRouter,
   gmb: gmbRouter,
+  meta: metaRouter,
+  metaBot: metaBotRouter,
 });
 
 /**

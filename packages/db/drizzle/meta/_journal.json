@@ -15,6 +15,34 @@
       "when": 1767985170954,
       "tag": "0001_careful_the_hand",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1768058217577,
+      "tag": "0002_bumpy_silver_samurai",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1768065048372,
+      "tag": "0003_nebulous_the_professor",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1768081824940,
+      "tag": "0004_little_master_chief",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1768096660623,
+      "tag": "0005_overconfident_blizzard",
+      "breakpoints": true
     }
   ]
 }

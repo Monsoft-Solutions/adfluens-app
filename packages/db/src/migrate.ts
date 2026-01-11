@@ -13,6 +13,7 @@ const __dirname = dirname(__filename);
  * This is used for Docker deployments where drizzle-kit is not available
  */
 async function runMigrations() {
+  // eslint-disable-next-line no-console
   console.log("🔄 Running database migrations...");
 
   const pool = new Pool({
@@ -26,6 +27,7 @@ async function runMigrations() {
 
   try {
     await migrate(db, { migrationsFolder });
+    // eslint-disable-next-line no-console
     console.log("✅ Database migrations completed successfully");
   } catch (error) {
     console.error("❌ Database migration failed:", error);

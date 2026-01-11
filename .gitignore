@@ -35,3 +35,6 @@ apps/api/tsconfig.tsbuildinfo
 .turbo/cookies/*
 .turbo/daemon/*
 *.tsbuildinfo
+
+# Claude Code
+.claude/settings.local.json
