@@ -1,0 +1,9 @@
+import baseConfig from "@repo/eslint-config/base";
+
+/** @type {import("eslint").Linter.Config[]} */
+export default [
+  {
+    ignores: [".astro/**", "dist/**", "node_modules/**"],
+  },
+  ...baseConfig,
+];
