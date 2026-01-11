@@ -746,7 +746,7 @@ async function findTriggeredFlow(
 async function startFlow(
   state: MetaConversationStateRow,
   flow: MetaBotFlowRow,
-  _message: string,
+  message: string,
   context: FlowExecutionContext
 ): Promise<BotResponse> {
   // Update state to flow mode
@@ -765,7 +765,7 @@ async function startFlow(
     return { handled: false, reason: "invalid_flow" };
   }
 
-  return executeNode(entryNode, state, flow, context);
+  return executeNode(entryNode, state, flow, context, message);
 }
 
 /**
@@ -820,7 +820,7 @@ async function executeFlowNode(
               currentNodeId: nextNode.id,
             },
           });
-          return executeNode(nextNode, state, flow, flowContext);
+          return executeNode(nextNode, state, flow, flowContext, message);
         }
       }
     }
@@ -836,7 +836,7 @@ async function executeFlowNode(
           currentNodeId: nextNode.id,
         },
       });
-      return executeNode(nextNode, state, flow, flowContext);
+      return executeNode(nextNode, state, flow, flowContext, message);
     }
   }
 
@@ -869,6 +869,7 @@ async function executeNode(
   state: MetaConversationStateRow,
   flow: MetaBotFlowRow,
   flowContext: FlowExecutionContext,
+  message: string,
   depth: number = 0,
   visitedNodes: Set<string> = new Set()
 ): Promise<BotResponse> {
@@ -927,7 +928,7 @@ async function executeNode(
 
         // Execute AI node operation
         const aiResult = await executeAiNodeOperation(aiConfig, {
-          message: state.context.lastUserMessage || "",
+          message,
           organizationId: flowContext.organizationId,
           conversationId: flowContext.conversationId,
           variables: state.context.variables,
@@ -1188,6 +1189,7 @@ async function executeNode(
             state,
             flow,
             flowContext,
+            message,
             depth + 1,
             visitedNodes
           );

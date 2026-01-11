@@ -1073,11 +1073,11 @@ async function executeClassifyIntent(
   config: MetaAiNodeActionConfig,
   context: AiNodeExecutionContext
 ): Promise<AiNodeResult> {
-  const categories = config.classificationCategories || [
-    "general",
-    "question",
-    "request",
-  ];
+  const categories =
+    config.classificationCategories &&
+    config.classificationCategories.length > 0
+      ? config.classificationCategories
+      : ["general", "question", "request"];
 
   const classificationSchema = z.object({
     category: z.enum(categories as [string, ...string[]]),
