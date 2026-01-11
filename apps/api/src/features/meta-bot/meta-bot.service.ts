@@ -31,6 +31,10 @@ import {
   buildBusinessContext,
 } from "./meta-bot-ai.service";
 import { notifyHandoffRequest } from "../meta/meta-notification.service";
+import {
+  scheduleFlowExecution,
+  cancelPendingExecutions,
+} from "./scheduled-execution.service";
 
 // =============================================================================
 // Types
@@ -52,6 +56,12 @@ export type ProcessMessageOptions = {
   message: string;
   platform: "messenger" | "instagram";
   participantName?: string;
+};
+
+export type FlowExecutionContext = {
+  organizationId: string;
+  metaPageId: string;
+  conversationId: string;
 };
 
 // =============================================================================
@@ -78,6 +88,9 @@ export async function processIncomingMessage(
     organizationId
   );
 
+  // 2.5. Cancel any pending scheduled executions (user sent a new message during delay)
+  await cancelPendingExecutions(conversationId);
+
   // 3. Check if human is handling (bypass bot)
   if (state.botMode === "human") {
     return { handled: false, reason: "human_handling" };
@@ -101,9 +114,21 @@ export async function processIncomingMessage(
     return { handled: true, response: ruleResponse, reason: "response_rule" };
   }
 
+  // Flow execution context for delay scheduling
+  const flowContext: FlowExecutionContext = {
+    organizationId,
+    metaPageId: pageId,
+    conversationId,
+  };
+
   // 6. Check if in an active flow
   if (state.botMode === "flow" && state.context.currentFlowId) {
-    const flowResult = await executeFlowNode(state, message, config);
+    const flowResult = await executeFlowNode(
+      state,
+      message,
+      config,
+      flowContext
+    );
     if (flowResult.handled) {
       return flowResult;
     }
@@ -114,7 +139,12 @@ export async function processIncomingMessage(
   if (config.flowsEnabled) {
     const triggeredFlow = await findTriggeredFlow(pageId, message);
     if (triggeredFlow) {
-      const flowResult = await startFlow(state, triggeredFlow, message);
+      const flowResult = await startFlow(
+        state,
+        triggeredFlow,
+        message,
+        flowContext
+      );
       if (flowResult.handled) {
         return flowResult;
       }
@@ -505,7 +535,8 @@ async function findTriggeredFlow(
 async function startFlow(
   state: MetaConversationStateRow,
   flow: MetaBotFlowRow,
-  _message: string
+  _message: string,
+  context: FlowExecutionContext
 ): Promise<BotResponse> {
   // Update state to flow mode
   await updateConversationState(state.id, {
@@ -523,7 +554,7 @@ async function startFlow(
     return { handled: false, reason: "invalid_flow" };
   }
 
-  return executeNode(entryNode, state, flow);
+  return executeNode(entryNode, state, flow, context);
 }
 
 /**
@@ -532,7 +563,8 @@ async function startFlow(
 async function executeFlowNode(
   state: MetaConversationStateRow,
   message: string,
-  config: MetaConversationConfigRow
+  config: MetaConversationConfigRow,
+  flowContext: FlowExecutionContext
 ): Promise<BotResponse> {
   if (!state.context.currentFlowId || !state.context.currentNodeId) {
     return { handled: false };
@@ -577,7 +609,7 @@ async function executeFlowNode(
               currentNodeId: nextNode.id,
             },
           });
-          return executeNode(nextNode, state, flow);
+          return executeNode(nextNode, state, flow, flowContext);
         }
       }
     }
@@ -593,7 +625,7 @@ async function executeFlowNode(
           currentNodeId: nextNode.id,
         },
       });
-      return executeNode(nextNode, state, flow);
+      return executeNode(nextNode, state, flow, flowContext);
     }
   }
 
@@ -619,11 +651,12 @@ async function executeFlowNode(
 /**
  * Execute a single node and return response
  */
-function executeNode(
+async function executeNode(
   node: MetaBotFlowRow["nodes"][0],
-  _state: MetaConversationStateRow,
-  _flow: MetaBotFlowRow
-): BotResponse {
+  state: MetaConversationStateRow,
+  flow: MetaBotFlowRow,
+  flowContext: FlowExecutionContext
+): Promise<BotResponse> {
   const responses: string[] = [];
 
   for (const action of node.actions) {
@@ -650,6 +683,37 @@ function executeNode(
       case "ai_response": {
         // Signal to fall back to AI
         return { handled: false, reason: "ai_fallback" };
+      }
+      case "delay": {
+        // Schedule the next node for later execution
+        const delayAmount = (action.config.delayAmount as number) || 1;
+        const delayUnit =
+          (action.config.delayUnit as "minutes" | "hours" | "days") || "days";
+
+        // Only schedule if there's a next node
+        if (node.nextNodes?.length) {
+          await scheduleFlowExecution({
+            organizationId: flowContext.organizationId,
+            metaPageId: flowContext.metaPageId,
+            conversationId: flowContext.conversationId,
+            flowId: flow.id,
+            nextNodeId: node.nextNodes[0]!,
+            delayAmount,
+            delayUnit,
+            conversationContext: state.context,
+          });
+
+          console.log(
+            `[meta-bot] Scheduled delay: ${delayAmount} ${delayUnit} for conversation ${flowContext.conversationId}`
+          );
+        }
+
+        // Return with any message that was collected before the delay
+        return {
+          handled: true,
+          response: responses.join("\n") || undefined,
+          reason: "flow_delay_scheduled",
+        };
       }
     }
   }

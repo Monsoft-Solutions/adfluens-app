@@ -32,7 +32,8 @@ export type MetaBotFlowAction = {
     | "set_variable"
     | "handoff"
     | "goto_node"
-    | "ai_response";
+    | "ai_response"
+    | "delay";
   config: Record<string, unknown>;
 };
 

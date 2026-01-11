@@ -87,6 +87,7 @@ const flowActionSchema = z.object({
     "handoff",
     "goto_node",
     "ai_response",
+    "delay",
   ]),
   config: z.record(z.string(), z.unknown()),
 });
@@ -626,7 +627,7 @@ export const metaBotRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { flowId, ...updates } = input;
 
-      await db
+      const [updatedFlow] = await db
         .update(metaBotFlowTable)
         .set(updates)
         .where(
@@ -634,9 +635,10 @@ export const metaBotRouter = router({
             eq(metaBotFlowTable.id, flowId),
             eq(metaBotFlowTable.organizationId, ctx.organization.id)
           )
-        );
+        )
+        .returning();
 
-      return { success: true };
+      return updatedFlow;
     }),
 
   /**

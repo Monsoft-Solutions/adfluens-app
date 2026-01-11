@@ -26,6 +26,7 @@ export * from "./meta-conversation-state.table";
 export * from "./meta-team-inbox.table";
 export * from "./meta-appointment-config.table";
 export * from "./meta-appointment.table";
+export * from "./meta-flow-scheduled-execution.table";
 
 // Notification tables
 export * from "./notification.table";

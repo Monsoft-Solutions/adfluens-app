@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TRPCProvider, trpcClient } from "./lib/trpc";
 import { AuthProvider } from "./lib/auth.provider";
 import { ThemeProvider } from "./lib/theme.provider";
-import { TooltipProvider } from "@repo/ui";
+import { TooltipProvider, Toaster } from "@repo/ui";
 import { AppLayout } from "./shared/components/app-layout.component";
 import { ProtectedRoute } from "./shared/components/protected-route.component";
 import { ChannelAnalyzerView } from "./features/youtube/views/channel-analyzer.view";
@@ -80,6 +80,7 @@ const App: React.FC = () => {
                   </Route>
                 </Routes>
               </BrowserRouter>
+              <Toaster />
             </TooltipProvider>
           </AuthProvider>
         </TRPCProvider>

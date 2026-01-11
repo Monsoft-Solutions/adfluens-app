@@ -36,12 +36,25 @@ export {
   metaAppointmentConfigTableRelations,
   metaAppointmentTable,
   metaAppointmentTableRelations,
+  metaFlowScheduledExecutionTable,
+  metaFlowScheduledExecutionTableRelations,
   // Notification table
   notificationTable,
 } from "./schema";
 
 // Re-export drizzle-orm utilities for convenience
-export { eq, and, or, desc, asc, sql, inArray, count } from "drizzle-orm";
+export {
+  eq,
+  and,
+  or,
+  desc,
+  asc,
+  sql,
+  inArray,
+  count,
+  lte,
+  gte,
+} from "drizzle-orm";
 
 // Inferred types from schema
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
@@ -158,6 +171,13 @@ export type {
   MetaAppointmentInsert,
   MetaAppointmentRow,
 } from "./schema/meta-appointment.table";
+
+// Re-export Meta flow scheduled execution types
+export type {
+  MetaFlowScheduledExecutionInsert,
+  MetaFlowScheduledExecutionRow,
+  ScheduledExecutionStatus,
+} from "./schema/meta-flow-scheduled-execution.table";
 
 // Re-export Notification types
 export type {

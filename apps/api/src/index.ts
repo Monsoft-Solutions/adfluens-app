@@ -20,6 +20,8 @@ import {
   handleVerification as handleMetaWebhookVerification,
   handleWebhook as handleMetaWebhook,
 } from "./features/meta/meta-webhook.handler";
+import cron from "node-cron";
+import { processScheduledExecutions } from "./features/meta-bot/scheduled-execution.service";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -243,3 +245,18 @@ app.listen(PORT, () => {
     console.log(`🔐 Auth API available at http://localhost:${PORT}/api/auth`);
   }
 });
+
+// Schedule cron job for processing delayed flow executions
+// Runs every minute to check for due scheduled executions
+cron.schedule("* * * * *", async () => {
+  try {
+    await processScheduledExecutions();
+  } catch (error) {
+    console.error("[cron] Failed to process scheduled executions:", error);
+  }
+});
+
+// eslint-disable-next-line no-console
+console.log(
+  "⏰ Scheduled execution processor cron job started (runs every minute)"
+);
