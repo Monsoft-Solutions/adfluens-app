@@ -97,6 +97,8 @@ const steps = [
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             line.style.width = '100%';
+            // Disconnect observer after animation triggers to prevent memory leak
+            observer.disconnect();
           }
         });
       },
