@@ -107,10 +107,6 @@ importers:
         version: 5.9.3
 
   apps/marketing:
-    dependencies:
-      astro:
-        specifier: ^5.2.0
-        version: 5.16.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.53.3)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
     devDependencies:
       '@astrojs/check':
         specifier: ^0.9.0
@@ -124,6 +120,9 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.1.17
         version: 4.1.17
+      astro:
+        specifier: ^5.2.0
+        version: 5.16.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.53.3)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
       postcss:
         specifier: ^8.5.6
         version: 8.5.6
