@@ -13,6 +13,11 @@ import {
   NODE_STYLES,
 } from "./node.utils";
 
+/**
+ * Renders a Condition node that displays the first condition's expression and Yes/No branch labels.
+ *
+ * @returns The JSX element representing the Condition node.
+ */
 export function ConditionNode({ id, data, selected }: FlowNodeProps) {
   const condition = data.conditions?.[0];
   const expression = condition?.expression || "";

@@ -58,7 +58,10 @@ const intentSchema = z.object({
 });
 
 /**
- * Detect intent and sentiment from user message
+ * Classifies a user's message into intent, sentiment, urgency, and extracts related entities.
+ *
+ * @param businessContext - Business-specific context to inform classification and entity extraction
+ * @returns A DetectedIntent object with `category` ('sales' | 'support' | 'appointment' | 'general' | 'handoff'), `confidence` (0–1), `sentiment` ('positive' | 'neutral' | 'negative'), `urgency` ('low' | 'normal' | 'high'), and optional `entities` (e.g., `product`, `service`, `date`, `time`)
  */
 export async function detectIntent(
   message: string,
@@ -112,7 +115,10 @@ Extract entities like products, services, dates, and times mentioned.`,
 // =============================================================================
 
 /**
- * Build business context from organization profile
+ * Assembles a textual business context from an organization's scraped profile data.
+ *
+ * @param organizationId - The ID of the organization whose profile will be fetched
+ * @returns A multiline context string containing available fields (business name, industry, description, services, products, key benefits, target audience, contact details, and location). Returns `"No specific business information available."` when no scraped profile data exists.
  */
 export async function buildBusinessContext(
   organizationId: string
@@ -178,7 +184,12 @@ export async function buildBusinessContext(
 }
 
 /**
- * Get conversation history for context
+ * Retrieve up to the last eight messages from a conversation formatted for AI context.
+ *
+ * Returns the most recent up to eight entries in chronological order (oldest to newest). Each entry maps the stored message to a `role` of `"assistant"` for messages from the page or `"user"` otherwise, and a `content` string (message text or `"[attachment]"` when text is absent).
+ *
+ * @param conversationId - The meta conversation record ID to fetch history for
+ * @returns An array of message objects with `role` and `content`, containing at most eight items
  */
 export async function getConversationHistory(
   conversationId: string
@@ -198,7 +209,12 @@ export async function getConversationHistory(
 }
 
 /**
- * Get appointment services for context
+ * Format the appointment services configured for a meta page into a human-readable list.
+ *
+ * @param pageId - Meta page identifier used to look up the appointment configuration
+ * @returns A multiline string where each line describes a service as
+ * "- {name} ({duration} minutes)" with optional ": {description}" and " - ${price}",
+ * or the string "No services configured for booking." when no services are found.
  */
 async function getAppointmentServices(pageId: string): Promise<string> {
   const config = await db.query.metaAppointmentConfigTable.findFirst({
@@ -224,7 +240,10 @@ async function getAppointmentServices(pageId: string): Promise<string> {
 // =============================================================================
 
 /**
- * Get tone instructions based on personality config
+ * Builds a natural-language instruction describing the assistant's tone and response formatting based on AI personality settings.
+ *
+ * @param personality - Optional AI personality config; reads `tone` (professional|friendly|casual|formal), `responseLength` ("concise"|"detailed"|"auto"), `useEmojis` (boolean), and `customInstructions` (string) to compose the instruction.
+ * @returns A single string with directives for tone, preferred response length, emoji usage, and any custom instructions.
  */
 function getToneInstructions(
   personality?: MetaConversationConfigRow["aiPersonality"]
@@ -262,7 +281,13 @@ function getToneInstructions(
 }
 
 /**
- * Build sales assistant system prompt
+ * Compose a system prompt that instructs an AI to act as a sales assistant using the provided business and conversational context.
+ *
+ * @param businessContext - Text describing the business (offerings, value props, contact details, FAQs, etc.) to include in the ABOUT THE BUSINESS section
+ * @param toneInstructions - Guidance on tone, length, emoji use, and other persona-related preferences to apply to responses
+ * @param salesContext - Optional sales-specific conversation state (e.g., qualificationStage, interestedProducts, painPoints) to populate the CONVERSATION STATE section
+ * @param additionalContext - Optional extra context or notes to include in an ADDITIONAL CONTEXT section
+ * @returns The complete system prompt string for a sales assistant, ready to be sent as the system message to an LLM
  */
 function buildSalesPrompt(
   businessContext: string,
@@ -311,7 +336,12 @@ GUIDELINES:
 }
 
 /**
- * Build support assistant system prompt
+ * Constructs a system prompt for a customer support assistant using business context and tone instructions.
+ *
+ * @param businessContext - Textual business information to include in the prompt (about the business, offerings, policies, etc.)
+ * @param toneInstructions - Guidance on tone, length, and style for responses
+ * @param additionalContext - Optional extra context to append to the prompt
+ * @returns The full system prompt string to be used as the assistant's system message
  */
 function buildSupportPrompt(
   businessContext: string,
@@ -341,7 +371,14 @@ GUIDELINES:
 }
 
 /**
- * Build appointment scheduling system prompt
+ * Constructs a system prompt for an appointment-scheduling assistant that combines business info, available services, tone instructions, and an optional current booking state.
+ *
+ * @param businessContext - Text describing the business used in the "ABOUT THE BUSINESS" section
+ * @param servicesInfo - Formatted list of services used in the "SERVICES OFFERED" section
+ * @param toneInstructions - Tone and style guidance inserted into the assistant's guidelines
+ * @param appointmentContext - Optional current booking details (service, preferredDate, preferredTime, contactInfo) used to populate "CURRENT BOOKING STATE"
+ * @param additionalContext - Optional extra contextual notes included in an "ADDITIONAL CONTEXT" section
+ * @returns A complete system prompt string tailored for appointment booking conversations
  */
 function buildAppointmentPrompt(
   businessContext: string,
@@ -401,7 +438,12 @@ GUIDELINES:
 }
 
 /**
- * Build general assistant system prompt
+ * Constructs a system prompt for a general business assistant.
+ *
+ * @param businessContext - Text describing the business (e.g., description, offerings, policies) used to ground assistant responses
+ * @param toneInstructions - Guidance on tone, response length, and style to apply in replies
+ * @param additionalContext - Optional extra context (e.g., page-specific details or recent state) to include in the prompt
+ * @returns The full system prompt string to be used as the assistant's system message
  */
 function buildGeneralPrompt(
   businessContext: string,
@@ -440,7 +482,13 @@ export type GenerateResponseOptions = {
 };
 
 /**
- * Generate AI response based on intent and context
+ * Constructs a contextual system prompt from business data, conversation state, intent, and configuration, then generates and returns an AI reply.
+ *
+ * The prompt selection prioritizes appointment, sales, support, or general flows based on the provided intent and enabled features in `config`. The chosen prompt is augmented with platform context before invoking the text-generation backend. When applicable (e.g., sales flow), the function returns suggested context updates such as `salesContext` and an `intentHistory`.
+ *
+ * @param options - Generation options including organizationId, conversation config, incoming message, platform, and optional conversationId, intent, and conversationState
+ * @returns An object with `response` containing the generated reply text, and optional `updatedContext` with context updates (for example, `salesContext` and `intentHistory`)
+ * @throws Rethrows any error produced by the underlying text generation call
  */
 export async function generateAiResponse(
   options: GenerateResponseOptions
@@ -544,7 +592,12 @@ export async function generateAiResponse(
 // =============================================================================
 
 /**
- * Check if message should trigger human handoff
+ * Determine whether a user message should be escalated to a human agent.
+ *
+ * @param message - The user's message text to evaluate for handoff triggers.
+ * @param intent - Detected intent (category, sentiment, urgency) used to decide escalation.
+ * @param config - Conversation configuration containing `handoffKeywords` and `supportConfig.escalationSentiment`.
+ * @returns `shouldHandoff` is `true` if escalation is required; `reason` is a short code explaining the trigger (`user_request`, `keyword: <kw>`, or `negative_sentiment_urgent`).
  */
 export function shouldTriggerHandoff(
   message: string,
@@ -585,7 +638,11 @@ export function shouldTriggerHandoff(
 // =============================================================================
 
 /**
- * Check custom response rules for a match
+ * Finds the first active response rule whose trigger appears in the message.
+ *
+ * @param message - Incoming message text to evaluate against rule triggers
+ * @param rules - Optional list of configured response rules (each with triggers, response, priority, and isActive)
+ * @returns The `response` text of the highest-priority active rule that matches the message, or `null` if no rule matches
  */
 export function checkResponseRules(
   message: string,
@@ -618,7 +675,15 @@ export function checkResponseRules(
 // =============================================================================
 
 /**
- * Check if current time is within business hours
+ * Determine whether the current time falls within configured business hours.
+ *
+ * Evaluates the provided business hours configuration to decide if the current local time (in the configured timezone) is inside today's scheduled opening window.
+ *
+ * @param businessHours - Configuration object with the following relevant fields:
+ *   - `enabled`: when `false` or omitted, business hours are ignored and the function returns `true`.
+ *   - `timezone`: IANA timezone string used to evaluate the current time; defaults to `"UTC"` when not provided.
+ *   - `schedule`: array of daily schedules where each item contains `day` (0 = Sunday through 6 = Saturday), and `startTime` / `endTime` formatted as `"HH:mm"`.
+ * @returns `true` if business hours are disabled or the current time (in the configured timezone) is between today's `startTime` and `endTime`, `false` otherwise.
  */
 export function isWithinBusinessHours(
   businessHours?: MetaConversationConfigRow["businessHours"]
@@ -669,7 +734,15 @@ export function isWithinBusinessHours(
 // =============================================================================
 
 /**
- * Test AI response generation (for preview in settings)
+ * Generate a preview AI response using the given configuration and optional forced intent.
+ *
+ * If `testIntent` is provided, that intent will be used instead of performing intent detection.
+ *
+ * @param organizationId - Organization identifier used to build business context
+ * @param config - Partial conversation configuration to apply for the test (overrides defaults)
+ * @param testMessage - The user message to generate a response for
+ * @param testIntent - Optional forced intent category to use ("sales" | "support" | "appointment" | "general")
+ * @returns The generated response text, or a fallback error message if generation fails
  */
 export async function testAiResponse(
   organizationId: string,

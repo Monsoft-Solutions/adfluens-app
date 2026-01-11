@@ -109,6 +109,12 @@ const PRIORITY_CONFIG: Record<string, { label: string; color: string }> = {
   urgent: { label: "Urgent", color: "bg-red-500/10 text-red-500" },
 };
 
+/**
+ * Produce a human-friendly relative time label for a given date.
+ *
+ * @param date - A Date object or an ISO/string parseable date. If `null` or `undefined`, an empty string is returned.
+ * @returns A relative time string such as `"Just now"`, `"5m ago"`, `"2h ago"`, `"3d ago"`, or a locale-formatted date for older timestamps; returns an empty string when `date` is `null` or `undefined`.
+ */
 function formatRelativeTime(date: Date | string | null | undefined): string {
   if (!date) return "";
   const now = new Date();
@@ -125,6 +131,13 @@ function formatRelativeTime(date: Date | string | null | undefined): string {
   return messageDate.toLocaleDateString();
 }
 
+/**
+ * Renders the Team Inbox interface for viewing, filtering, and acting on conversations that require human attention.
+ *
+ * Displays inbox statistics, provides status and priority filters, lists inbox items with per-item actions (change status, change priority, return to bot), and opens a conversation detail dialog with a message preview and composer.
+ *
+ * @returns The MetaInbox React element.
+ */
 export function MetaInbox() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();

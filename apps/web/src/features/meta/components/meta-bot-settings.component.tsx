@@ -94,6 +94,16 @@ const TIMEZONES = [
   "UTC",
 ];
 
+/**
+ * Render the Meta Bot Settings UI for configuring an AI bot for a given page.
+ *
+ * The component fetches the page's current bot settings, initializes local editable state,
+ * and provides controls to update capabilities, context sources, personality, business hours,
+ * human handoff rules, and a test panel for previewing responses.
+ *
+ * @param pageId - Identifier of the page whose bot settings are shown and edited
+ * @returns The React element containing the full settings UI and controls
+ */
 export function MetaBotSettings({ pageId }: MetaBotSettingsProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();

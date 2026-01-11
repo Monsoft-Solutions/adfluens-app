@@ -8,7 +8,15 @@ import { db, eq, and, notificationTable, metaLeadTable } from "@repo/db";
 import { env } from "@repo/env";
 
 /**
- * Create an in-app notification
+ * Create an in-app notification record for an organization.
+ *
+ * @param organizationId - The organization identifier to scope the notification
+ * @param userId - Optional user identifier for a specific recipient
+ * @param type - A short string identifying the notification type (e.g., "meta_lead")
+ * @param title - Notification title shown in the UI
+ * @param body - Notification body text shown in the UI
+ * @param payload - Arbitrary JSON data attached to the notification for client use
+ * @param actionUrl - Optional URL that the client should navigate to when the notification is acted on
  */
 async function createNotification(input: {
   organizationId: string;
@@ -31,7 +39,11 @@ async function createNotification(input: {
 }
 
 /**
- * Send email notification (placeholder - implement with your email provider)
+ * Send an email notification; current implementation logs the intended recipient and subject.
+ *
+ * @param to - Recipient email address
+ * @param subject - Email subject line
+ * @param _htmlBody - HTML content of the email (currently unused)
  */
 async function _sendEmailNotification(
   to: string,
@@ -54,7 +66,16 @@ async function _sendEmailNotification(
 }
 
 /**
- * Notify about a new lead from Meta Ads
+ * Create an in-app notification for a new Meta lead, mark the lead as notified, and prepare an email notification (email is prepared but not sent).
+ *
+ * @param input - Properties describing the organization, lead, and source page
+ * @param input.organizationId - ID of the organization that should receive the notification
+ * @param input.leadId - ID of the Meta lead
+ * @param input.pageId - ID of the Meta page where the lead originated
+ * @param input.pageName - Display name of the Meta page
+ * @param input.leadName - Optional display name of the lead
+ * @param input.leadEmail - Optional email address of the lead
+ * @param input.formName - Optional name of the form that generated the lead
  */
 export async function notifyNewLead(input: {
   organizationId: string;
@@ -102,7 +123,15 @@ export async function notifyNewLead(input: {
 }
 
 /**
- * Notify about a conversation handoff request
+ * Create an in-app notification for a conversation handoff request.
+ *
+ * @param input - Handoff details
+ * @param input.organizationId - Organization that should receive the notification
+ * @param input.conversationId - ID of the conversation requiring human support
+ * @param input.pageId - Meta page ID where the conversation occurred
+ * @param input.pageName - Human-readable name of the page
+ * @param input.platform - Platform the conversation originated from (`"messenger"` or `"instagram"`)
+ * @param input.reason - Short description of why a handoff was requested
  */
 export async function notifyHandoffRequest(input: {
   organizationId: string;
@@ -136,7 +165,10 @@ export async function notifyHandoffRequest(input: {
 }
 
 /**
- * Build HTML email for new lead notification
+ * Generates the HTML body for a new-lead notification email.
+ *
+ * @param input - Object containing optional leadName, leadEmail, formName, and required pageName used to populate the template
+ * @returns The complete HTML string for the email, including a "View in Dashboard" link
  */
 function buildLeadEmailHtml(input: {
   leadName?: string;
@@ -192,7 +224,10 @@ function buildLeadEmailHtml(input: {
 }
 
 /**
- * Get unread notification count for organization
+ * Gets the number of unread notifications for an organization.
+ *
+ * @param organizationId - ID of the organization to count notifications for
+ * @returns The number of notifications where `isRead` is `false`
  */
 export async function getUnreadNotificationCount(
   organizationId: string
@@ -206,8 +241,13 @@ export async function getUnreadNotificationCount(
 }
 
 /**
- * Get notifications for organization
- */
+ * Retrieve notifications for an organization, optionally limiting the number returned and filtering to unread items.
+ *
+ * @param organizationId - The organization identifier to fetch notifications for.
+ * @param options - Optional controls for the query.
+ * @param options.limit - Maximum number of notifications to return; defaults to 50.
+ * @param options.unreadOnly - If true, only notifications that have not been read are returned.
+ * @returns An array of notification records ordered by `createdAt` descending (newest first).
 export async function getNotifications(
   organizationId: string,
   options?: { limit?: number; unreadOnly?: boolean }
@@ -226,7 +266,10 @@ export async function getNotifications(
 }
 
 /**
- * Mark notification as read
+ * Mark a specific notification for an organization as read.
+ *
+ * @param notificationId - The ID of the notification to mark as read
+ * @param organizationId - The organization ID used to scope the update
  */
 export async function markNotificationAsRead(
   notificationId: string,

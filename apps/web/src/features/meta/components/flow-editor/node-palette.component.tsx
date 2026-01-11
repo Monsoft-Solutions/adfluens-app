@@ -137,7 +137,12 @@ type NodePaletteProps = {
 
 // ============================================================================
 // Component
-// ============================================================================
+/**
+ * Render the Node Palette panel containing draggable node templates grouped by category.
+ *
+ * @param onDragStart - Callback invoked when a palette item drag starts; receives the drag event and the `FlowNodeType` of the item being dragged.
+ * @returns The React element for the node palette with Messages, Logic, and Actions sections populated by draggable items.
+ */
 
 export function NodePalette({ onDragStart }: NodePaletteProps) {
   const messageNodes = PALETTE_ITEMS.filter(
@@ -210,7 +215,13 @@ export function NodePalette({ onDragStart }: NodePaletteProps) {
 
 // ============================================================================
 // Palette Item
-// ============================================================================
+/**
+ * Render a draggable palette card for a single node template.
+ *
+ * @param item - Palette item metadata (label, description, icon, category, and type) used for display and to identify the node being dragged
+ * @param onDragStart - Callback invoked when dragging begins; receives the drag event and the item's node type
+ * @returns A React element representing the draggable palette item
+ */
 
 function PaletteItem({
   item,

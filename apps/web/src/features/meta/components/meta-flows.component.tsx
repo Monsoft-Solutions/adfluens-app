@@ -112,7 +112,16 @@ type MetaFlowsProps = {
 
 // ============================================================================
 // Component
-// ============================================================================
+/**
+ * Render the conversation flows manager for a specific page.
+ *
+ * Provides a UI to list, create, edit, toggle, and delete conversation flows;
+ * create quick response flows from keywords; browse and apply flow templates;
+ * and open a full visual FlowEditor for custom or templated flows.
+ *
+ * @param pageId - The page identifier used to fetch and scope flows and templates
+ * @returns The React element for the flows management interface
+ */
 
 export function MetaFlows({ pageId }: MetaFlowsProps) {
   const trpc = useTRPC();

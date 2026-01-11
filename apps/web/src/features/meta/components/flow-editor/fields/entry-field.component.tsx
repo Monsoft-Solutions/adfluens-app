@@ -1,7 +1,7 @@
 /**
- * Entry Node Fields
+ * Renders informational fields for entry nodes in the properties panel.
  *
- * Properties panel fields for entry nodes (informational only).
+ * Displays a short explanatory message and a note that trigger keywords are configured in the toolbar.
  */
 
 export function EntryNodeFields() {

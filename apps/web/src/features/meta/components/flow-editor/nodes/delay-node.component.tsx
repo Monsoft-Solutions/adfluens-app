@@ -14,6 +14,14 @@ import {
   NODE_STYLES,
 } from "./node.utils";
 
+/**
+ * Render a flow editor node that represents a pause/delay and displays its configured duration.
+ *
+ * @param id - The node's unique identifier
+ * @param data - Node payload containing the delay configuration and optional display name
+ * @param selected - Whether the node is currently selected in the editor
+ * @returns The JSX element for the delay (wait) node, showing the duration and explanatory text
+ */
 export function DelayNode({ id, data, selected }: FlowNodeProps) {
   const { delayAmount, delayUnit } = getDelayConfig(data);
 

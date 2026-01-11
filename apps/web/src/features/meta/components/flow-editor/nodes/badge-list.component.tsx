@@ -14,6 +14,15 @@ type BadgeListProps = {
   overflowVariant?: "secondary" | "outline";
 };
 
+/**
+ * Render a compact list of badges for the provided items and show a single overflow badge when there are more items than the limit.
+ *
+ * @param items - Array of strings to display as individual badges
+ * @param limit - Maximum number of visible badges before showing an overflow badge (default: 3)
+ * @param primaryVariant - Variant to use for visible badges (default: "outline")
+ * @param overflowVariant - Variant to use for the overflow badge (default: "secondary")
+ * @returns The badge list element, or `null` when `items` is empty
+ */
 export function BadgeList({
   items,
   limit = 3,

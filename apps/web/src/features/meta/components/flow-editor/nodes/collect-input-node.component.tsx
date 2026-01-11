@@ -15,6 +15,14 @@ import {
   NODE_STYLES,
 } from "./node.utils";
 
+/**
+ * Render a flow editor node that displays a collect-input prompt and an optional "Save to" badge.
+ *
+ * @param id - The node's unique identifier
+ * @param data - Node payload containing configuration and display name
+ * @param selected - Whether the node is currently selected in the editor
+ * @returns The JSX element for the Collect Input node used in the flow editor
+ */
 export function CollectInputNode({ id, data, selected }: FlowNodeProps) {
   const { prompt, inputName } = getCollectInputConfig(data);
 

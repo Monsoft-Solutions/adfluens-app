@@ -13,6 +13,13 @@ import {
   NODE_STYLES,
 } from "./node.utils";
 
+/**
+ * Render a flow-editor node representing an AI-generated response.
+ *
+ * The node is configured with a Sparkles icon, themed colors, a delete handler derived from the node data and id, and a short description indicating that AI will generate a contextual response.
+ *
+ * @returns A JSX element for an "AI Response" BaseNode configured with icon, colors, title, delete handler, and descriptive text.
+ */
 export function AiResponseNode({ id, data, selected }: FlowNodeProps) {
   return (
     <BaseNode

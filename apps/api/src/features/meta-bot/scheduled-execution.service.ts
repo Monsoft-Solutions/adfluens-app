@@ -44,7 +44,13 @@ export type ScheduleExecutionParams = {
 // =============================================================================
 
 /**
- * Calculate delay in milliseconds
+ * Convert a time duration into milliseconds.
+ *
+ * Treats unrecognized units as minutes.
+ *
+ * @param amount - The quantity of time to convert
+ * @param unit - Unit of time: "minutes", "hours", or "days"
+ * @returns The duration in milliseconds
  */
 function calculateDelayMs(
   amount: number,
@@ -63,7 +69,11 @@ function calculateDelayMs(
 }
 
 /**
- * Schedule a flow node execution after a delay
+ * Create a pending scheduled execution for a flow node to run after the specified delay.
+ *
+ * @param params - Scheduling parameters (organization, page, conversation, flow, target node, delay amount/unit, and optional conversation context)
+ * @returns The ID of the newly created scheduled execution
+ * @throws Error if the database insert fails and the execution cannot be scheduled
  */
 export async function scheduleFlowExecution(
   params: ScheduleExecutionParams
@@ -97,8 +107,10 @@ export async function scheduleFlowExecution(
 }
 
 /**
- * Cancel all pending scheduled executions for a conversation
- * Called when a user sends a new message during a delay
+ * Marks all pending scheduled executions for the given conversation as "cancelled".
+ *
+ * @param conversationId - The ID of the conversation whose pending executions should be cancelled
+ * @returns The number of executions that were marked as cancelled
  */
 export async function cancelPendingExecutions(
   conversationId: string
@@ -124,8 +136,10 @@ export async function cancelPendingExecutions(
 }
 
 /**
- * Cancel all pending scheduled executions for a flow
- * Called when a flow is deactivated
+ * Mark all pending scheduled executions for a flow as cancelled.
+ *
+ * @param flowId - ID of the flow whose pending scheduled executions should be cancelled
+ * @returns The number of executions that were cancelled
  */
 export async function cancelPendingExecutionsForFlow(
   flowId: string
@@ -155,8 +169,9 @@ export async function cancelPendingExecutionsForFlow(
 // =============================================================================
 
 /**
- * Process all due scheduled executions
- * Called by cron job every minute
+ * Processes scheduled executions that are due.
+ *
+ * Called periodically (for example, every minute) by a scheduler. Finds pending executions whose scheduled time is <= now and delegates each to processExecution; logs progress and records individual execution failures without aborting the batch.
  */
 export async function processScheduledExecutions(): Promise<void> {
   const now = new Date();
@@ -193,7 +208,9 @@ export async function processScheduledExecutions(): Promise<void> {
 }
 
 /**
- * Process a single scheduled execution
+ * Process a scheduled flow execution: validate and restore state, run the target node, update execution status, and deliver any resulting delayed message.
+ *
+ * Loads the scheduled execution, verifies the flow and conversation are still valid for execution, restores the saved conversation context, executes the scheduled node, and updates the execution record to `processing`, then to `completed`, `failed`, or `cancelled` as appropriate. If the node produces a response, that response is sent after execution.
  */
 async function processExecution(executionId: string): Promise<void> {
   // Mark as processing
@@ -318,7 +335,13 @@ async function processExecution(executionId: string): Promise<void> {
 }
 
 /**
- * Execute a scheduled node and return response
+ * Execute the given flow node's actions, update conversation and flow state, schedule any downstream delays, and collect messages to send.
+ *
+ * @param node - The flow node whose actions will be executed.
+ * @param state - Current conversation state; this function updates the state's context and bot mode as needed.
+ * @param flow - Parent flow containing nodes and metadata; used to resolve next nodes and update completion count.
+ * @param execution - Identifiers (organizationId, metaPageId, conversationId, flowId) used when scheduling further executions or sending responses.
+ * @returns A concatenated message string if one or more messages were produced, or `null` if no message should be sent.
  */
 async function executeScheduledNode(
   node: MetaBotFlowRow["nodes"][0],
@@ -438,7 +461,10 @@ async function executeScheduledNode(
 }
 
 /**
- * Send the delayed response to the user
+ * Send a scheduled message to the conversation using the page's credentials.
+ *
+ * @param execution - Execution context containing `conversationId`, `metaPageId`, and `organizationId`; used to locate the page and conversation for delivery
+ * @param message - The text message to deliver to the conversation participant
  */
 async function sendDelayedResponse(
   execution: {
@@ -493,7 +519,13 @@ async function sendDelayedResponse(
 }
 
 /**
- * Update execution status
+ * Set the status and related metadata for a scheduled execution.
+ *
+ * Updates the execution record's `status`, `lastError` (if provided), and `processedAt` timestamp.
+ *
+ * @param executionId - The ID of the scheduled execution to update
+ * @param status - The new status to set (`completed`, `failed`, or `cancelled`)
+ * @param error - Optional error message to record when the status is `failed`
  */
 async function markExecutionStatus(
   executionId: string,

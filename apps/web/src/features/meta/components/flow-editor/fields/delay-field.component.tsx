@@ -16,6 +16,17 @@ import {
 import type { NodeFieldProps } from "./field.types";
 import { getDelayConfig } from "../nodes/node.utils";
 
+/**
+ * Render form controls for configuring a delay action on a flow node.
+ *
+ * Renders an input for the delay amount (min 1), a unit selector (minutes, hours, days),
+ * and updates the parent via `onUpdate` with an action of type `"delay"` containing
+ * the selected `delayAmount` and `delayUnit`.
+ *
+ * @param data - Node data from which the initial delay configuration is derived
+ * @param onUpdate - Callback invoked with an update payload containing the delay action
+ * @returns A React element containing the delay configuration UI
+ */
 export function DelayNodeFields({ data, onUpdate }: NodeFieldProps) {
   const { delayAmount, delayUnit } = getDelayConfig(data);
 

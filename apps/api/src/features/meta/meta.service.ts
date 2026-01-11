@@ -84,7 +84,12 @@ setInterval(
 // ============================================================================
 
 /**
- * Generate OAuth URL for Meta connection
+ * Builds a Meta OAuth authorization URL to initiate a connection for an organization and user.
+ *
+ * @param organizationId - The organization identifier that will be encoded in the OAuth state
+ * @param userId - The user identifier that will be encoded in the OAuth state
+ * @param redirectPath - Optional path to redirect the user to after completing OAuth (defaults to `/settings`)
+ * @returns The Meta authorization URL with an encoded state payload for the given organization and user
  */
 export function generateMetaOAuthUrl(
   organizationId: string,
@@ -105,7 +110,13 @@ export function generateMetaOAuthUrl(
 }
 
 /**
- * Handle OAuth callback - exchange code for tokens and create pending connection
+ * Process the Meta OAuth callback, exchange the authorization code for a long-lived access token, fetch the Meta user, and register a pending connection.
+ *
+ * This stores a pending connection entry (including tokens, Meta user info, scopes, and timestamps) in the in-memory pendingConnections map.
+ *
+ * @param code - The authorization code returned by Meta
+ * @param state - Base64-encoded JSON containing { organizationId, userId, redirectPath }
+ * @returns An object with the generated `setupCode` for completing the connection and the original `redirectPath`
  */
 export async function handleOAuthCallback(
   code: string,
@@ -161,7 +172,13 @@ export async function handleOAuthCallback(
 }
 
 /**
- * Get pending connection by setup code
+ * Retrieve a pending Meta connection by its setup code and validate the requesting user.
+ *
+ * @param setupCode - The temporary setup code created during the OAuth callback
+ * @param userId - The user id that must match the pending connection's owner
+ * @returns The pending connection entry associated with `setupCode`
+ * @throws Error if the setup code is not found or has expired
+ * @throws Error if `userId` does not match the pending connection's owner
  */
 export function getPendingConnection(setupCode: string, userId: string) {
   const pending = pendingConnections.get(setupCode);
@@ -175,7 +192,12 @@ export function getPendingConnection(setupCode: string, userId: string) {
 }
 
 /**
- * List available pages from pending connection
+ * Lists pages available to the pending Meta connection.
+ *
+ * @param setupCode - The pending connection setup code
+ * @param userId - The ID of the user who initiated the connection
+ * @returns An array of page objects retrieved from Meta for the pending connection
+ * @throws If the pending connection is not found or does not belong to the given user
  */
 export async function listAvailablePages(setupCode: string, userId: string) {
   const pending = getPendingConnection(setupCode, userId);
@@ -183,7 +205,14 @@ export async function listAvailablePages(setupCode: string, userId: string) {
 }
 
 /**
- * Complete connection by selecting pages
+ * Finalize a Meta OAuth setup by creating or updating the organization's Meta connection and persisting the selected pages.
+ *
+ * This will create a new connection or update an existing one with the pending token and meta user info, add/update the provided pages (fetching page details and attempting webhook subscription), remove any previously selected pages that are no longer included, and clear the pending connection entry.
+ *
+ * @param setupCode - The setup code that identifies the pending connection to complete
+ * @param userId - The ID of the user completing the connection; used to validate ownership of the pending connection
+ * @param selectedPages - Array of pages to attach to the connection; each item must include `pageId`, `pageName`, and `pageAccessToken`, and may include Instagram account details
+ * @returns The ID of the created or updated Meta connection
  */
 export async function completeConnection(
   setupCode: string,
@@ -343,7 +372,9 @@ export async function completeConnection(
 // ============================================================================
 
 /**
- * Get Meta connection for organization
+ * Retrieve the Meta connection record for an organization.
+ *
+ * @returns The Meta connection record for the organization, or `undefined` if none exists.
  */
 export async function getConnection(organizationId: string) {
   return db.query.metaConnectionTable.findFirst({
@@ -352,7 +383,9 @@ export async function getConnection(organizationId: string) {
 }
 
 /**
- * Get pages for organization
+ * Retrieve all Meta pages associated with the given organization.
+ *
+ * @returns An array of meta page records for the organization's connection, ordered by `createdAt` descending; an empty array if the organization has no connection.
  */
 export async function getPages(organizationId: string) {
   const connection = await getConnection(organizationId);
@@ -365,7 +398,9 @@ export async function getPages(organizationId: string) {
 }
 
 /**
- * Get a specific page
+ * Retrieve the Meta page with the given id that belongs to the specified organization.
+ *
+ * @returns The page record if found, otherwise `null`.
  */
 export async function getPage(pageId: string, organizationId: string) {
   return db.query.metaPageTable.findFirst({
@@ -377,7 +412,11 @@ export async function getPage(pageId: string, organizationId: string) {
 }
 
 /**
- * Disconnect Meta integration
+ * Remove the Meta connection for an organization.
+ *
+ * Removes the organization's Meta connection record; related pages, leads, and conversations are also deleted via database cascade.
+ *
+ * @param organizationId - The organization id whose Meta connection should be removed
  */
 export async function disconnect(organizationId: string): Promise<void> {
   const connection = await getConnection(organizationId);
@@ -413,7 +452,13 @@ export async function updatePage(
 // ============================================================================
 
 /**
- * Sync leads from Meta for a page
+ * Synchronizes lead entries from Meta for a specific page into the local database.
+ *
+ * This inserts any new leads found on the page's lead forms, updates the page's
+ * lastSyncedAt timestamp, and returns counts of inserted leads and per-form errors.
+ *
+ * @returns An object with `synced` — the number of new leads inserted, and `errors` — the number of form-level failures encountered while syncing.
+ * @throws If the page cannot be found, or if a non-recoverable error occurs during synchronization.
  */
 export async function syncPageLeads(
   pageId: string,
@@ -519,7 +564,13 @@ export async function syncPageLeads(
 }
 
 /**
- * Sync conversations from Meta for a page (both Messenger and Instagram)
+ * Synchronizes Messenger and Instagram conversations for a Meta page.
+ *
+ * @param pageId - The internal meta page id to sync conversations for
+ * @param organizationId - The organization id that owns the page
+ * @param platform - Optional platform filter: "messenger" to sync only Messenger, "instagram" to sync only Instagram
+ * @returns An object with totals: `synced` (total conversations added), `errors` (total errors), `messenger` (Messenger conversations added), `instagram` (Instagram conversations added), and optional `instagramError` with a user-facing message when Instagram fetch fails
+ * @throws If the page cannot be found for the given organization or if an unrecoverable error occurs during sync
  */
 export async function syncPageConversations(
   pageId: string,
@@ -546,7 +597,17 @@ export async function syncPageConversations(
   let instagramSynced = 0;
   let instagramErrorMsg: string | undefined;
 
-  // Helper function to sync conversations for a platform
+  /**
+   * Syncs a batch of conversations for the specified platform and persists new conversation records.
+   *
+   * Processes each conversation item, creates a conversation record for the first participant that is not the page or account, attempts to fetch recent messages for context, and inserts the conversation into the database if it does not already exist.
+   *
+   * @param conversations - Array of conversation objects returned by the Meta API. Each item should include `id`, `updated_time`, `participants.data` (array of participant objects with `id`, optional `name`/`username`), and optionally `messages.data` (array of message objects with `id`, optional `message`, and `created_time`).
+   * @param targetPlatform - The platform these conversations belong to: `"messenger"` or `"instagram"`.
+   * @param accountId - The Meta account ID used to identify and exclude page/account participants when selecting the conversation participant.
+   * @param pageData - The page record (must include `id`, `pageId`, `pageAccessToken`, and `organizationId`) used for organization context and API calls.
+   * @returns An object with `synced` as the number of conversations successfully inserted and `errors` as the number of conversations that failed to sync.
+   */
   async function syncPlatformConversations(
     conversations: Array<{
       id: string;
@@ -752,7 +813,11 @@ export async function syncPageConversations(
 // ============================================================================
 
 /**
- * Check if token needs refresh and refresh if necessary
+ * Ensure the organization's Meta access token is valid, refreshing and persisting a new long-lived token if it is expired or within the refresh buffer window.
+ *
+ * @param organizationId - The organization id whose Meta connection token should be validated
+ * @returns The valid Meta access token
+ * @throws If no Meta connection exists for the organization, the connection is in an error state, or a token refresh fails
  */
 export async function ensureValidToken(
   organizationId: string
@@ -816,7 +881,10 @@ export async function ensureValidToken(
 }
 
 /**
- * Get valid page access token
+ * Retrieve the page's active access token for the specified organization.
+ *
+ * @returns The page's access token.
+ * @throws Error if the page is not found or is in an error state.
  */
 export async function getValidPageToken(
   pageId: string,
@@ -840,7 +908,13 @@ export async function getValidPageToken(
 // ============================================================================
 
 /**
- * Process a lead webhook event
+ * Handle an incoming lead webhook and persist the lead if it is new.
+ *
+ * @param pageId - The Meta page ID that received the lead
+ * @param leadgenId - The Meta lead generation ID for the lead
+ * @param formId - The lead form ID (may be used to fetch form metadata)
+ * @param createdTime - Lead creation time as a Unix timestamp in seconds
+ * @returns The inserted `MetaLeadInsert` record, or `null` if the lead was not processed (page not found, already exists, or an error occurred)
  */
 export async function processLeadWebhook(
   pageId: string,
@@ -933,7 +1007,15 @@ export async function processLeadWebhook(
 }
 
 /**
- * Get leads for organization
+ * Fetches leads for an organization, optionally filtered by page, status, and limited in count.
+ *
+ * @param organizationId - The organization to query leads for
+ * @param options - Optional filters and pagination controls
+ * @param options.pageId - If provided, only return leads for this page
+ * @param options.status - If provided, only return leads with this status
+ * @param options.limit - Maximum number of leads to return (default: 20)
+ * @param options.cursor - Optional pagination cursor
+ * @returns The list of matching lead records ordered by `leadCreatedAt` descending
  */
 export async function getLeads(
   organizationId: string,
@@ -962,7 +1044,12 @@ export async function getLeads(
 }
 
 /**
- * Update lead status
+ * Update the status and optional notes for a Meta lead belonging to an organization.
+ *
+ * @param leadId - The ID of the lead to update
+ * @param organizationId - The organization that owns the lead
+ * @param status - The new lead status
+ * @param notes - Optional notes to store with the lead
  */
 export async function updateLeadStatus(
   leadId: string,
@@ -991,7 +1078,14 @@ export async function updateLeadStatus(
 // ============================================================================
 
 /**
- * Get or create conversation for a message
+ * Retrieve an existing conversation for the given page and thread, or create a new conversation record if none exists.
+ *
+ * @param pageId - ID of the Meta page the conversation belongs to
+ * @param organizationId - ID of the organization owning the conversation
+ * @param platform - Platform of the conversation (`"messenger"` or `"instagram"`)
+ * @param threadId - Thread identifier from the external platform
+ * @param participantId - External participant identifier for the conversation
+ * @returns The ID of the existing or newly created conversation
  */
 export async function getOrCreateConversation(
   pageId: string,
@@ -1055,7 +1149,13 @@ export async function getOrCreateConversation(
 }
 
 /**
- * Update conversation with new message
+ * Append a message to a conversation's recent messages and update its preview, timestamp, and count.
+ *
+ * @param conversationId - The conversation's id to update
+ * @param message - The message to add
+ * @param message.text - Optional message text
+ * @param message.isFromPage - `true` if the message was sent by the page, `false` if sent by the user
+ * @param message.timestamp - Message timestamp as a string parseable by `Date` (e.g., ISO 8601)
  */
 export async function updateConversationWithMessage(
   conversationId: string,
@@ -1099,7 +1199,15 @@ export async function updateConversationWithMessage(
 }
 
 /**
- * Send a message in a conversation
+ * Send a text message to a conversation participant and record the outgoing message.
+ *
+ * Sends the message via the conversation's Meta page access token and appends the outgoing
+ * message to the conversation's recent messages and metadata.
+ *
+ * @param conversationId - The id of the conversation to send the message in
+ * @param organizationId - The organization id used to validate conversation ownership
+ * @param text - The message text to send
+ * @throws If the conversation or its page cannot be found
  */
 export async function sendConversationMessage(
   conversationId: string,
@@ -1142,7 +1250,17 @@ export async function sendConversationMessage(
 }
 
 /**
- * Get conversations for organization
+ * Retrieve conversations for an organization with optional filters.
+ *
+ * Supports filtering by page ID, platform, whether the conversation needs attention, and result limit.
+ *
+ * @param organizationId - The organization identifier to scope the query
+ * @param options - Optional query filters
+ * @param options.pageId - If provided, only return conversations for this page
+ * @param options.platform - If provided, only return conversations for this platform (`"messenger"` or `"instagram"`)
+ * @param options.needsAttention - If provided, filters conversations by their needsAttention flag
+ * @param options.limit - Maximum number of conversations to return (defaults to 20)
+ * @returns An array of conversation records matching the filters, ordered by `lastMessageAt` descending (newest first)
  */
 export async function getConversations(
   organizationId: string,
@@ -1181,7 +1299,11 @@ export async function getConversations(
 // ============================================================================
 
 /**
- * Get conversation config for a page
+ * Retrieve the conversation AI/configuration record for a specific page within an organization.
+ *
+ * @param pageId - The Meta page ID to fetch configuration for
+ * @param organizationId - The organization ID that owns the page
+ * @returns The conversation configuration record for the specified page and organization, or `null` if none exists
  */
 export async function getConversationConfig(
   pageId: string,
@@ -1196,7 +1318,20 @@ export async function getConversationConfig(
 }
 
 /**
- * Update conversation config
+ * Create or update the conversation AI/configuration for a page within an organization.
+ *
+ * Updates the existing per-page configuration if present; otherwise inserts a new config record.
+ *
+ * @param config - Partial configuration values to set. Supported keys:
+ *   - `aiEnabled`: whether AI features are enabled
+ *   - `aiPersonality`: personality settings (`tone`, `responseLength`, `useEmojis`, `customInstructions`)
+ *   - `aiTemperature`: model temperature or similar randomness control
+ *   - `welcomeMessage`, `awayMessage`: automatic message templates
+ *   - `businessHours`: `{ enabled, timezone, schedule: [{ day, startTime, endTime }] }`
+ *   - `handoffKeywords`: keywords that trigger human handoff
+ *   - `handoffNotificationEmail`: email to notify on handoff events
+ *   - `useOrganizationContext`, `useWebsiteContext`: flags controlling context sources
+ *   - `additionalContext`: free-form context to include with AI prompts
  */
 export async function updateConversationConfig(
   pageId: string,
