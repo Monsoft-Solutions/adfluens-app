@@ -48,13 +48,16 @@ export function AiNode({ id, data, selected }: FlowNodeProps) {
             <span className="font-mono">{`{{${config.outputVariable}}}`}</span>
           </div>
         )}
-        {operation === "extract_data" && config.extractionSchema?.length && (
-          <div className="text-xs text-muted-foreground">
-            Fields: {config.extractionSchema.map((f) => f.name).join(", ")}
-          </div>
-        )}
+        {operation === "extract_data" &&
+          config.extractionSchema &&
+          config.extractionSchema.length > 0 && (
+            <div className="text-xs text-muted-foreground">
+              Fields: {config.extractionSchema.map((f) => f.name).join(", ")}
+            </div>
+          )}
         {operation === "classify_intent" &&
-          config.classificationCategories?.length && (
+          config.classificationCategories &&
+          config.classificationCategories.length > 0 && (
             <div className="text-xs text-muted-foreground">
               Categories:{" "}
               {config.classificationCategories.slice(0, 3).join(", ")}
