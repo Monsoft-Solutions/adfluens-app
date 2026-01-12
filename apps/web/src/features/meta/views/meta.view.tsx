@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
-import { FileText, MessageSquare, Users, Inbox, Bot, Zap } from "lucide-react";
+import {
+  FileText,
+  MessageSquare,
+  Users,
+  Inbox,
+  Bot,
+  Zap,
+  ImageIcon,
+} from "lucide-react";
 import {
   Tabs,
   TabsContent,
@@ -26,6 +34,7 @@ import { MetaConversationsList } from "../components/meta-conversations-list.com
 import { MetaBotSettings } from "../components/meta-bot-settings.component";
 import { MetaInbox } from "../components/meta-inbox.component";
 import { MetaFlows } from "../components/meta-flows.component";
+import { ContentPostsList } from "../../content/components/content-posts-list.component";
 
 /**
  * Meta Business (Facebook/Instagram) Management View
@@ -162,10 +171,14 @@ export const MetaView: React.FC = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="pages" className="space-y-6">
-        <TabsList className="grid w-full max-w-3xl grid-cols-6">
+        <TabsList className="grid w-full max-w-4xl grid-cols-7">
           <TabsTrigger value="pages" className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
             <span className="hidden sm:inline">Pages</span>
+          </TabsTrigger>
+          <TabsTrigger value="posts" className="flex items-center gap-2">
+            <ImageIcon className="w-4 h-4" />
+            <span className="hidden sm:inline">Posts</span>
           </TabsTrigger>
           <TabsTrigger value="leads" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
@@ -194,6 +207,42 @@ export const MetaView: React.FC = () => {
 
         <TabsContent value="pages" className="space-y-6">
           <MetaPagesList pages={pages} />
+        </TabsContent>
+
+        <TabsContent value="posts" className="space-y-6">
+          {pages.length === 0 ? (
+            <div className="p-6 bg-muted/30 border border-border rounded-lg text-center">
+              <ImageIcon className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+              <p className="text-muted-foreground">
+                Connect a page first to create and publish content.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Page Selector */}
+              <div className="flex items-center gap-4">
+                <Label>Select Page:</Label>
+                <Select
+                  value={selectedPageId || pages[0]?.id || ""}
+                  onValueChange={setSelectedPageId}
+                >
+                  <SelectTrigger className="w-64">
+                    <SelectValue placeholder="Select a page" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pages.map((page) => (
+                      <SelectItem key={page.id} value={page.id}>
+                        {page.pageName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Content Posts List */}
+              <ContentPostsList pageId={selectedPageId || pages[0]?.id || ""} />
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="leads" className="space-y-6">

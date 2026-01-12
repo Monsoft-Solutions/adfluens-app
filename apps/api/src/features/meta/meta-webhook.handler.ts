@@ -66,8 +66,7 @@ export function handleVerification(req: Request, res: Response): void {
   const verifyToken = env.META_WEBHOOK_VERIFY_TOKEN;
 
   if (mode === "subscribe" && token === verifyToken) {
-    // eslint-disable-next-line no-console
-    console.log("[meta-webhook] Verification successful");
+    console.warn("[meta-webhook] Verification successful");
     res.status(200).send(challenge);
   } else {
     console.error("[meta-webhook] Verification failed");
@@ -314,8 +313,7 @@ async function processLeadgenEvent(
     created_time: number;
   }
 ): Promise<void> {
-  // eslint-disable-next-line no-console
-  console.log(`[meta-webhook] Processing lead: ${value.leadgen_id}`);
+  console.warn(`[meta-webhook] Processing lead: ${value.leadgen_id}`);
 
   const lead = await processLeadWebhook(
     value.page_id,

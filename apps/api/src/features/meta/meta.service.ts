@@ -576,7 +576,7 @@ export async function syncPageConversations(
     let platformSynced = 0;
     let platformErrors = 0;
 
-    console.log("Syncing conversations for platform:", targetPlatform);
+    console.warn("Syncing conversations for platform:", targetPlatform);
 
     for (const conv of conversations) {
       try {

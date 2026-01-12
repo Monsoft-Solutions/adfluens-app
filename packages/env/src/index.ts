@@ -42,6 +42,9 @@ export const env = createEnv({
     /** Meta webhook verification token (for lead and message webhooks) */
     META_WEBHOOK_VERIFY_TOKEN: z.string().min(1).optional(),
 
+    /** fal.ai API key for AI image generation (optional, for content creation) */
+    FAL_AI_API_KEY: z.string().min(1).optional(),
+
     /** ScrapingDog API key for web scraping */
     SCRAPINGDOG_API_KEY: z.string().min(1, "ScrapingDog API key is required"),
 

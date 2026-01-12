@@ -203,3 +203,22 @@ export type {
   NotificationRow,
   NotificationPayload,
 } from "./schema/notification.table";
+
+// Re-export Content creation tables
+export {
+  contentPostTable,
+  contentPostTableRelations,
+} from "./schema/content-post.table";
+export {
+  contentPlatformEnum,
+  contentPostStatusEnum,
+  contentMediaSourceEnum,
+} from "./schema/content-enums";
+
+// Re-export Content creation types
+export type {
+  ContentPostRow,
+  ContentPostInsert,
+  ContentPostMediaJson,
+  ContentPostPublishResultJson,
+} from "./schema/content-post.table";

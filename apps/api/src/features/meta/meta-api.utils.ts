@@ -55,8 +55,10 @@ export const META_SCOPES = [
   "pages_read_engagement",
   "pages_manage_metadata",
   "pages_messaging",
+  "pages_manage_posts", // Content publishing to Facebook Pages
   "instagram_basic",
   "instagram_manage_messages",
+  "instagram_content_publish", // Content publishing to Instagram
   "leads_retrieval",
   "ads_read",
 ].join(",");

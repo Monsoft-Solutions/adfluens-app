@@ -103,11 +103,11 @@ export const MetaConversationDetail: React.FC<MetaConversationDetailProps> = ({
     }
   };
 
-  const messages = (conversation?.recentMessages as MetaMessage[]) || [];
-
   // Check if the 7-day messaging window is still open
   // Using HUMAN_AGENT tag extends the window from 24 hours to 7 days
   const isWindowExpired = useMemo(() => {
+    const messages = (conversation?.recentMessages as MetaMessage[]) || [];
+
     if (!messages.length) return false;
 
     // Find the last message FROM the user (not from the page)
@@ -120,7 +120,9 @@ export const MetaConversationDetail: React.FC<MetaConversationDetailProps> = ({
     const sevenDays = 7 * 24 * 60 * 60 * 1000;
 
     return now - lastUserMessageTime > sevenDays;
-  }, [messages]);
+  }, [conversation?.recentMessages]);
+
+  const messages = (conversation?.recentMessages as MetaMessage[]) || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

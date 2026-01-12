@@ -49,8 +49,7 @@ async function _sendEmailNotification(
   //   html: htmlBody,
   // });
 
-  // eslint-disable-next-line no-console
-  console.log(`[notification] Email would be sent to ${to}: ${subject}`);
+  console.warn(`[notification] Email would be sent to ${to}: ${subject}`);
 }
 
 /**
@@ -95,10 +94,8 @@ export async function notifyNewLead(input: {
   const emailBody = buildLeadEmailHtml(input);
 
   // For now, just log - implement actual email sending with your provider
-  // eslint-disable-next-line no-console
-  console.log(`[notification] Would send email: ${emailSubject}`);
-  // eslint-disable-next-line no-console
-  console.log(`[notification] Email body: ${emailBody.substring(0, 200)}...`);
+  console.warn(`[notification] Would send email: ${emailSubject}`);
+  console.warn(`[notification] Email body: ${emailBody.substring(0, 200)}...`);
 }
 
 /**
