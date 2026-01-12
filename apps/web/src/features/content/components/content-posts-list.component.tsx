@@ -19,7 +19,7 @@ import {
   Skeleton,
 } from "@repo/ui";
 import { useTRPC } from "@/lib/trpc";
-import { ContentCreateDialog } from "./content-create-dialog.component";
+import { ContentCreateDialog } from "./content-create-dialog";
 import { ContentPostCard } from "./content-post-card.component";
 
 type ContentPostsListProps = {
