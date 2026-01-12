@@ -327,9 +327,70 @@ Format each idea as a brief description (1-2 sentences).`,
 // Image Prompt Expansion
 // =============================================================================
 
+export type ImageStyle =
+  | "photorealistic"
+  | "illustration"
+  | "3d-render"
+  | "flat-design"
+  | "watercolor"
+  | "cinematic";
+
+export type ImageMood =
+  | "vibrant"
+  | "moody"
+  | "professional"
+  | "playful"
+  | "calm"
+  | "luxurious";
+
+export type ImageComposition =
+  | "closeup"
+  | "wide"
+  | "overhead"
+  | "centered"
+  | "rule-of-thirds";
+
+/**
+ * Style modifiers for prompt expansion
+ */
+export const styleModifiers: Record<ImageStyle, string> = {
+  photorealistic: "photorealistic photograph, highly detailed, sharp focus",
+  illustration: "digital illustration, artistic style, hand-drawn feel",
+  "3d-render": "3D rendered, cinema 4D style, volumetric lighting",
+  "flat-design": "flat design, minimal, vector-style, clean lines",
+  watercolor: "watercolor painting, soft edges, artistic brushstrokes",
+  cinematic: "cinematic still, movie-like composition, dramatic lighting",
+};
+
+/**
+ * Mood modifiers for prompt expansion
+ */
+export const moodModifiers: Record<ImageMood, string> = {
+  vibrant: "bright colors, energetic, lively atmosphere",
+  moody: "dark tones, atmospheric, dramatic shadows",
+  professional: "clean, corporate, polished look",
+  playful: "fun, whimsical, colorful elements",
+  calm: "serene, peaceful, soft tones",
+  luxurious: "elegant, sophisticated, premium feel",
+};
+
+/**
+ * Composition modifiers for prompt expansion
+ */
+export const compositionModifiers: Record<ImageComposition, string> = {
+  closeup: "close-up shot, detailed focus on subject",
+  wide: "wide angle, establishing shot, environmental context",
+  overhead: "top-down view, flat lay perspective",
+  centered: "centered composition, symmetrical framing",
+  "rule-of-thirds": "rule of thirds composition, balanced asymmetry",
+};
+
 export type ExpandIdeaToPromptInput = {
   idea: string;
   model: ImageModel;
+  style?: ImageStyle;
+  mood?: ImageMood;
+  composition?: ImageComposition;
 };
 
 export type ExpandIdeaToPromptResult = {
@@ -344,13 +405,25 @@ export type ExpandIdeaToPromptResult = {
  * - Nano Banana Pro (Google/Gemini): Professional photography terms, color grading, complex compositions
  * - GPT-Image-1.5 (OpenAI): Front-loaded subject, conversational language, strong instruction following
  *
- * @param input - The idea and target model
+ * @param input - The idea and target model with optional style preferences
  * @returns Optimized prompt and negative prompt
  */
 export async function expandIdeaToPrompt(
   input: ExpandIdeaToPromptInput
 ): Promise<ExpandIdeaToPromptResult> {
-  const { idea, model } = input;
+  const { idea, model, style, mood, composition } = input;
+
+  // Build user preferences section if any are provided
+  const preferences: string[] = [];
+  if (style) preferences.push(`Style: ${styleModifiers[style]}`);
+  if (mood) preferences.push(`Mood: ${moodModifiers[mood]}`);
+  if (composition)
+    preferences.push(`Composition: ${compositionModifiers[composition]}`);
+
+  const userPreferences =
+    preferences.length > 0
+      ? `\n\nUSER PREFERENCES (you MUST incorporate these into the prompt):\n${preferences.join("\n")}`
+      : "";
 
   // Model-specific guidance based on research
   const guidance =
@@ -385,8 +458,8 @@ BEST PRACTICES:
   const result = await coreGenerateText({
     modelId: "gpt-4.1",
     temperature: 0.7,
-    system: `You are an expert at writing image generation prompts. Transform simple ideas into detailed, model-optimized prompts. Your output shouild be in raw markdown, with no additional formatting or explanations.`,
-    prompt: `${guidance}
+    system: `You are an expert at writing image generation prompts. Transform simple ideas into detailed, model-optimized prompts. Your output should be raw text only, with no additional formatting or explanations.`,
+    prompt: `${guidance}${userPreferences}
 
 ---
 

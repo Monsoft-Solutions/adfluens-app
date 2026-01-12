@@ -351,10 +351,57 @@ export const contentRouter = router({
     }),
 
   /**
-   * Generate images from an idea or direct prompt
+   * Optimize an idea into a detailed image generation prompt
    *
-   * When improvePrompt=true (default): AI optimizes the input into a detailed prompt
-   * When improvePrompt=false: Input is used directly as the final prompt
+   * Takes a simple idea and expands it into an optimized prompt based on model best practices.
+   * Returns both the main prompt and negative prompt.
+   */
+  optimizeImagePrompt: organizationProcedure
+    .input(
+      z.object({
+        idea: z.string().min(1, "Describe your image").max(500),
+        model: z.enum(getValidModelValues()).default(DEFAULT_MODEL),
+        // Advanced style options
+        style: z
+          .enum([
+            "photorealistic",
+            "illustration",
+            "3d-render",
+            "flat-design",
+            "watercolor",
+            "cinematic",
+          ])
+          .optional(),
+        mood: z
+          .enum([
+            "vibrant",
+            "moody",
+            "professional",
+            "playful",
+            "calm",
+            "luxurious",
+          ])
+          .optional(),
+        composition: z
+          .enum(["closeup", "wide", "overhead", "centered", "rule-of-thirds"])
+          .optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const result = await contentAiUtils.expandIdeaToPrompt({
+        idea: input.idea,
+        model: input.model,
+        style: input.style,
+        mood: input.mood,
+        composition: input.composition,
+      });
+      return { prompt: result.prompt, negativePrompt: result.negativePrompt };
+    }),
+
+  /**
+   * Generate images from a prompt
+   *
+   * Takes a direct prompt (can be user-typed or AI-optimized) and generates images.
    */
   generateFromIdea: organizationProcedure
     .input(
@@ -364,6 +411,30 @@ export const contentRouter = router({
         size: z.enum(getValidSizeValues()).default(DEFAULT_SIZE),
         count: z.number().int().min(1).max(4).default(2),
         improvePrompt: z.boolean().default(true),
+        // Advanced style options
+        style: z
+          .enum([
+            "photorealistic",
+            "illustration",
+            "3d-render",
+            "flat-design",
+            "watercolor",
+            "cinematic",
+          ])
+          .optional(),
+        mood: z
+          .enum([
+            "vibrant",
+            "moody",
+            "professional",
+            "playful",
+            "calm",
+            "luxurious",
+          ])
+          .optional(),
+        composition: z
+          .enum(["closeup", "wide", "overhead", "centered", "rule-of-thirds"])
+          .optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -371,10 +442,13 @@ export const contentRouter = router({
       let negativePrompt: string | undefined;
 
       if (input.improvePrompt) {
-        // AI expands and optimizes the prompt
+        // AI expands and optimizes the prompt with user preferences
         const expanded = await contentAiUtils.expandIdeaToPrompt({
           idea: input.idea,
           model: input.model,
+          style: input.style,
+          mood: input.mood,
+          composition: input.composition,
         });
         prompt = expanded.prompt;
         negativePrompt = expanded.negativePrompt;

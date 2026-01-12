@@ -18,6 +18,7 @@ import {
   AlertCircle,
   Link,
   Wand2,
+  ChevronDown,
 } from "lucide-react";
 import {
   Dialog,
@@ -112,6 +113,14 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [generatedPrompt, setGeneratedPrompt] = useState("");
   const [improvePrompt, setImprovePrompt] = useState(true);
+
+  // Advanced style options
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [imageStyle, setImageStyle] = useState<string | undefined>();
+  const [imageMood, setImageMood] = useState<string | undefined>();
+  const [imageComposition, setImageComposition] = useState<
+    string | undefined
+  >();
 
   // Check if AI image generation is available
   const { data: aiAvailability } = useQuery({
@@ -214,6 +223,30 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
         size: imageSize as "square" | "portrait" | "landscape",
         count: imageCount,
         improvePrompt,
+        // Advanced style options (only sent if set)
+        style: imageStyle as
+          | "photorealistic"
+          | "illustration"
+          | "3d-render"
+          | "flat-design"
+          | "watercolor"
+          | "cinematic"
+          | undefined,
+        mood: imageMood as
+          | "vibrant"
+          | "moody"
+          | "professional"
+          | "playful"
+          | "calm"
+          | "luxurious"
+          | undefined,
+        composition: imageComposition as
+          | "closeup"
+          | "wide"
+          | "overhead"
+          | "centered"
+          | "rule-of-thirds"
+          | undefined,
       }),
     onSuccess: (result) => {
       setGeneratedImages(result.images);
@@ -286,6 +319,11 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
     setGeneratedPrompt("");
     setMediaTab("url");
     setImprovePrompt(true);
+    // Reset advanced style options
+    setShowAdvanced(false);
+    setImageStyle(undefined);
+    setImageMood(undefined);
+    setImageComposition(undefined);
   };
 
   const isValid =
@@ -497,6 +535,118 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
                       </Select>
                     </div>
                   </div>
+
+                  {/* Collapsible Advanced Style Options */}
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvanced(!showAdvanced)}
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <ChevronDown
+                      className={cn(
+                        "w-4 h-4 transition-transform",
+                        showAdvanced && "rotate-180"
+                      )}
+                    />
+                    Customize Style
+                    {(imageStyle || imageMood || imageComposition) && (
+                      <Badge
+                        variant="secondary"
+                        className="text-xs px-1.5 py-0"
+                      >
+                        {
+                          [imageStyle, imageMood, imageComposition].filter(
+                            Boolean
+                          ).length
+                        }{" "}
+                        set
+                      </Badge>
+                    )}
+                  </button>
+
+                  {showAdvanced && (
+                    <div className="grid grid-cols-3 gap-3 pt-1">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Style</Label>
+                        <Select
+                          value={imageStyle || "auto"}
+                          onValueChange={(v) =>
+                            setImageStyle(v === "auto" ? undefined : v)
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Auto" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">Auto</SelectItem>
+                            <SelectItem value="photorealistic">
+                              Photorealistic
+                            </SelectItem>
+                            <SelectItem value="illustration">
+                              Illustration
+                            </SelectItem>
+                            <SelectItem value="3d-render">3D Render</SelectItem>
+                            <SelectItem value="flat-design">
+                              Flat Design
+                            </SelectItem>
+                            <SelectItem value="watercolor">
+                              Watercolor
+                            </SelectItem>
+                            <SelectItem value="cinematic">Cinematic</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Mood</Label>
+                        <Select
+                          value={imageMood || "auto"}
+                          onValueChange={(v) =>
+                            setImageMood(v === "auto" ? undefined : v)
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Auto" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">Auto</SelectItem>
+                            <SelectItem value="vibrant">Vibrant</SelectItem>
+                            <SelectItem value="moody">Moody</SelectItem>
+                            <SelectItem value="professional">
+                              Professional
+                            </SelectItem>
+                            <SelectItem value="playful">Playful</SelectItem>
+                            <SelectItem value="calm">Calm</SelectItem>
+                            <SelectItem value="luxurious">Luxurious</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Composition</Label>
+                        <Select
+                          value={imageComposition || "auto"}
+                          onValueChange={(v) =>
+                            setImageComposition(v === "auto" ? undefined : v)
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Auto" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">Auto</SelectItem>
+                            <SelectItem value="closeup">Close-up</SelectItem>
+                            <SelectItem value="wide">Wide Shot</SelectItem>
+                            <SelectItem value="overhead">Overhead</SelectItem>
+                            <SelectItem value="centered">Centered</SelectItem>
+                            <SelectItem value="rule-of-thirds">
+                              Rule of Thirds
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Generate button */}
                   <Button
