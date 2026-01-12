@@ -13,6 +13,14 @@ import {
 } from "@repo/types/content/content-post.type";
 import * as contentService from "./content.service";
 import * as contentAiUtils from "./content-ai.utils";
+import * as falImageUtils from "./fal-image.utils";
+import {
+  FAL_MODEL_CONFIGS,
+  getValidModelValues,
+  getValidSizeValues,
+  DEFAULT_MODEL,
+  DEFAULT_SIZE,
+} from "./fal-models.config";
 
 // =============================================================================
 // Router Definition
@@ -267,5 +275,78 @@ export const contentRouter = router({
     )
     .mutation(async ({ input }) => {
       return contentAiUtils.generateContentIdeas(input.topic, input.count);
+    }),
+
+  // ===========================================================================
+  // AI Image Generation
+  // ===========================================================================
+
+  /**
+   * Check if AI image generation is available
+   */
+  isImageGenerationAvailable: organizationProcedure.query(() => {
+    return { available: falImageUtils.isFalConfigured() };
+  }),
+
+  /**
+   * Get available image generation models and sizes
+   */
+  getImageGenerationOptions: organizationProcedure.query(() => {
+    const available = falImageUtils.isFalConfigured();
+
+    if (!available) {
+      return { available: false, models: [] };
+    }
+
+    return {
+      available: true,
+      models: FAL_MODEL_CONFIGS.map((config) => ({
+        value: config.value,
+        label: config.label,
+        description: config.description,
+        sizes: config.sizes.map((size) => ({
+          value: size.value,
+          label: size.label,
+        })),
+      })),
+    };
+  }),
+
+  /**
+   * Generate a single AI image
+   */
+  generateImage: organizationProcedure
+    .input(
+      z.object({
+        prompt: z.string().min(1, "Prompt is required").max(1000),
+        model: z.enum(getValidModelValues()).default(DEFAULT_MODEL),
+        size: z.enum(getValidSizeValues()).default(DEFAULT_SIZE),
+        negativePrompt: z.string().max(500).optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      return falImageUtils.generateImage(input, ctx.organization.id);
+    }),
+
+  /**
+   * Generate multiple AI images for selection
+   */
+  generateMultipleImages: organizationProcedure
+    .input(
+      z.object({
+        prompt: z.string().min(1, "Prompt is required").max(1000),
+        model: z.enum(getValidModelValues()).default(DEFAULT_MODEL),
+        size: z.enum(getValidSizeValues()).default(DEFAULT_SIZE),
+        negativePrompt: z.string().max(500).optional(),
+        count: z.number().int().min(1).max(4).default(2),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { count, ...generateInput } = input;
+      return falImageUtils.generateMultipleImages(
+        generateInput,
+        ctx.organization.id,
+        count
+      );
     }),
 });

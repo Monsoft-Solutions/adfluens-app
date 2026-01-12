@@ -1,12 +1,12 @@
 /**
  * Content Create Dialog
  *
- * Dialog for creating new content posts with AI-powered caption
- * and hashtag generation.
+ * Dialog for creating new content posts with AI-powered caption,
+ * hashtag, and image generation.
  */
 
 import React, { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   Sparkles,
@@ -16,6 +16,8 @@ import {
   Facebook,
   Instagram,
   AlertCircle,
+  Link,
+  Wand2,
 } from "lucide-react";
 import {
   Dialog,
@@ -29,9 +31,18 @@ import {
   Textarea,
   Label,
   Badge,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   cn,
 } from "@repo/ui";
-import { trpcClient } from "@/lib/trpc";
+import { trpcClient, useTRPC } from "@/lib/trpc";
 
 type ContentCreateDialogProps = {
   open: boolean;
@@ -41,6 +52,14 @@ type ContentCreateDialogProps = {
 };
 
 type Platform = "facebook" | "instagram";
+
+type GeneratedImage = {
+  url: string;
+  storedUrl: string;
+  width: number;
+  height: number;
+  model: string;
+};
 
 const platformConfig: Record<
   Platform,
@@ -71,6 +90,8 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
   pageId,
   onSuccess,
 }) => {
+  const trpc = useTRPC();
+
   // Form state
   const [platforms, setPlatforms] = useState<Platform[]>(["facebook"]);
   const [caption, setCaption] = useState("");
@@ -80,6 +101,42 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
   const [mediaUrlInput, setMediaUrlInput] = useState("");
   const [aiTopic, setAiTopic] = useState("");
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+
+  // AI Image generation state
+  const [mediaTab, setMediaTab] = useState<"url" | "ai">("url");
+  const [imageIdea, setImageIdea] = useState("");
+  const [imageModel, setImageModel] = useState<string>("nano-banana-pro");
+  const [imageSize, setImageSize] = useState<string>("square");
+  const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
+  const [generatedPrompt, setGeneratedPrompt] = useState("");
+
+  // Check if AI image generation is available
+  const { data: aiAvailability } = useQuery({
+    ...trpc.content.isImageGenerationAvailable.queryOptions(),
+    staleTime: Infinity,
+  });
+
+  // Fetch available models and sizes
+  const { data: imageOptions } = useQuery({
+    ...trpc.content.getImageGenerationOptions.queryOptions(),
+    staleTime: Infinity,
+    enabled: aiAvailability?.available === true,
+  });
+
+  // Current selected model config
+  const selectedModelConfig = imageOptions?.models.find(
+    (m) => m.value === imageModel
+  );
+
+  // Reset size when model changes if current size is invalid for new model
+  React.useEffect(() => {
+    if (
+      selectedModelConfig &&
+      !selectedModelConfig.sizes.some((s) => s.value === imageSize)
+    ) {
+      setImageSize(selectedModelConfig.sizes[0]?.value || "square");
+    }
+  }, [imageModel, selectedModelConfig, imageSize]);
 
   // Create mutation
   const createMutation = useMutation({
@@ -92,7 +149,9 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
         media: mediaUrls.map((url) => ({
           url,
           storedUrl: url,
-          source: "url" as const,
+          source: generatedImages.some((g) => g.storedUrl === url)
+            ? ("fal_generated" as const)
+            : ("url" as const),
         })),
       }),
     onSuccess: () => {
@@ -143,6 +202,22 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
     },
   });
 
+  // Generate AI image from idea mutation
+  const generateFromIdeaMutation = useMutation({
+    mutationFn: () =>
+      trpcClient.content.generateFromIdea.mutate({
+        idea: imageIdea,
+        model: imageModel as "nano-banana-pro" | "gpt-image-1",
+        size: imageSize as "square" | "portrait" | "landscape",
+        count: 2,
+      }),
+    onSuccess: (result) => {
+      setGeneratedImages(result.images);
+      setGeneratedPrompt(result.prompt);
+      setImageIdea("");
+    },
+  });
+
   // Platform validation
   const minMaxCaption = Math.min(
     ...platforms.map((p) => platformConfig[p].maxCaption)
@@ -181,6 +256,13 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
 
   const removeMediaUrl = (url: string) => {
     setMediaUrls((prev) => prev.filter((u) => u !== url));
+    setGeneratedImages((prev) => prev.filter((g) => g.storedUrl !== url));
+  };
+
+  const addGeneratedImage = (image: GeneratedImage) => {
+    if (!mediaUrls.includes(image.storedUrl) && mediaUrls.length < 10) {
+      setMediaUrls((prev) => [...prev, image.storedUrl]);
+    }
   };
 
   const resetForm = () => {
@@ -191,6 +273,10 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
     setAiTopic("");
     setHashtagInput("");
     setMediaUrlInput("");
+    setImageIdea("");
+    setGeneratedImages([]);
+    setGeneratedPrompt("");
+    setMediaTab("url");
   };
 
   const isValid =
@@ -206,7 +292,7 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
           <DialogTitle>Create Post</DialogTitle>
           <DialogDescription>
             Create a new post for Facebook and Instagram. Use AI to generate
-            captions and hashtags.
+            captions, hashtags, and images.
           </DialogDescription>
         </DialogHeader>
 
@@ -243,31 +329,208 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
             )}
           </div>
 
-          {/* Media Section */}
+          {/* Media Section with Tabs */}
           <div className="space-y-2">
             <Label>Media (Required)</Label>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Paste image URL..."
-                value={mediaUrlInput}
-                onChange={(e) => setMediaUrlInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addMediaUrl()}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={addMediaUrl}
-                disabled={isUploadingMedia || !mediaUrlInput.trim()}
-              >
-                {isUploadingMedia ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Plus className="w-4 h-4" />
-                )}
-              </Button>
-            </div>
+            <Tabs
+              value={mediaTab}
+              onValueChange={(v) => setMediaTab(v as "url" | "ai")}
+            >
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="url" className="flex items-center gap-2">
+                  <Link className="w-4 h-4" />
+                  From URL
+                </TabsTrigger>
+                <TabsTrigger
+                  value="ai"
+                  className="flex items-center gap-2"
+                  disabled={!aiAvailability?.available}
+                >
+                  <Wand2 className="w-4 h-4" />
+                  AI Generate
+                  {!aiAvailability?.available && (
+                    <span className="text-xs text-muted-foreground">
+                      (Not configured)
+                    </span>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+
+              {/* URL Tab */}
+              <TabsContent value="url" className="space-y-3 mt-3">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Paste image URL..."
+                    value={mediaUrlInput}
+                    onChange={(e) => setMediaUrlInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && addMediaUrl()}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addMediaUrl}
+                    disabled={isUploadingMedia || !mediaUrlInput.trim()}
+                  >
+                    {isUploadingMedia ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Plus className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+              </TabsContent>
+
+              {/* AI Generate Tab - Simplified UX */}
+              <TabsContent value="ai" className="space-y-4 mt-3">
+                <div className="space-y-3">
+                  {/* Simple idea input */}
+                  <div className="space-y-2">
+                    <Label>What do you want to create?</Label>
+                    <Input
+                      placeholder="e.g., sunset on a beach, product photo, cozy cafe..."
+                      value={imageIdea}
+                      onChange={(e) => setImageIdea(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (
+                          e.key === "Enter" &&
+                          imageIdea.trim() &&
+                          !generateFromIdeaMutation.isPending
+                        ) {
+                          generateFromIdeaMutation.mutate();
+                        }
+                      }}
+                    />
+                  </div>
+
+                  {/* Model & Size in compact row */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Model</Label>
+                      <Select
+                        value={imageModel}
+                        onValueChange={(v) => setImageModel(v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {imageOptions?.models.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Size</Label>
+                      <Select
+                        value={imageSize}
+                        onValueChange={(v) => setImageSize(v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {selectedModelConfig?.sizes.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Generate button */}
+                  <Button
+                    type="button"
+                    onClick={() => generateFromIdeaMutation.mutate()}
+                    disabled={
+                      !imageIdea.trim() || generateFromIdeaMutation.isPending
+                    }
+                    className="w-full"
+                  >
+                    {generateFromIdeaMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Generate Images
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Show AI-generated prompt for transparency */}
+                  {generatedPrompt && (
+                    <details className="text-xs">
+                      <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                        View AI-generated prompt
+                      </summary>
+                      <p className="mt-2 p-2 bg-muted rounded text-muted-foreground">
+                        {generatedPrompt}
+                      </p>
+                    </details>
+                  )}
+
+                  {/* Generated Images Preview */}
+                  {generatedImages.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-xs">
+                        Generated Images (click to add)
+                      </Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {generatedImages.map((image, index) => {
+                          const isAdded = mediaUrls.includes(image.storedUrl);
+                          return (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() =>
+                                !isAdded && addGeneratedImage(image)
+                              }
+                              className={cn(
+                                "relative aspect-square rounded-lg overflow-hidden border-2 transition-all",
+                                isAdded
+                                  ? "border-primary ring-2 ring-primary/20"
+                                  : "border-border hover:border-primary/50"
+                              )}
+                              disabled={isAdded}
+                            >
+                              <img
+                                src={image.storedUrl}
+                                alt={`Generated ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                              {isAdded && (
+                                <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                  <Badge variant="default">Added</Badge>
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {generateFromIdeaMutation.error && (
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs">
+                      <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                      <span>{generateFromIdeaMutation.error.message}</span>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            {/* Selected Media Preview */}
             {mediaUrls.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="flex flex-wrap gap-2 mt-3">
                 {mediaUrls.map((url, index) => (
                   <div
                     key={index}
@@ -285,12 +548,20 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
                     >
                       <X className="w-3 h-3" />
                     </button>
+                    {generatedImages.some((g) => g.storedUrl === url) && (
+                      <Badge
+                        variant="secondary"
+                        className="absolute bottom-1 left-1 text-[10px] px-1 py-0"
+                      >
+                        AI
+                      </Badge>
+                    )}
                   </div>
                 ))}
               </div>
             )}
             <p className="text-xs text-muted-foreground">
-              Add up to 10 images. Images will be uploaded and stored.
+              {mediaUrls.length}/10 images added
             </p>
           </div>
 
