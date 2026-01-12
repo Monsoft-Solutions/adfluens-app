@@ -1,12 +1,22 @@
 /**
  * Caption Section Component
  *
- * AI-powered caption generation and editing.
+ * AI-powered caption generation and editing with color-coded character count.
  */
 
 import React from "react";
-import { Loader2, Sparkles } from "lucide-react";
-import { Button, Input, Textarea, Label, cn } from "@repo/ui";
+import { Loader2, Sparkles, Wand2 } from "lucide-react";
+import {
+  Button,
+  Input,
+  Textarea,
+  Label,
+  cn,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@repo/ui";
 import type { UseMutationResult } from "@tanstack/react-query";
 
 type CaptionSectionProps = {
@@ -40,60 +50,113 @@ export const CaptionSection: React.FC<CaptionSectionProps> = ({
     generateCaptionMutation.mutate(aiTopic);
   };
 
+  // Calculate progress percentage and color
+  const progressPercentage = Math.min((captionLength / maxLength) * 100, 100);
+  const getProgressColor = () => {
+    if (isTooLong) return "bg-destructive";
+    if (progressPercentage > 80) return "bg-yellow-500";
+    return "bg-green-500";
+  };
+
+  const getTextColor = () => {
+    if (isTooLong) return "text-destructive";
+    if (progressPercentage > 80) return "text-yellow-600 dark:text-yellow-500";
+    return "text-green-600 dark:text-green-500";
+  };
+
   return (
-    <>
+    <div className="space-y-4">
       {/* AI Caption Generation */}
       <div className="space-y-2">
-        <Label>AI Caption Generator</Label>
+        <div className="flex items-center gap-2">
+          <Wand2 className="w-4 h-4 text-primary" />
+          <Label className="font-medium">AI Caption Generator</Label>
+          <span className="text-xs text-muted-foreground">(optional)</span>
+        </div>
         <div className="flex gap-2">
           <Input
             placeholder="Describe your post topic..."
             value={aiTopic}
             onChange={(e) => onAiTopicChange(e.target.value)}
           />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleGenerate}
-            disabled={!aiTopic.trim() || generateCaptionMutation.isPending}
-          >
-            {generateCaptionMutation.isPending ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Sparkles className="w-4 h-4 mr-2" />
-            )}
-            Generate
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleGenerate}
+                  disabled={
+                    !aiTopic.trim() || generateCaptionMutation.isPending
+                  }
+                >
+                  {generateCaptionMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Generate
+                    </>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Generate an engaging caption for your topic</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
-      {/* Caption */}
+      {/* Caption Textarea */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label>Caption</Label>
-          <span
-            className={cn(
-              "text-xs",
-              isTooLong ? "text-destructive" : "text-muted-foreground"
-            )}
-          >
-            {captionLength} / {maxLength}
-          </span>
+          <Label className="font-medium">Caption</Label>
+          <div className="flex items-center gap-2">
+            <span className={cn("text-xs font-medium", getTextColor())}>
+              {captionLength.toLocaleString()} / {maxLength.toLocaleString()}
+            </span>
+          </div>
         </div>
+
         <Textarea
           placeholder="Write your caption..."
           value={caption}
           onChange={(e) => onCaptionChange(e.target.value)}
           rows={4}
-          className={cn(isTooLong && "border-destructive")}
+          className={cn(
+            "resize-none transition-colors",
+            isTooLong && "border-destructive focus-visible:ring-destructive"
+          )}
         />
-        {isTooLong && (
-          <p className="text-xs text-destructive">
-            Caption exceeds {maxLength} character limit for{" "}
-            {platforms.join(", ")}
-          </p>
-        )}
+
+        {/* Progress bar */}
+        <div className="space-y-1">
+          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+            <div
+              className={cn("h-full transition-all", getProgressColor())}
+              style={{ width: `${Math.min(progressPercentage, 100)}%` }}
+            />
+          </div>
+
+          {isTooLong && (
+            <p className="text-xs text-destructive flex items-center gap-1">
+              <span className="inline-block w-1 h-1 rounded-full bg-destructive" />
+              Caption exceeds {maxLength.toLocaleString()} character limit for{" "}
+              {platforms.join(", ")}
+            </p>
+          )}
+
+          {!isTooLong && progressPercentage > 80 && (
+            <p className="text-xs text-yellow-600 dark:text-yellow-500">
+              Approaching character limit
+            </p>
+          )}
+        </div>
       </div>
-    </>
+    </div>
   );
 };
