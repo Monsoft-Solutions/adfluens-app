@@ -40,6 +40,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Switch,
   cn,
 } from "@repo/ui";
 import { trpcClient, useTRPC } from "@/lib/trpc";
@@ -109,6 +110,7 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
   const [imageSize, setImageSize] = useState<string>("square");
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [generatedPrompt, setGeneratedPrompt] = useState("");
+  const [improvePrompt, setImprovePrompt] = useState(true);
 
   // Check if AI image generation is available
   const { data: aiAvailability } = useQuery({
@@ -210,11 +212,15 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
         model: imageModel as "nano-banana-pro" | "gpt-image-1",
         size: imageSize as "square" | "portrait" | "landscape",
         count: 2,
+        improvePrompt,
       }),
     onSuccess: (result) => {
       setGeneratedImages(result.images);
       setGeneratedPrompt(result.prompt);
-      setImageIdea("");
+      // Only clear input if AI improved (user might want to tweak direct prompt)
+      if (improvePrompt) {
+        setImageIdea("");
+      }
     },
   });
 
@@ -277,6 +283,7 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
     setGeneratedImages([]);
     setGeneratedPrompt("");
     setMediaTab("url");
+    setImprovePrompt(true);
   };
 
   const isValid =
@@ -380,26 +387,53 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
                 </div>
               </TabsContent>
 
-              {/* AI Generate Tab - Simplified UX */}
+              {/* AI Generate Tab */}
               <TabsContent value="ai" className="space-y-4 mt-3">
                 <div className="space-y-3">
-                  {/* Simple idea input */}
-                  <div className="space-y-2">
-                    <Label>What do you want to create?</Label>
-                    <Input
-                      placeholder="e.g., sunset on a beach, product photo, cozy cafe..."
-                      value={imageIdea}
-                      onChange={(e) => setImageIdea(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (
-                          e.key === "Enter" &&
-                          imageIdea.trim() &&
-                          !generateFromIdeaMutation.isPending
-                        ) {
-                          generateFromIdeaMutation.mutate();
-                        }
-                      }}
+                  {/* Toggle: Improve with AI vs Use as final prompt */}
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="improve-prompt" className="text-sm">
+                      {improvePrompt
+                        ? "AI will optimize your idea"
+                        : "Using prompt directly"}
+                    </Label>
+                    <Switch
+                      id="improve-prompt"
+                      checked={improvePrompt}
+                      onCheckedChange={setImprovePrompt}
                     />
+                  </div>
+
+                  {/* Input - changes based on mode */}
+                  <div className="space-y-2">
+                    <Label>
+                      {improvePrompt
+                        ? "Describe your image idea"
+                        : "Enter your prompt"}
+                    </Label>
+                    {improvePrompt ? (
+                      <Input
+                        placeholder="e.g., sunset on a beach, product photo, cozy cafe..."
+                        value={imageIdea}
+                        onChange={(e) => setImageIdea(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (
+                            e.key === "Enter" &&
+                            imageIdea.trim() &&
+                            !generateFromIdeaMutation.isPending
+                          ) {
+                            generateFromIdeaMutation.mutate();
+                          }
+                        }}
+                      />
+                    ) : (
+                      <Textarea
+                        placeholder="Enter detailed prompt with style, lighting, composition..."
+                        value={imageIdea}
+                        onChange={(e) => setImageIdea(e.target.value)}
+                        rows={3}
+                      />
+                    )}
                   </div>
 
                   {/* Model & Size in compact row */}
@@ -460,16 +494,18 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
                     ) : (
                       <>
                         <Sparkles className="w-4 h-4 mr-2" />
-                        Generate Images
+                        {improvePrompt
+                          ? "Generate Images"
+                          : "Generate with Custom Prompt"}
                       </>
                     )}
                   </Button>
 
-                  {/* Show AI-generated prompt for transparency */}
-                  {generatedPrompt && (
+                  {/* Show AI-generated prompt for transparency (only when AI improved) */}
+                  {generatedPrompt && improvePrompt && (
                     <details className="text-xs">
                       <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-                        View AI-generated prompt
+                        View AI-optimized prompt
                       </summary>
                       <p className="mt-2 p-2 bg-muted rounded text-muted-foreground">
                         {generatedPrompt}

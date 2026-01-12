@@ -18,17 +18,6 @@
 type SizeParamType = "aspect_ratio" | "image_size";
 
 /**
- * Size configuration for a model
- */
-type ModelSizeConfig<T extends string = string> = {
-  readonly value: T;
-  readonly label: string;
-  readonly apiValue: string;
-  readonly width: number;
-  readonly height: number;
-};
-
-/**
  * All supported image generation models
  *
  * To add a new model:
@@ -172,7 +161,6 @@ export function getValidSizeValues(): [ImageSize, ...ImageSize[]] {
   );
   return Array.from(allSizes) as [ImageSize, ...ImageSize[]];
 }
-
 /**
  * Default values
  */

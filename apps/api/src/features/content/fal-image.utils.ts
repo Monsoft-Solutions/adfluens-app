@@ -87,14 +87,17 @@ export async function generateImage(
       }
     },
   })) as unknown as {
-    images: Array<{ url: string; width?: number; height?: number }>;
+    data: {
+      images: Array<{ url: string; width?: number; height?: number }>;
+    };
+    requestId: string;
   };
 
-  if (!result.images || result.images.length === 0) {
+  if (!result.data?.images || result.data.images.length === 0) {
     throw new Error("No images generated");
   }
 
-  const generatedImageUrl = result.images[0]!.url;
+  const generatedImageUrl = result.data.images[0]!.url;
 
   // Upload to our storage
   const storedUrl = await mediaStorage.uploadFromUrl(
@@ -105,8 +108,8 @@ export async function generateImage(
   return {
     url: generatedImageUrl,
     storedUrl,
-    width: result.images[0]!.width || sizeConfig.width,
-    height: result.images[0]!.height || sizeConfig.height,
+    width: result.data.images[0]!.width || sizeConfig.width,
+    height: result.data.images[0]!.height || sizeConfig.height,
     model,
   };
 }
@@ -141,6 +144,8 @@ export async function generateMultipleImages(
     output_format: "png",
   };
 
+  console.log("Generating images with input:", falInput);
+
   // Add size parameter based on model's API requirements
   if (modelConfig.sizeParamType === "aspect_ratio") {
     falInput.aspect_ratio = sizeConfig.apiValue;
@@ -151,17 +156,27 @@ export async function generateMultipleImages(
   // Call fal.ai API with correct model ID
   const result = (await fal.subscribe(modelConfig.falModelId, {
     input: falInput,
-    logs: false,
+    logs: true,
+    onQueueUpdate: (update) => {
+      if (update.status === "IN_PROGRESS") {
+        update.logs.map((log) => log.message).forEach(console.log);
+      }
+    },
   })) as unknown as {
-    images: Array<{ url: string; width?: number; height?: number }>;
+    data: {
+      images: Array<{ url: string; width?: number; height?: number }>;
+    };
+    requestId: string;
   };
 
-  if (!result.images || result.images.length === 0) {
+  console.log("Result:", JSON.stringify(result));
+
+  if (!result.data?.images || result.data.images.length === 0) {
     throw new Error("No images generated");
   }
 
   // Upload all images to storage in parallel
-  const uploadPromises = result.images.map(async (image) => {
+  const uploadPromises = result.data.images.map(async (image) => {
     const storedUrl = await mediaStorage.uploadFromUrl(
       image.url,
       `content/${organizationId}/ai-generated`

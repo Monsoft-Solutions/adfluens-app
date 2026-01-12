@@ -349,4 +349,48 @@ export const contentRouter = router({
         count
       );
     }),
+
+  /**
+   * Generate images from an idea or direct prompt
+   *
+   * When improvePrompt=true (default): AI optimizes the input into a detailed prompt
+   * When improvePrompt=false: Input is used directly as the final prompt
+   */
+  generateFromIdea: organizationProcedure
+    .input(
+      z.object({
+        idea: z.string().min(1, "Describe your image").max(500),
+        model: z.enum(getValidModelValues()).default(DEFAULT_MODEL),
+        size: z.enum(getValidSizeValues()).default(DEFAULT_SIZE),
+        count: z.number().int().min(1).max(4).default(2),
+        improvePrompt: z.boolean().default(true),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      let prompt: string;
+      let negativePrompt: string | undefined;
+
+      if (input.improvePrompt) {
+        // AI expands and optimizes the prompt
+        const expanded = await contentAiUtils.expandIdeaToPrompt({
+          idea: input.idea,
+          model: input.model,
+        });
+        prompt = expanded.prompt;
+        negativePrompt = expanded.negativePrompt;
+      } else {
+        // Use input directly as final prompt
+        prompt = input.idea;
+        negativePrompt = undefined;
+      }
+
+      // Generate images
+      const images = await falImageUtils.generateMultipleImages(
+        { prompt, negativePrompt, model: input.model, size: input.size },
+        ctx.organization.id,
+        input.count
+      );
+
+      return { prompt, images, wasImproved: input.improvePrompt };
+    }),
 });

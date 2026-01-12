@@ -8,6 +8,7 @@
 import { coreGenerateText, coreGenerateObject } from "@monsoft/ai/core";
 import { z } from "zod";
 import { getAdapter } from "./platform-adapters";
+import type { ImageModel } from "./fal-models.config";
 
 // =============================================================================
 // Types
@@ -320,4 +321,93 @@ Format each idea as a brief description (1-2 sentences).`,
   });
 
   return result.object.ideas;
+}
+
+// =============================================================================
+// Image Prompt Expansion
+// =============================================================================
+
+export type ExpandIdeaToPromptInput = {
+  idea: string;
+  model: ImageModel;
+};
+
+export type ExpandIdeaToPromptResult = {
+  prompt: string;
+  negativePrompt: string;
+};
+
+/**
+ * Expand a simple idea into an optimized image generation prompt
+ *
+ * Applies model-specific best practices based on research:
+ * - Nano Banana Pro (Recraft V3): Structured format, natural language, camera gear
+ * - GPT-Image-1 (Flux Dev): Front-loaded subject, spatial language, no negative prompts
+ *
+ * @param input - The idea and target model
+ * @returns Optimized prompt and negative prompt
+ */
+export async function expandIdeaToPrompt(
+  input: ExpandIdeaToPromptInput
+): Promise<ExpandIdeaToPromptResult> {
+  const { idea, model } = input;
+
+  // Model-specific guidance based on research
+  const guidance =
+    model === "nano-banana-pro"
+      ? `You are optimizing a prompt for Nano Banana Pro (Recraft V3).
+
+STRUCTURE: "A [style] of [subject]. [Detailed description]. [Background]. [Style modifiers]."
+
+BEST PRACTICES:
+- Use natural language, NOT tag soups (no "4k, masterpiece, trending")
+- Be precise with technical details: "single key light 45° above left" not "dramatic lighting"
+- Specify materials: "weathered oak", "brushed aluminum", "matte ceramic"
+- For photorealism: add camera gear like "shot on Hasselblad X2D"
+- Use descriptive adjectives: "crystalline", "bioluminescent", "sun-drenched"
+
+EXAMPLE:
+Input: "coffee shop"
+Output: "A warm digital photograph of a cozy artisan coffee shop interior. Exposed brick walls with trailing ivy, reclaimed wood tables with natural grain patterns, ceramic cups releasing wisps of steam. Soft golden pendant lighting from vintage Edison bulbs, morning sunlight streaming through large windows creating warm shadows. Shot on Sony A7IV, 35mm lens, shallow depth of field."`
+      : `You are optimizing a prompt for GPT-Image-1 (Flux Dev).
+
+STRUCTURE: Front-load the subject first, then add environment, end with technical details.
+
+BEST PRACTICES:
+- Put main subject FIRST, details second
+- For photorealism: specify camera ("shot on iPhone 16"), lens, aperture
+- Use spatial language: "in the foreground", "positioned left", "background shows"
+- Be specific: "middle-aged woman with curly auburn hair" not "woman"
+- Include composition: "close-up", "wide shot", "eye-level angle"
+- AVOID: "white background" (causes blur), negative prompt syntax
+
+EXAMPLE:
+Input: "coffee shop"
+Output: "Cozy artisan coffee shop interior, warm ambient lighting from pendant lamps, barista in denim apron preparing espresso at wooden counter, steam rising from ceramic cups in foreground, exposed brick walls with chalkboard menu in background, plants on windowsill catching morning light, shot on Canon EOS R5, 24mm wide angle, f/2.8, natural indoor lighting."`;
+
+  const result = await coreGenerateText({
+    modelId: "gpt-4.1-mini",
+    temperature: 0.7,
+    system: `You are an expert at writing image generation prompts. Transform simple ideas into detailed, model-optimized prompts.`,
+    prompt: `${guidance}
+
+---
+
+Transform this idea into an optimized prompt (60-100 words):
+
+Idea: "${idea}"
+
+Return ONLY the prompt text, no explanations.`,
+  });
+
+  // Model-specific negative prompts (Flux Dev doesn't use them well)
+  const negativePrompt =
+    model === "nano-banana-pro"
+      ? "blurry, low quality, distorted, ugly, text overlay, watermark, logo, signature, oversaturated"
+      : "";
+
+  return {
+    prompt: result.text.trim(),
+    negativePrompt,
+  };
 }
