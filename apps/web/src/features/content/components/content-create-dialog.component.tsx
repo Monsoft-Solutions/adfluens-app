@@ -108,6 +108,7 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
   const [imageIdea, setImageIdea] = useState("");
   const [imageModel, setImageModel] = useState<string>("nano-banana-pro");
   const [imageSize, setImageSize] = useState<string>("square");
+  const [imageCount, setImageCount] = useState<number>(2);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [generatedPrompt, setGeneratedPrompt] = useState("");
   const [improvePrompt, setImprovePrompt] = useState(true);
@@ -211,7 +212,7 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
         idea: imageIdea,
         model: imageModel as "nano-banana-pro" | "gpt-image-1",
         size: imageSize as "square" | "portrait" | "landscape",
-        count: 2,
+        count: imageCount,
         improvePrompt,
       }),
     onSuccess: (result) => {
@@ -280,6 +281,7 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
     setHashtagInput("");
     setMediaUrlInput("");
     setImageIdea("");
+    setImageCount(2);
     setGeneratedImages([]);
     setGeneratedPrompt("");
     setMediaTab("url");
@@ -436,8 +438,8 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
                     )}
                   </div>
 
-                  {/* Model & Size in compact row */}
-                  <div className="grid grid-cols-2 gap-3">
+                  {/* Model, Size & Count in compact row */}
+                  <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1.5">
                       <Label className="text-xs">Model</Label>
                       <Select
@@ -470,6 +472,25 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
                           {selectedModelConfig?.sizes.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
                               {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Count</Label>
+                      <Select
+                        value={imageCount.toString()}
+                        onValueChange={(v) => setImageCount(parseInt(v, 10))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4].map((n) => (
+                            <SelectItem key={n} value={n.toString()}>
+                              {n} {n === 1 ? "image" : "images"}
                             </SelectItem>
                           ))}
                         </SelectContent>

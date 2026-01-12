@@ -148,7 +148,7 @@ export async function generateCaptionVariations(
   });
 
   const result = await coreGenerateObject({
-    modelId: "gpt-4.1-mini",
+    modelId: "gpt-4.1",
     temperature: 0.8,
     schema: variationsSchema,
     system: `You are a social media content expert. Create ${count} unique caption variations.`,
@@ -259,7 +259,7 @@ export async function enhanceCaption(
   };
 
   const result = await coreGenerateText({
-    modelId: "gpt-4.1-mini",
+    modelId: "gpt-4.1",
     temperature: 0.6,
     system: `You are a social media content editor. Improve captions while maintaining their core message.`,
     prompt: `${styleInstructions[style]}
@@ -305,7 +305,7 @@ export async function generateContentIdeas(
   });
 
   const result = await coreGenerateObject({
-    modelId: "gpt-4.1-mini",
+    modelId: "gpt-4.1",
     temperature: 0.8,
     schema: ideasSchema,
     system: `You are a creative social media strategist who generates engaging content ideas.`,
@@ -341,8 +341,8 @@ export type ExpandIdeaToPromptResult = {
  * Expand a simple idea into an optimized image generation prompt
  *
  * Applies model-specific best practices based on research:
- * - Nano Banana Pro (Recraft V3): Structured format, natural language, camera gear
- * - GPT-Image-1 (Flux Dev): Front-loaded subject, spatial language, no negative prompts
+ * - Nano Banana Pro (Google/Gemini): Professional photography terms, color grading, complex compositions
+ * - GPT-Image-1.5 (OpenAI): Front-loaded subject, conversational language, strong instruction following
  *
  * @param input - The idea and target model
  * @returns Optimized prompt and negative prompt
@@ -355,52 +355,49 @@ export async function expandIdeaToPrompt(
   // Model-specific guidance based on research
   const guidance =
     model === "nano-banana-pro"
-      ? `You are optimizing a prompt for Nano Banana Pro (Recraft V3).
+      ? `You are optimizing a prompt for Nano Banana Pro (Google's Gemini-based image model).
 
-STRUCTURE: "A [style] of [subject]. [Detailed description]. [Background]. [Style modifiers]."
+STRUCTURE: "[Subject] in [setting/environment]. [Lighting and camera details]. [Style and mood]."
 
 BEST PRACTICES:
-- Use natural language, NOT tag soups (no "4k, masterpiece, trending")
-- Be precise with technical details: "single key light 45° above left" not "dramatic lighting"
-- Specify materials: "weathered oak", "brushed aluminum", "matte ceramic"
-- For photorealism: add camera gear like "shot on Hasselblad X2D"
-- Use descriptive adjectives: "crystalline", "bioluminescent", "sun-drenched"
+- Use professional photography terms: "shallow depth of field", "soft diffused lighting", "low angle perspective"
+- Specify color grading: "warm golden tones", "high contrast", "muted earth palette"
+- Include camera/framing: "close-up portrait", "wide establishing shot", "eye-level angle"
+- For text in images: use quotes like 'text "HELLO" on wooden sign'
+- Be specific about materials: "brushed metal", "weathered wood", "matte ceramic"
+- Describe atmosphere: "cozy", "dramatic", "ethereal", "vibrant"
 
 EXAMPLE:
 Input: "coffee shop"
-Output: "A warm digital photograph of a cozy artisan coffee shop interior. Exposed brick walls with trailing ivy, reclaimed wood tables with natural grain patterns, ceramic cups releasing wisps of steam. Soft golden pendant lighting from vintage Edison bulbs, morning sunlight streaming through large windows creating warm shadows. Shot on Sony A7IV, 35mm lens, shallow depth of field."`
-      : `You are optimizing a prompt for GPT-Image-1 (Flux Dev).
+Output: "Cozy artisan coffee shop interior with exposed brick walls and hanging Edison bulbs. Soft morning light streaming through large windows, shallow depth of field focusing on a steaming ceramic cup on a reclaimed wood table. Warm golden tones with hints of green from potted plants, inviting and intimate atmosphere."`
+      : `You are optimizing a prompt for GPT-Image-1.5 (OpenAI's latest image generation model).
 
-STRUCTURE: Front-load the subject first, then add environment, end with technical details.
+STRUCTURE: Put the main subject FIRST, then add environment and details.
 
 BEST PRACTICES:
-- Put main subject FIRST, details second
-- For photorealism: specify camera ("shot on iPhone 16"), lens, aperture
-- Use spatial language: "in the foreground", "positioned left", "background shows"
-- Be specific: "middle-aged woman with curly auburn hair" not "woman"
-- Include composition: "close-up", "wide shot", "eye-level angle"
-- AVOID: "white background" (causes blur), negative prompt syntax
-
-EXAMPLE:
-Input: "coffee shop"
-Output: "Cozy artisan coffee shop interior, warm ambient lighting from pendant lamps, barista in denim apron preparing espresso at wooden counter, steam rising from ceramic cups in foreground, exposed brick walls with chalkboard menu in background, plants on windowsill catching morning light, shot on Canon EOS R5, 24mm wide angle, f/2.8, natural indoor lighting."`;
+- Front-load the subject: "A barista preparing espresso..." not "In a coffee shop, there is a barista..."
+- Use clear, descriptive language (conversational, not keyword lists)
+- For text in images: 'text "YOUR TEXT" displayed on [surface]'
+- Include composition: "close-up", "centered", "wide shot", "overhead view"
+- Specify lighting: "natural window light", "neon glow", "dramatic shadows"
+- Describe mood explicitly: "cheerful", "mysterious", "professional"`;
 
   const result = await coreGenerateText({
-    modelId: "gpt-4.1-mini",
+    modelId: "gpt-4.1",
     temperature: 0.7,
-    system: `You are an expert at writing image generation prompts. Transform simple ideas into detailed, model-optimized prompts.`,
+    system: `You are an expert at writing image generation prompts. Transform simple ideas into detailed, model-optimized prompts. Your output shouild be in raw markdown, with no additional formatting or explanations.`,
     prompt: `${guidance}
 
 ---
 
-Transform this idea into an optimized prompt (60-100 words):
+Transform this idea into an optimized prompt (60-120 words):
 
 Idea: "${idea}"
 
 Return ONLY the prompt text, no explanations.`,
   });
 
-  // Model-specific negative prompts (Flux Dev doesn't use them well)
+  // Model-specific negative prompts
   const negativePrompt =
     model === "nano-banana-pro"
       ? "blurry, low quality, distorted, ugly, text overlay, watermark, logo, signature, oversaturated"
