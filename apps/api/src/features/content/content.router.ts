@@ -406,65 +406,26 @@ export const contentRouter = router({
   generateFromIdea: organizationProcedure
     .input(
       z.object({
-        idea: z.string().min(1, "Describe your image").max(500),
+        prompt: z.string().min(1, "Provide an image prompt").max(2000),
+        negativePrompt: z.string().max(1000).optional(),
         model: z.enum(getValidModelValues()).default(DEFAULT_MODEL),
         size: z.enum(getValidSizeValues()).default(DEFAULT_SIZE),
         count: z.number().int().min(1).max(4).default(2),
-        improvePrompt: z.boolean().default(true),
-        // Advanced style options
-        style: z
-          .enum([
-            "photorealistic",
-            "illustration",
-            "3d-render",
-            "flat-design",
-            "watercolor",
-            "cinematic",
-          ])
-          .optional(),
-        mood: z
-          .enum([
-            "vibrant",
-            "moody",
-            "professional",
-            "playful",
-            "calm",
-            "luxurious",
-          ])
-          .optional(),
-        composition: z
-          .enum(["closeup", "wide", "overhead", "centered", "rule-of-thirds"])
-          .optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
-      let prompt: string;
-      let negativePrompt: string | undefined;
-
-      if (input.improvePrompt) {
-        // AI expands and optimizes the prompt with user preferences
-        const expanded = await contentAiUtils.expandIdeaToPrompt({
-          idea: input.idea,
-          model: input.model,
-          style: input.style,
-          mood: input.mood,
-          composition: input.composition,
-        });
-        prompt = expanded.prompt;
-        negativePrompt = expanded.negativePrompt;
-      } else {
-        // Use input directly as final prompt
-        prompt = input.idea;
-        negativePrompt = undefined;
-      }
-
-      // Generate images
+      // Generate images directly from the provided prompt
       const images = await falImageUtils.generateMultipleImages(
-        { prompt, negativePrompt, model: input.model, size: input.size },
+        {
+          prompt: input.prompt,
+          negativePrompt: input.negativePrompt,
+          model: input.model,
+          size: input.size,
+        },
         ctx.organization.id,
         input.count
       );
 
-      return { prompt, images, wasImproved: input.improvePrompt };
+      return { prompt: input.prompt, images };
     }),
 });

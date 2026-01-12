@@ -41,7 +41,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Switch,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
   cn,
 } from "@repo/ui";
 import { trpcClient, useTRPC } from "@/lib/trpc";
@@ -106,13 +109,14 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
 
   // AI Image generation state
   const [mediaTab, setMediaTab] = useState<"url" | "ai">("url");
-  const [imageIdea, setImageIdea] = useState("");
+  const [ideaInput, setIdeaInput] = useState(""); // Simple idea for optimization
+  const [imagePrompt, setImagePrompt] = useState(""); // Final editable prompt
+  const [negativePrompt, setNegativePrompt] = useState("");
   const [imageModel, setImageModel] = useState<string>("nano-banana-pro");
   const [imageSize, setImageSize] = useState<string>("square");
   const [imageCount, setImageCount] = useState<number>(2);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
-  const [generatedPrompt, setGeneratedPrompt] = useState("");
-  const [improvePrompt, setImprovePrompt] = useState(true);
+  const [isOptimizing, setIsOptimizing] = useState(false);
 
   // Advanced style options
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -214,15 +218,12 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
     },
   });
 
-  // Generate AI image from idea mutation
-  const generateFromIdeaMutation = useMutation({
+  // Optimize prompt from idea mutation
+  const optimizePromptMutation = useMutation({
     mutationFn: () =>
-      trpcClient.content.generateFromIdea.mutate({
-        idea: imageIdea,
+      trpcClient.content.optimizeImagePrompt.mutate({
+        idea: ideaInput,
         model: imageModel as "nano-banana-pro" | "gpt-image-1",
-        size: imageSize as "square" | "portrait" | "landscape",
-        count: imageCount,
-        improvePrompt,
         // Advanced style options (only sent if set)
         style: imageStyle as
           | "photorealistic"
@@ -248,13 +249,33 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
           | "rule-of-thirds"
           | undefined,
       }),
+    onMutate: () => {
+      setIsOptimizing(true);
+    },
+    onSuccess: (result) => {
+      setImagePrompt(result.prompt);
+      setNegativePrompt(result.negativePrompt || "");
+      setIsOptimizing(false);
+      // Collapse advanced options after optimization since they no longer affect anything
+      setShowAdvanced(false);
+    },
+    onError: () => {
+      setIsOptimizing(false);
+    },
+  });
+
+  // Generate AI images from prompt mutation
+  const generateFromIdeaMutation = useMutation({
+    mutationFn: () =>
+      trpcClient.content.generateFromIdea.mutate({
+        prompt: imagePrompt,
+        negativePrompt: negativePrompt || undefined,
+        model: imageModel as "nano-banana-pro" | "gpt-image-1",
+        size: imageSize as "square" | "portrait" | "landscape",
+        count: imageCount,
+      }),
     onSuccess: (result) => {
       setGeneratedImages(result.images);
-      setGeneratedPrompt(result.prompt);
-      // Only clear input if AI improved (user might want to tweak direct prompt)
-      if (improvePrompt) {
-        setImageIdea("");
-      }
     },
   });
 
@@ -313,12 +334,13 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
     setAiTopic("");
     setHashtagInput("");
     setMediaUrlInput("");
-    setImageIdea("");
+    setIdeaInput("");
+    setImagePrompt("");
+    setNegativePrompt("");
     setImageCount(2);
     setGeneratedImages([]);
-    setGeneratedPrompt("");
     setMediaTab("url");
-    setImprovePrompt(true);
+    setIsOptimizing(false);
     // Reset advanced style options
     setShowAdvanced(false);
     setImageStyle(undefined);
@@ -430,50 +452,50 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
               {/* AI Generate Tab */}
               <TabsContent value="ai" className="space-y-4 mt-3">
                 <div className="space-y-3">
-                  {/* Toggle: Improve with AI vs Use as final prompt */}
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="improve-prompt" className="text-sm">
-                      {improvePrompt
-                        ? "AI will optimize your idea"
-                        : "Using prompt directly"}
-                    </Label>
-                    <Switch
-                      id="improve-prompt"
-                      checked={improvePrompt}
-                      onCheckedChange={setImprovePrompt}
-                    />
-                  </div>
-
-                  {/* Input - changes based on mode */}
+                  {/* Step 1: Idea input (optional) with Optimize button */}
                   <div className="space-y-2">
-                    <Label>
-                      {improvePrompt
-                        ? "Describe your image idea"
-                        : "Enter your prompt"}
+                    <Label className="text-sm">
+                      Describe your idea (optional)
                     </Label>
-                    {improvePrompt ? (
+                    <div className="flex gap-2">
                       <Input
                         placeholder="e.g., sunset on a beach, product photo, cozy cafe..."
-                        value={imageIdea}
-                        onChange={(e) => setImageIdea(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (
-                            e.key === "Enter" &&
-                            imageIdea.trim() &&
-                            !generateFromIdeaMutation.isPending
-                          ) {
-                            generateFromIdeaMutation.mutate();
-                          }
-                        }}
+                        value={ideaInput}
+                        onChange={(e) => setIdeaInput(e.target.value)}
+                        className="flex-1"
                       />
-                    ) : (
-                      <Textarea
-                        placeholder="Enter detailed prompt with style, lighting, composition..."
-                        value={imageIdea}
-                        onChange={(e) => setImageIdea(e.target.value)}
-                        rows={3}
-                      />
-                    )}
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => optimizePromptMutation.mutate()}
+                        disabled={!ideaInput.trim() || isOptimizing}
+                        className="whitespace-nowrap"
+                      >
+                        {isOptimizing ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Optimizing...
+                          </>
+                        ) : (
+                          <>
+                            <Wand2 className="w-4 h-4 mr-2" />
+                            Optimize
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Step 2: Editable prompt textarea */}
+                  <div className="space-y-2">
+                    <Label className="text-sm">Image Prompt</Label>
+                    <Textarea
+                      placeholder="Type your prompt directly or optimize from an idea above..."
+                      value={imagePrompt}
+                      onChange={(e) => setImagePrompt(e.target.value)}
+                      rows={4}
+                      className="font-mono text-sm"
+                    />
                   </div>
 
                   {/* Model, Size & Count in compact row */}
@@ -537,32 +559,46 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
                   </div>
 
                   {/* Collapsible Advanced Style Options */}
-                  <button
-                    type="button"
-                    onClick={() => setShowAdvanced(!showAdvanced)}
-                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <ChevronDown
-                      className={cn(
-                        "w-4 h-4 transition-transform",
-                        showAdvanced && "rotate-180"
-                      )}
-                    />
-                    Customize Style
-                    {(imageStyle || imageMood || imageComposition) && (
-                      <Badge
-                        variant="secondary"
-                        className="text-xs px-1.5 py-0"
-                      >
-                        {
-                          [imageStyle, imageMood, imageComposition].filter(
-                            Boolean
-                          ).length
-                        }{" "}
-                        set
-                      </Badge>
-                    )}
-                  </button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={() => setShowAdvanced(!showAdvanced)}
+                          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <ChevronDown
+                            className={cn(
+                              "w-4 h-4 transition-transform",
+                              showAdvanced && "rotate-180"
+                            )}
+                          />
+                          Customize Style
+                          {(imageStyle || imageMood || imageComposition) && (
+                            <Badge
+                              variant="secondary"
+                              className="text-xs px-1.5 py-0"
+                            >
+                              {
+                                [
+                                  imageStyle,
+                                  imageMood,
+                                  imageComposition,
+                                ].filter(Boolean).length
+                              }{" "}
+                              set
+                            </Badge>
+                          )}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs text-sm">
+                          These options guide AI prompt optimization. Click
+                          &quot;Optimize&quot; to apply them to your idea.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
 
                   {showAdvanced && (
                     <div className="grid grid-cols-3 gap-3 pt-1">
@@ -648,12 +684,12 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
                     </div>
                   )}
 
-                  {/* Generate button */}
+                  {/* Generate Images button */}
                   <Button
                     type="button"
                     onClick={() => generateFromIdeaMutation.mutate()}
                     disabled={
-                      !imageIdea.trim() || generateFromIdeaMutation.isPending
+                      !imagePrompt.trim() || generateFromIdeaMutation.isPending
                     }
                     className="w-full"
                   >
@@ -665,24 +701,10 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
                     ) : (
                       <>
                         <Sparkles className="w-4 h-4 mr-2" />
-                        {improvePrompt
-                          ? "Generate Images"
-                          : "Generate with Custom Prompt"}
+                        Generate Images
                       </>
                     )}
                   </Button>
-
-                  {/* Show AI-generated prompt for transparency (only when AI improved) */}
-                  {generatedPrompt && improvePrompt && (
-                    <details className="text-xs">
-                      <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-                        View AI-optimized prompt
-                      </summary>
-                      <p className="mt-2 p-2 bg-muted rounded text-muted-foreground">
-                        {generatedPrompt}
-                      </p>
-                    </details>
-                  )}
 
                   {/* Generated Images Preview */}
                   {generatedImages.length > 0 && (
