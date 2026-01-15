@@ -214,6 +214,18 @@ export {
   contentPostStatusEnum,
   contentMediaSourceEnum,
 } from "./schema/content-enums";
+export {
+  contentPostAccountTable,
+  contentPostAccountTableRelations,
+} from "./schema/content-post-account.table";
+
+// Re-export Platform connection tables
+export {
+  platformConnectionTable,
+  platformConnectionTableRelations,
+  platformConnectionStatusEnum,
+  platformSourceTypeEnum,
+} from "./schema/platform-connection.table";
 
 // Re-export Content creation types
 export type {
@@ -222,3 +234,24 @@ export type {
   ContentPostMediaJson,
   ContentPostPublishResultJson,
 } from "./schema/content-post.table";
+
+// Re-export Content post account types
+export type {
+  ContentPostAccountRow,
+  ContentPostAccountInsert,
+} from "./schema/content-post-account.table";
+
+// Re-export Platform connection types
+export type {
+  PlatformConnectionRow,
+  PlatformConnectionInsert,
+  PlatformConnectionStatusDb,
+  PlatformSourceTypeDb,
+} from "./schema/platform-connection.table";
+
+// Re-export Content enum types
+export type {
+  ContentPlatformDb,
+  ContentPostStatusDb,
+  ContentMediaSourceDb,
+} from "./schema/content-enums";

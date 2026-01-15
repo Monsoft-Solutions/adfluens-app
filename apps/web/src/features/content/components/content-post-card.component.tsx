@@ -53,7 +53,6 @@ type ContentPost = {
   id: string;
   organizationId: string;
   platforms: string[];
-  metaPageId: string | null;
   caption: string;
   hashtags: string[] | null;
   media: ContentPostMedia[];

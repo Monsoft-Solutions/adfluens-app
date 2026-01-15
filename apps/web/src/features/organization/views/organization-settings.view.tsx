@@ -22,6 +22,7 @@ import {
 } from "../components/profile-form.component";
 import { BusinessInfoDisplay } from "../components/business-info-display.component";
 import { GMBConnectionSettings } from "../components/gmb-connection-settings.component";
+import { MetaConnectionSettings } from "../components/meta-connection-settings.component";
 
 /**
  * Organization Settings view
@@ -179,10 +180,11 @@ export const OrganizationSettingsView: React.FC = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full max-w-lg grid-cols-3">
+        <TabsList className="grid w-full max-w-2xl grid-cols-4">
           <TabsTrigger value="profile">Profile & Links</TabsTrigger>
           <TabsTrigger value="business-info">Business Info</TabsTrigger>
           <TabsTrigger value="google-business">Google Business</TabsTrigger>
+          <TabsTrigger value="meta-business">Meta Business</TabsTrigger>
         </TabsList>
 
         {/* Profile Tab */}
@@ -266,6 +268,22 @@ export const OrganizationSettingsView: React.FC = () => {
             </CardHeader>
             <CardContent>
               <GMBConnectionSettings />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Meta Business Tab */}
+        <TabsContent value="meta-business" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Meta Business</CardTitle>
+              <CardDescription>
+                Connect your Meta Business account to manage Facebook and
+                Instagram pages directly from this app.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <MetaConnectionSettings />
             </CardContent>
           </Card>
         </TabsContent>

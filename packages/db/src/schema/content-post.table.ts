@@ -14,7 +14,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { contentPlatformEnum, contentPostStatusEnum } from "./content-enums";
-import { metaPageTable } from "./meta-page.table";
+import { contentPostAccountTable } from "./content-post-account.table";
 
 // =============================================================================
 // JSON Types for JSONB Columns
@@ -70,14 +70,6 @@ export const contentPostTable = pgTable(
     /** Target platforms for publishing (array of enum values) */
     platforms: contentPlatformEnum("platforms").array().notNull(),
 
-    /**
-     * Reference to Meta page (for Facebook/Instagram in Phase 1)
-     * Nullable to support future platforms that don't use Meta pages
-     */
-    metaPageId: uuid("meta_page_id").references(() => metaPageTable.id, {
-      onDelete: "set null",
-    }),
-
     /** Post caption/text content */
     caption: text("caption").notNull(),
 
@@ -114,7 +106,6 @@ export const contentPostTable = pgTable(
   (table) => [
     index("content_post_org_idx").on(table.organizationId),
     index("content_post_status_idx").on(table.status),
-    index("content_post_meta_page_idx").on(table.metaPageId),
     index("content_post_created_idx").on(table.createdAt),
   ]
 );
@@ -125,12 +116,9 @@ export const contentPostTable = pgTable(
 
 export const contentPostTableRelations = relations(
   contentPostTable,
-  ({ one }) => ({
-    /** Reference to the Meta page used for publishing */
-    metaPage: one(metaPageTable, {
-      fields: [contentPostTable.metaPageId],
-      references: [metaPageTable.id],
-    }),
+  ({ many }) => ({
+    /** Platform accounts this post is linked to */
+    postAccounts: many(contentPostAccountTable),
   })
 );
 

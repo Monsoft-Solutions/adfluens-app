@@ -70,11 +70,27 @@ export type ContentPostPublishResult = z.infer<
 >;
 
 // =============================================================================
-// Phase 1 Platform Schema (Facebook, Instagram only)
+// Platform Schemas
 // =============================================================================
 
+/**
+ * Phase 1 Platform Schema (Facebook, Instagram only)
+ * @deprecated Use contentPlatformSchema for new code
+ */
 export const phase1PlatformSchema = z.enum(["facebook", "instagram"]);
 export type Phase1Platform = z.infer<typeof phase1PlatformSchema>;
+
+/**
+ * All supported content platforms
+ */
+export const contentPlatformSchema = z.enum([
+  "facebook",
+  "instagram",
+  "gmb",
+  "linkedin",
+  "twitter",
+]);
+export type ContentPlatform = z.infer<typeof contentPlatformSchema>;
 
 // =============================================================================
 // Content Post
@@ -86,7 +102,7 @@ export const contentPostSchema = z.object({
   /** Organization that owns this post */
   organizationId: z.string(),
   /** Target platforms for publishing */
-  platforms: z.array(phase1PlatformSchema),
+  platforms: z.array(contentPlatformSchema),
   /** Post caption/text content */
   caption: z.string(),
   /** Hashtags (without # symbol) */
@@ -95,7 +111,7 @@ export const contentPostSchema = z.object({
   media: z.array(contentPostMediaSchema),
   /** Current status of the post */
   status: contentPostStatusSchema,
-  /** Results from publishing to each platform */
+  /** Results from publishing to each platform (legacy) */
   publishResults: z
     .record(z.string(), contentPostPublishResultSchema)
     .optional(),
@@ -112,6 +128,10 @@ export type ContentPost = z.infer<typeof contentPostSchema>;
 // Create Input
 // =============================================================================
 
+/**
+ * Legacy create input (Phase 1 - Meta only)
+ * @deprecated Use contentPostCreateInputV2Schema for new code
+ */
 export const contentPostCreateInputSchema = z.object({
   /** Target platforms for publishing */
   platforms: z
@@ -134,6 +154,29 @@ export const contentPostCreateInputSchema = z.object({
 });
 export type ContentPostCreateInput = z.infer<
   typeof contentPostCreateInputSchema
+>;
+
+/**
+ * V2 create input - supports multi-platform accounts
+ */
+export const contentPostCreateInputV2Schema = z.object({
+  /** Platform connection IDs to publish to */
+  accountIds: z.array(z.string().uuid()).min(1, "Select at least one account"),
+  /** Post caption/text content */
+  caption: z
+    .string()
+    .min(1, "Caption is required")
+    .max(63206, "Caption exceeds maximum length"),
+  /** Hashtags (without # symbol) */
+  hashtags: z.array(z.string().max(100)).max(30).optional(),
+  /** Media attachments */
+  media: z
+    .array(contentPostMediaSchema)
+    .min(1, "At least one image is required")
+    .max(10, "Maximum 10 images allowed"),
+});
+export type ContentPostCreateInputV2 = z.infer<
+  typeof contentPostCreateInputV2Schema
 >;
 
 // =============================================================================
@@ -161,8 +204,12 @@ export type ContentPostUpdateInput = z.infer<
 export const contentPostListInputSchema = z.object({
   /** Filter by status */
   status: contentPostStatusSchema.optional(),
-  /** Filter by Meta page ID */
+  /** Filter by Meta page ID (legacy) */
   pageId: z.string().uuid().optional(),
+  /** Filter by platform */
+  platform: contentPlatformSchema.optional(),
+  /** Filter by platform connection ID */
+  accountId: z.string().uuid().optional(),
   /** Number of posts to return */
   limit: z.number().int().min(1).max(100).default(20),
   /** Cursor for pagination */

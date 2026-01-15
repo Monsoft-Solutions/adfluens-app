@@ -1,19 +1,19 @@
 /**
- * Content Create Dialog
+ * Content Create Dialog V2
  *
- * Dialog for creating new content posts with AI-powered caption,
- * hashtag, and image generation.
+ * Dialog for creating new content posts with multi-account support.
+ * Uses platform connection IDs instead of Meta page ID.
  */
 
 import React, { useState } from "react";
 import {
   Loader2,
-  Plus,
-  AlertCircle,
+  Users,
   Image,
   FileText,
   ChevronDown,
   CheckCircle2,
+  Hash,
 } from "lucide-react";
 import {
   Dialog,
@@ -25,21 +25,24 @@ import {
   Button,
   cn,
 } from "@repo/ui";
-import type { ContentCreateDialogProps } from "./content-create-dialog.types";
-import { useContentCreate } from "./use-content-create.hook";
-import { PlatformSelector } from "./platform-selector.component";
+import { useContentCreateV2 } from "./use-content-create-v2.hook";
+import { AccountSelector } from "./account-selector.component";
 import { MediaSection } from "./media-section.component";
 import { CaptionSection } from "./caption-section.component";
 import { HashtagsSection } from "./hashtags-section.component";
 
-export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
+type ContentCreateDialogV2Props = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
+};
+
+export const ContentCreateDialogV2: React.FC<ContentCreateDialogV2Props> = ({
   open,
   onOpenChange,
-  pageId,
   onSuccess,
 }) => {
-  const content = useContentCreate({
-    pageId,
+  const content = useContentCreateV2({
     onSuccess,
     onClose: () => onOpenChange(false),
   });
@@ -50,6 +53,7 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
   // Auto-expand content section when media is added
   const hasMedia = content.mediaUrls.length > 0;
   const hasCaption = content.caption.trim().length > 0;
+  const hasAccounts = content.selectedAccountIds.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -57,17 +61,33 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="text-xl">Create Post</DialogTitle>
           <DialogDescription>
-            Create a new post for Facebook and Instagram. Use AI to generate
-            captions, hashtags, and images.
+            Create a new post for your connected social media accounts. Use AI
+            to generate captions, hashtags, and images.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Platform Selection - Always visible */}
-          <PlatformSelector
-            platforms={content.platforms}
-            onToggle={content.togglePlatform}
-          />
+          {/* Account Selection - Card with border */}
+          <div className="rounded-lg border bg-card p-4 space-y-4">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" />
+              <h3 className="font-medium">
+                Select Accounts
+                <span className="text-destructive ml-1">*</span>
+              </h3>
+              {hasAccounts && (
+                <span className="text-xs text-muted-foreground ml-auto">
+                  {content.selectedAccountIds.length} selected
+                </span>
+              )}
+            </div>
+            <AccountSelector
+              accounts={content.accounts}
+              selectedAccountIds={content.selectedAccountIds}
+              onToggle={content.toggleAccount}
+              isLoading={content.isLoadingAccounts}
+            />
+          </div>
 
           {/* Media Section - Card with border */}
           <div className="rounded-lg border bg-card p-4 space-y-4">
@@ -108,6 +128,8 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
               onImageCountChange={content.setImageCount}
               imageOptions={content.imageOptions}
               selectedModelConfig={content.selectedModelConfig}
+              generateFromIdeaMutation={content.generateFromIdeaMutation}
+              onAddGeneratedImage={content.addGeneratedImage}
               showAdvanced={content.showAdvanced}
               onShowAdvancedChange={content.setShowAdvanced}
               imageStyle={content.imageStyle}
@@ -116,82 +138,81 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
               onImageMoodChange={content.setImageMood}
               imageComposition={content.imageComposition}
               onImageCompositionChange={content.setImageComposition}
-              generateFromIdeaMutation={content.generateFromIdeaMutation}
-              onAddGeneratedImage={content.addGeneratedImage}
             />
           </div>
 
-          {/* Content Section - Collapsible Card */}
+          {/* Content Section - Expandable */}
           <div className="rounded-lg border bg-card overflow-hidden">
             <button
               type="button"
-              onClick={() => setIsContentExpanded(!isContentExpanded)}
               className={cn(
-                "w-full p-4 flex items-center gap-2 text-left hover:bg-muted/50 transition-colors",
-                !hasMedia && "opacity-60"
+                "w-full flex items-center justify-between p-4",
+                "hover:bg-accent/50 transition-colors",
+                (hasMedia || isContentExpanded) && "border-b"
               )}
+              onClick={() => setIsContentExpanded(!isContentExpanded)}
             >
-              <FileText className="w-5 h-5 text-primary" />
-              <h3 className="font-medium flex-1">Caption & Hashtags</h3>
-              {hasCaption && (
-                <CheckCircle2 className="w-4 h-4 text-green-500" />
-              )}
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" />
+                <h3 className="font-medium">Content</h3>
+                {hasCaption && (
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                )}
+              </div>
               <ChevronDown
                 className={cn(
-                  "w-4 h-4 text-muted-foreground transition-transform",
+                  "w-5 h-5 text-muted-foreground transition-transform",
                   (isContentExpanded || hasMedia) && "rotate-180"
                 )}
               />
             </button>
 
-            {/* Auto-expand when media is added, or manually expanded */}
             {(isContentExpanded || hasMedia) && (
-              <div className="px-4 pb-4 space-y-6 border-t pt-4">
-                {/* Caption Section */}
+              <div className="p-4 space-y-6">
+                {/* Caption */}
                 <CaptionSection
-                  aiTopic={content.aiTopic}
-                  onAiTopicChange={content.setAiTopic}
                   caption={content.caption}
                   onCaptionChange={content.setCaption}
                   captionLength={content.captionLength}
                   maxLength={content.minMaxCaption}
                   isTooLong={content.isCaptionTooLong}
-                  platforms={content.platforms}
+                  aiTopic={content.aiTopic}
+                  onAiTopicChange={content.setAiTopic}
                   generateCaptionMutation={content.generateCaptionMutation}
+                  platforms={content.selectedPlatforms}
                 />
 
-                {/* Hashtags Section */}
-                <HashtagsSection
-                  hashtags={content.hashtags}
-                  hashtagInput={content.hashtagInput}
-                  onInputChange={content.setHashtagInput}
-                  onAdd={content.addHashtag}
-                  onRemove={content.removeHashtag}
-                  caption={content.caption}
-                  suggestHashtagsMutation={content.suggestHashtagsMutation}
-                />
+                {/* Hashtags */}
+                <div className="pt-4 border-t">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Hash className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Hashtags</span>
+                    <span className="text-xs text-muted-foreground">
+                      ({content.hashtags.length}/30)
+                    </span>
+                  </div>
+                  <HashtagsSection
+                    hashtags={content.hashtags}
+                    hashtagInput={content.hashtagInput}
+                    onInputChange={content.setHashtagInput}
+                    onAdd={content.addHashtag}
+                    onRemove={content.removeHashtag}
+                    suggestHashtagsMutation={content.suggestHashtagsMutation}
+                    caption={content.caption}
+                  />
+                </div>
               </div>
             )}
           </div>
-
-          {/* Error */}
-          {content.error && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{content.error.message}</span>
-            </div>
-          )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button
             onClick={content.handleCreate}
             disabled={!content.isValid || content.isCreating}
-            size="lg"
-            className="min-w-[140px]"
           >
             {content.isCreating ? (
               <>
@@ -199,10 +220,7 @@ export const ContentCreateDialog: React.FC<ContentCreateDialogProps> = ({
                 Creating...
               </>
             ) : (
-              <>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Post
-              </>
+              "Create Draft"
             )}
           </Button>
         </DialogFooter>

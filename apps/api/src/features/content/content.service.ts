@@ -5,16 +5,27 @@
  * Handles CRUD operations, media uploads, and platform-specific publishing.
  */
 
-import { db, eq, and, desc, contentPostTable, metaPageTable } from "@repo/db";
+import {
+  db,
+  eq,
+  and,
+  desc,
+  inArray,
+  contentPostTable,
+  contentPostAccountTable,
+  platformConnectionTable,
+} from "@repo/db";
 import type {
   ContentPostRow,
   ContentPostInsert,
   ContentPostMediaJson,
   ContentPostPublishResultJson,
+  ContentPostAccountInsert,
+  PlatformConnectionRow,
   MetaPageRow,
 } from "@repo/db";
 import type {
-  ContentPostCreateInput,
+  ContentPostCreateInputV2,
   ContentPostUpdateInput,
   ContentPostListInput,
 } from "@repo/types/content/content-post.type";
@@ -27,6 +38,10 @@ import { TRPCError } from "@trpc/server";
 
 import { getAdapter, getAllSpecs } from "./platform-adapters";
 import * as metaContentApi from "../meta/meta-content-api.utils";
+import {
+  getConnectionsByIds,
+  resolveCredentials,
+} from "../platform-connection/platform-connection.service";
 import { mediaStorage } from "@repo/media-storage";
 
 // =============================================================================
@@ -43,15 +58,46 @@ type ListPostsResult = {
 // =============================================================================
 
 /**
- * Create a new content post (draft)
+ * Create a new content post with multi-account support (V2)
+ *
+ * Creates a post and links it to multiple platform connections.
  */
-export async function createPost(
-  input: ContentPostCreateInput,
+export async function createPostV2(
+  input: ContentPostCreateInputV2,
   organizationId: string,
   userId: string
-): Promise<ContentPostRow> {
-  // Validate platforms
-  for (const platform of input.platforms) {
+): Promise<ContentPostRow & { accounts: PlatformConnectionRow[] }> {
+  // Get the platform connections
+  const connections = await db.query.platformConnectionTable.findMany({
+    where: and(
+      inArray(platformConnectionTable.id, input.accountIds),
+      eq(platformConnectionTable.organizationId, organizationId),
+      eq(platformConnectionTable.status, "active")
+    ),
+  });
+
+  if (connections.length === 0) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "No valid platform connections found",
+    });
+  }
+
+  // Ensure all requested accounts were found
+  if (connections.length !== input.accountIds.length) {
+    const foundIds = new Set(connections.map((c) => c.id));
+    const missingIds = input.accountIds.filter((id) => !foundIds.has(id));
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Some platform connections not found or inactive: ${missingIds.join(", ")}`,
+    });
+  }
+
+  // Extract unique platforms from connections
+  const platforms = [...new Set(connections.map((c) => c.platform))];
+
+  // Validate against each platform
+  for (const platform of platforms) {
     const adapter = getAdapter(platform);
     const mockPost = {
       caption: input.caption,
@@ -68,12 +114,12 @@ export async function createPost(
     }
   }
 
+  // Create the post
   const [post] = await db
     .insert(contentPostTable)
     .values({
       organizationId,
-      platforms: input.platforms,
-      metaPageId: input.pageId,
+      platforms,
       caption: input.caption,
       hashtags: input.hashtags || null,
       media: input.media as ContentPostMediaJson[],
@@ -89,7 +135,18 @@ export async function createPost(
     });
   }
 
-  return post;
+  // Link post to platform connections
+  const postAccountInserts: ContentPostAccountInsert[] = connections.map(
+    (conn) => ({
+      contentPostId: post.id,
+      platformConnectionId: conn.id,
+      status: "pending" as const,
+    })
+  );
+
+  await db.insert(contentPostAccountTable).values(postAccountInserts);
+
+  return { ...post, accounts: connections };
 }
 
 /**
@@ -143,15 +200,28 @@ export async function listPosts(
     conditions.push(eq(contentPostTable.status, options.status));
   }
 
-  if (options?.pageId) {
-    conditions.push(eq(contentPostTable.metaPageId, options.pageId));
-  }
+  // If filtering by platform, we need to check if platform is in the platforms array
+  // Drizzle doesn't have a direct contains for arrays, so we use SQL
+  let posts: ContentPostRow[];
 
-  const posts = await db.query.contentPostTable.findMany({
-    where: and(...conditions),
-    orderBy: [desc(contentPostTable.createdAt)],
-    limit: limit + 1, // Fetch one extra to determine if there are more
-  });
+  if (options?.platform) {
+    // Use raw SQL for array contains
+    const { sql } = await import("drizzle-orm");
+    posts = await db.query.contentPostTable.findMany({
+      where: and(
+        ...conditions,
+        sql`${options.platform} = ANY(${contentPostTable.platforms})`
+      ),
+      orderBy: [desc(contentPostTable.createdAt)],
+      limit: limit + 1,
+    });
+  } else {
+    posts = await db.query.contentPostTable.findMany({
+      where: and(...conditions),
+      orderBy: [desc(contentPostTable.createdAt)],
+      limit: limit + 1,
+    });
+  }
 
   const hasMore = posts.length > limit;
   const resultPosts = hasMore ? posts.slice(0, limit) : posts;
@@ -249,7 +319,9 @@ export async function deletePost(
 // =============================================================================
 
 /**
- * Publish a post to all selected platforms
+ * Publish a post to all linked platform accounts (V2 flow)
+ *
+ * Resolves credentials from content_post_account → platform_connection → source table
  */
 export async function publishPost(
   postId: string,
@@ -264,13 +336,16 @@ export async function publishPost(
     });
   }
 
-  // Get the Meta page for publishing
-  let metaPage: MetaPageRow | null = null;
-  if (post.metaPageId) {
-    metaPage =
-      (await db.query.metaPageTable.findFirst({
-        where: eq(metaPageTable.id, post.metaPageId),
-      })) ?? null;
+  // Get linked platform accounts
+  const postAccounts = await db.query.contentPostAccountTable.findMany({
+    where: eq(contentPostAccountTable.contentPostId, postId),
+  });
+
+  if (postAccounts.length === 0) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "No platform accounts linked to this post",
+    });
   }
 
   // Mark as pending
@@ -283,41 +358,63 @@ export async function publishPost(
   let hasSuccess = false;
   let lastError: string | null = null;
 
-  // Publish to each platform
-  for (const platform of post.platforms) {
+  // Resolve platform connections
+  const connectionIds = postAccounts.map((pa) => pa.platformConnectionId);
+  const connections = await getConnectionsByIds(connectionIds, organizationId);
+
+  // Publish to each linked account
+  for (const account of postAccounts) {
+    const connection = connections.find(
+      (c) => c.id === account.platformConnectionId
+    );
+    if (!connection) {
+      await updateAccountStatus(account.id, "failed", {
+        error: "Platform connection not found",
+      });
+      continue;
+    }
+
     try {
-      if (platform === "facebook" || platform === "instagram") {
-        if (!metaPage) {
-          throw new Error("Meta page not found for publishing");
-        }
+      const resolved = await resolveCredentials(connection);
+      let result: PlatformPublishResult;
 
-        if (platform === "facebook") {
-          results[platform] = await publishToFacebook(post, metaPage);
-        } else {
-          results[platform] = await publishToInstagram(post, metaPage);
-        }
-
-        if (results[platform].success) {
-          hasSuccess = true;
-        } else {
-          lastError = results[platform].error || "Unknown error";
-        }
+      if (connection.platform === "facebook") {
+        const pageData = buildMetaPageData(resolved);
+        result = await publishToFacebook(post, pageData);
+      } else if (connection.platform === "instagram") {
+        const pageData = buildMetaPageData(resolved);
+        result = await publishToInstagram(post, pageData);
+      } else {
+        result = {
+          success: false,
+          error: `Platform ${connection.platform} not yet supported`,
+        };
       }
-      // Future platforms can be added here:
-      // else if (platform === "gmb") { ... }
-      // else if (platform === "linkedin") { ... }
+
+      results[connection.platform] = result;
+      await updateAccountStatus(
+        account.id,
+        result.success ? "published" : "failed",
+        {
+          postId: result.postId,
+          permalink: result.permalink,
+          error: result.error,
+          publishedAt: result.success ? new Date().toISOString() : undefined,
+        }
+      );
+
+      if (result.success) hasSuccess = true;
+      else lastError = result.error || "Unknown error";
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
-      results[platform] = {
-        success: false,
-        error: errorMessage,
-      };
+      results[connection.platform] = { success: false, error: errorMessage };
       lastError = errorMessage;
+      await updateAccountStatus(account.id, "failed", { error: errorMessage });
     }
   }
 
-  // Convert results to JSON format for storage
+  // Build publish results JSON
   const publishResultsJson: Record<string, ContentPostPublishResultJson> = {};
   for (const [platform, result] of Object.entries(results)) {
     publishResultsJson[platform] = {
@@ -328,7 +425,7 @@ export async function publishPost(
     };
   }
 
-  // Update post with results
+  // Update post status
   await db
     .update(contentPostTable)
     .set({
@@ -339,6 +436,38 @@ export async function publishPost(
     .where(eq(contentPostTable.id, postId));
 
   return results;
+}
+
+/**
+ * Helper: Build MetaPageRow-compatible object from resolved credentials
+ */
+function buildMetaPageData(
+  resolved: Awaited<ReturnType<typeof resolveCredentials>>
+): MetaPageRow {
+  return {
+    pageId: resolved.credentials?.pageId as string,
+    pageAccessToken: resolved.accessToken!,
+    instagramAccountId: resolved.credentials?.instagramAccountId as
+      | string
+      | null,
+  } as MetaPageRow;
+}
+
+/**
+ * Helper: Update content_post_account status
+ */
+async function updateAccountStatus(
+  accountId: string,
+  status: "published" | "failed",
+  publishResult: Record<string, unknown>
+): Promise<void> {
+  await db
+    .update(contentPostAccountTable)
+    .set({
+      status,
+      publishResult: publishResult as ContentPostPublishResultJson,
+    })
+    .where(eq(contentPostAccountTable.id, accountId));
 }
 
 /**

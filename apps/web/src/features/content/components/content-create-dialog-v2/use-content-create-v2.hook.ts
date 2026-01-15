@@ -1,30 +1,45 @@
 /**
- * Content Create Hook
+ * Content Create V2 Hook
  *
- * Custom hook managing all state, mutations, and handlers for content creation.
+ * Custom hook managing state for multi-account content creation.
+ * Uses platform connection IDs instead of Meta page ID.
  */
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { trpcClient, useTRPC } from "@/lib/trpc";
-import type { Platform, GeneratedImage } from "./content-create-dialog.types";
-import { platformConfig } from "./content-create-dialog.types";
 
-type UseContentCreateProps = {
-  pageId: string;
+type GeneratedImage = {
+  url: string;
+  storedUrl: string;
+  width: number;
+  height: number;
+  model: string;
+};
+
+type UseContentCreateV2Props = {
   onSuccess?: () => void;
   onClose: () => void;
 };
 
-export const useContentCreate = ({
-  pageId,
+const platformMaxCaptions: Record<string, number> = {
+  facebook: 63206,
+  instagram: 2200,
+  gmb: 1500,
+  linkedin: 3000,
+  twitter: 280,
+};
+
+export const useContentCreateV2 = ({
   onSuccess,
   onClose: _onClose,
-}: UseContentCreateProps) => {
+}: UseContentCreateV2Props) => {
   const trpc = useTRPC();
 
+  // Account selection state
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
+
   // Form state
-  const [platforms, setPlatforms] = useState<Platform[]>(["facebook"]);
   const [caption, setCaption] = useState("");
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [hashtagInput, setHashtagInput] = useState("");
@@ -52,6 +67,13 @@ export const useContentCreate = ({
     string | undefined
   >();
 
+  // Fetch connected accounts
+  const { data: accountsData, isLoading: isLoadingAccounts } = useQuery({
+    ...trpc.platformConnection.list.queryOptions({ status: "active" }),
+  });
+
+  const accounts = accountsData || [];
+
   // Check if AI image generation is available
   const { data: aiAvailability } = useQuery({
     ...trpc.content.isImageGenerationAvailable.queryOptions(),
@@ -70,7 +92,7 @@ export const useContentCreate = ({
     (m) => m.value === imageModel
   );
 
-  // Reset size when model changes if current size is invalid for new model
+  // Reset size when model changes if current size is invalid
   React.useEffect(() => {
     if (
       selectedModelConfig &&
@@ -80,9 +102,29 @@ export const useContentCreate = ({
     }
   }, [imageModel, selectedModelConfig, imageSize]);
 
+  // Derive platforms from selected accounts
+  const selectedPlatforms = useMemo(() => {
+    const platforms = new Set<string>();
+    accounts
+      .filter((a) => selectedAccountIds.includes(a.id))
+      .forEach((a) => platforms.add(a.platform));
+    return Array.from(platforms);
+  }, [accounts, selectedAccountIds]);
+
+  // Calculate min caption length across selected platforms
+  const minMaxCaption = useMemo(() => {
+    if (selectedPlatforms.length === 0) return 63206;
+    return Math.min(
+      ...selectedPlatforms.map((p) => platformMaxCaptions[p] || 63206)
+    );
+  }, [selectedPlatforms]);
+
+  const captionLength = caption.length;
+  const isCaptionTooLong = captionLength > minMaxCaption;
+
   // Reset form function
   const resetForm = () => {
-    setPlatforms(["facebook"]);
+    setSelectedAccountIds([]);
     setCaption("");
     setHashtags([]);
     setMediaUrls([]);
@@ -106,8 +148,7 @@ export const useContentCreate = ({
   const createMutation = useMutation({
     mutationFn: () =>
       trpcClient.content.create.mutate({
-        platforms,
-        pageId,
+        accountIds: selectedAccountIds,
         caption,
         hashtags: hashtags.length > 0 ? hashtags : undefined,
         media: mediaUrls.map((url) => ({
@@ -129,7 +170,9 @@ export const useContentCreate = ({
     mutationFn: (topic: string) =>
       trpcClient.content.generateCaption.mutate({
         topic,
-        platforms,
+        platforms: selectedPlatforms as Array<
+          "facebook" | "instagram" | "gmb" | "linkedin" | "twitter"
+        >,
         tone: "engaging",
       }),
     onSuccess: (result) => {
@@ -144,7 +187,9 @@ export const useContentCreate = ({
     mutationFn: () =>
       trpcClient.content.suggestHashtags.mutate({
         caption,
-        platforms,
+        platforms: selectedPlatforms as Array<
+          "facebook" | "instagram" | "gmb" | "linkedin" | "twitter"
+        >,
         count: 15,
       }),
     onSuccess: (result) => {
@@ -166,7 +211,7 @@ export const useContentCreate = ({
     },
   });
 
-  // Optimize prompt from idea mutation
+  // Optimize prompt mutation
   const optimizePromptMutation = useMutation({
     mutationFn: () =>
       trpcClient.content.optimizeImagePrompt.mutate({
@@ -210,7 +255,7 @@ export const useContentCreate = ({
     },
   });
 
-  // Generate AI images from prompt mutation
+  // Generate AI images mutation
   const generateFromIdeaMutation = useMutation({
     mutationFn: () =>
       trpcClient.content.generateFromIdea.mutate({
@@ -225,19 +270,12 @@ export const useContentCreate = ({
     },
   });
 
-  // Platform validation
-  const minMaxCaption = Math.min(
-    ...platforms.map((p) => platformConfig[p].maxCaption)
-  );
-  const captionLength = caption.length;
-  const isCaptionTooLong = captionLength > minMaxCaption;
-
   // Handlers
-  const togglePlatform = (platform: Platform) => {
-    setPlatforms((prev) =>
-      prev.includes(platform)
-        ? prev.filter((p) => p !== platform)
-        : [...prev, platform]
+  const toggleAccount = (accountId: string) => {
+    setSelectedAccountIds((prev) =>
+      prev.includes(accountId)
+        ? prev.filter((id) => id !== accountId)
+        : [...prev, accountId]
     );
   };
 
@@ -277,15 +315,18 @@ export const useContentCreate = ({
   };
 
   const isValid =
-    platforms.length > 0 &&
+    selectedAccountIds.length > 0 &&
     caption.trim().length > 0 &&
     !isCaptionTooLong &&
     mediaUrls.length > 0;
 
   return {
-    // Platform state
-    platforms,
-    togglePlatform,
+    // Account selection
+    accounts,
+    isLoadingAccounts,
+    selectedAccountIds,
+    toggleAccount,
+    selectedPlatforms,
 
     // Media state
     mediaTab,

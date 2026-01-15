@@ -7,6 +7,9 @@
 
 import { facebookAdapter, FACEBOOK_SPECS } from "./facebook.adapter";
 import { instagramAdapter, INSTAGRAM_SPECS } from "./instagram.adapter";
+import { gmbAdapter, GMB_SPECS } from "./gmb.adapter";
+import { linkedinAdapter, LINKEDIN_SPECS } from "./linkedin.adapter";
+import { twitterAdapter, TWITTER_SPECS } from "./twitter.adapter";
 import type { PlatformAdapter } from "./platform-adapter.type";
 import type { PlatformSpecs } from "@repo/types/content/platform-specs.type";
 
@@ -20,10 +23,9 @@ import type { PlatformSpecs } from "@repo/types/content/platform-specs.type";
 export const platformAdapters: Record<string, PlatformAdapter> = {
   facebook: facebookAdapter,
   instagram: instagramAdapter,
-  // Future platforms:
-  // gmb: gmbAdapter,
-  // linkedin: linkedinAdapter,
-  // twitter: twitterAdapter,
+  gmb: gmbAdapter,
+  linkedin: linkedinAdapter,
+  twitter: twitterAdapter,
 };
 
 // =============================================================================
@@ -76,4 +78,10 @@ export function getSpecs(platform: string): PlatformSpecs {
 // =============================================================================
 
 export type { PlatformAdapter } from "./platform-adapter.type";
-export { FACEBOOK_SPECS, INSTAGRAM_SPECS };
+export {
+  FACEBOOK_SPECS,
+  INSTAGRAM_SPECS,
+  GMB_SPECS,
+  LINKEDIN_SPECS,
+  TWITTER_SPECS,
+};

@@ -9,7 +9,8 @@ import { router, organizationProcedure } from "../../trpc/init";
 import {
   contentPostMediaSchema,
   contentPostListInputSchema,
-  phase1PlatformSchema,
+  contentPlatformSchema,
+  contentPostCreateInputV2Schema,
 } from "@repo/types/content/content-post.type";
 import * as contentService from "./content.service";
 import * as contentAiUtils from "./content-ai.utils";
@@ -32,28 +33,19 @@ export const contentRouter = router({
   // ===========================================================================
 
   /**
-   * Create a new content post (draft)
+   * Create a new content post with multi-account support
+   *
+   * Uses platform connection IDs to link posts to accounts.
+   * Supports publishing to multiple accounts across different platforms.
    */
   create: organizationProcedure
-    .input(
-      z.object({
-        platforms: z
-          .array(phase1PlatformSchema)
-          .min(1, "Select at least one platform"),
-        pageId: z.string().uuid("Invalid page ID"),
-        caption: z
-          .string()
-          .min(1, "Caption is required")
-          .max(63206, "Caption exceeds maximum length"),
-        hashtags: z.array(z.string().max(100)).max(30).optional(),
-        media: z
-          .array(contentPostMediaSchema)
-          .min(1, "At least one image is required")
-          .max(10, "Maximum 10 images allowed"),
-      })
-    )
+    .input(contentPostCreateInputV2Schema)
     .mutation(async ({ input, ctx }) => {
-      return contentService.createPost(input, ctx.organization.id, ctx.user.id);
+      return contentService.createPostV2(
+        input,
+        ctx.organization.id,
+        ctx.user.id
+      );
     }),
 
   /**
@@ -136,7 +128,7 @@ export const contentRouter = router({
   validatePost: organizationProcedure
     .input(
       z.object({
-        platforms: z.array(phase1PlatformSchema).min(1),
+        platforms: z.array(contentPlatformSchema).min(1),
         caption: z.string(),
         hashtags: z.array(z.string()).optional(),
         media: z.array(contentPostMediaSchema),
@@ -194,7 +186,7 @@ export const contentRouter = router({
             "witty",
           ])
           .optional(),
-        platforms: z.array(phase1PlatformSchema).min(1),
+        platforms: z.array(contentPlatformSchema).min(1),
         businessContext: z.string().optional(),
         additionalInstructions: z.string().optional(),
       })
@@ -220,7 +212,7 @@ export const contentRouter = router({
             "witty",
           ])
           .optional(),
-        platforms: z.array(phase1PlatformSchema).min(1),
+        platforms: z.array(contentPlatformSchema).min(1),
         businessContext: z.string().optional(),
         count: z.number().int().min(1).max(5).default(3),
       })
@@ -237,7 +229,7 @@ export const contentRouter = router({
     .input(
       z.object({
         caption: z.string().min(1, "Caption is required"),
-        platforms: z.array(phase1PlatformSchema).min(1),
+        platforms: z.array(contentPlatformSchema).min(1),
         count: z.number().int().min(1).max(30).default(15),
         topic: z.string().optional(),
       })
@@ -253,7 +245,7 @@ export const contentRouter = router({
     .input(
       z.object({
         originalCaption: z.string().min(1, "Caption is required"),
-        platforms: z.array(phase1PlatformSchema).min(1),
+        platforms: z.array(contentPlatformSchema).min(1),
         style: z
           .enum(["expand", "condense", "professional", "engaging"])
           .optional(),
