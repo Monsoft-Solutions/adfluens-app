@@ -8,14 +8,7 @@
 import React, { useState, useMemo } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { trpcClient, useTRPC } from "@/lib/trpc";
-
-type GeneratedImage = {
-  url: string;
-  storedUrl: string;
-  width: number;
-  height: number;
-  model: string;
-};
+import type { GeneratedImage } from "./content-create-dialog.types";
 
 type UseContentCreateV2Props = {
   onSuccess?: () => void;

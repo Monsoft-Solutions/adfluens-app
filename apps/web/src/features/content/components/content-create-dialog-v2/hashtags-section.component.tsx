@@ -144,7 +144,7 @@ export const HashtagsSection: React.FC<HashtagsSectionProps> = ({
             <div
               className={cn(
                 "h-full transition-all",
-                isNearLimit ? "bg-yellow-500" : "bg-primary"
+                isNearLimit ? "bg-warning" : "bg-primary"
               )}
               style={{ width: `${progressPercentage}%` }}
             />
@@ -152,9 +152,7 @@ export const HashtagsSection: React.FC<HashtagsSectionProps> = ({
           <span
             className={cn(
               "text-xs",
-              isNearLimit
-                ? "text-yellow-600 dark:text-yellow-500"
-                : "text-muted-foreground"
+              isNearLimit ? "text-warning" : "text-muted-foreground"
             )}
           >
             {hashtags.length}/30

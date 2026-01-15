@@ -123,30 +123,6 @@ export const platformConnectionRouter = router({
    * Returns counts and availability by platform.
    */
   getSummary: organizationProcedure.query(async ({ ctx }) => {
-    const connections = await platformConnectionService.listConnections(
-      ctx.organization.id,
-      { status: "active" }
-    );
-
-    const summary = {
-      facebook: { count: 0, accounts: [] as { id: string; name: string }[] },
-      instagram: { count: 0, accounts: [] as { id: string; name: string }[] },
-      gmb: { count: 0, accounts: [] as { id: string; name: string }[] },
-      linkedin: { count: 0, accounts: [] as { id: string; name: string }[] },
-      twitter: { count: 0, accounts: [] as { id: string; name: string }[] },
-    };
-
-    for (const conn of connections) {
-      const platform = conn.platform as keyof typeof summary;
-      if (summary[platform]) {
-        summary[platform].count++;
-        summary[platform].accounts.push({
-          id: conn.id,
-          name: conn.accountName,
-        });
-      }
-    }
-
-    return summary;
+    return platformConnectionService.getConnectionsSummary(ctx.organization.id);
   }),
 });

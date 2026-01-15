@@ -144,7 +144,7 @@ export const OrganizationSettingsView: React.FC = () => {
       {successMessage && (
         <div
           className={cn(
-            "bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400",
+            "bg-success/10 border border-success/20 text-success",
             "px-4 py-3 rounded-lg mb-6 flex items-center gap-3"
           )}
         >

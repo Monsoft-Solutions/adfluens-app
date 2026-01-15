@@ -44,6 +44,12 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
 
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -203,6 +209,14 @@
   --destructive: oklch(0.58 0.22 27);
   --destructive-foreground: oklch(1 0 0);
 
+  /* Success - Emerald green */
+  --success: oklch(0.66 0.17 162); /* #10B981 */
+  --success-foreground: oklch(1 0 0);
+
+  /* Warning - Amber/Yellow */
+  --warning: oklch(0.75 0.18 75); /* #F59E0B */
+  --warning-foreground: oklch(0.11 0 0);
+
   /* Borders & Inputs */
   --border: oklch(0.91 0 0); /* Smoke #E5E5E5 */
   --input: oklch(0.91 0 0);
@@ -242,6 +256,14 @@
   /* Destructive */
   --destructive: oklch(0.45 0.18 27);
   --destructive-foreground: oklch(0.94 0 0);
+
+  /* Success - Emerald green (brighter for dark mode) */
+  --success: oklch(0.66 0.17 162); /* #10B981 */
+  --success-foreground: oklch(0.11 0 0);
+
+  /* Warning - Amber/Yellow (brighter for dark mode) */
+  --warning: oklch(0.8 0.16 75); /* Brighter amber */
+  --warning-foreground: oklch(0.11 0 0);
 
   /* Borders & Inputs */
   --border: oklch(0.23 0 0); /* Graphite #262626 */

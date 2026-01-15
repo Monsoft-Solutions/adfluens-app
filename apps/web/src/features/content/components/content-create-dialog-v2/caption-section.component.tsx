@@ -54,14 +54,14 @@ export const CaptionSection: React.FC<CaptionSectionProps> = ({
   const progressPercentage = Math.min((captionLength / maxLength) * 100, 100);
   const getProgressColor = () => {
     if (isTooLong) return "bg-destructive";
-    if (progressPercentage > 80) return "bg-yellow-500";
-    return "bg-green-500";
+    if (progressPercentage > 80) return "bg-warning";
+    return "bg-success";
   };
 
   const getTextColor = () => {
     if (isTooLong) return "text-destructive";
-    if (progressPercentage > 80) return "text-yellow-600 dark:text-yellow-500";
-    return "text-green-600 dark:text-green-500";
+    if (progressPercentage > 80) return "text-warning";
+    return "text-success";
   };
 
   return (
@@ -151,9 +151,7 @@ export const CaptionSection: React.FC<CaptionSectionProps> = ({
           )}
 
           {!isTooLong && progressPercentage > 80 && (
-            <p className="text-xs text-yellow-600 dark:text-yellow-500">
-              Approaching character limit
-            </p>
+            <p className="text-xs text-warning">Approaching character limit</p>
           )}
         </div>
       </div>

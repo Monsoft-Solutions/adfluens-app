@@ -212,6 +212,57 @@ export async function resolveCredentialsForMany(
 }
 
 // =============================================================================
+// Summary & Stats
+// =============================================================================
+
+type PlatformAccount = {
+  id: string;
+  name: string;
+};
+
+type PlatformSummary = {
+  facebook: { count: number; accounts: PlatformAccount[] };
+  instagram: { count: number; accounts: PlatformAccount[] };
+  gmb: { count: number; accounts: PlatformAccount[] };
+  linkedin: { count: number; accounts: PlatformAccount[] };
+  twitter: { count: number; accounts: PlatformAccount[] };
+};
+
+/**
+ * Get a summary of connected platforms for an organization
+ *
+ * Returns counts and account lists by platform.
+ */
+export async function getConnectionsSummary(
+  organizationId: string
+): Promise<PlatformSummary> {
+  const connections = await listConnections(organizationId, {
+    status: "active",
+  });
+
+  const summary: PlatformSummary = {
+    facebook: { count: 0, accounts: [] },
+    instagram: { count: 0, accounts: [] },
+    gmb: { count: 0, accounts: [] },
+    linkedin: { count: 0, accounts: [] },
+    twitter: { count: 0, accounts: [] },
+  };
+
+  for (const conn of connections) {
+    const platform = conn.platform as keyof PlatformSummary;
+    if (platform in summary) {
+      summary[platform].count++;
+      summary[platform].accounts.push({
+        id: conn.id,
+        name: conn.accountName,
+      });
+    }
+  }
+
+  return summary;
+}
+
+// =============================================================================
 // Sync Operations
 // =============================================================================
 

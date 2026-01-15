@@ -54,6 +54,20 @@ type ListPostsResult = {
 };
 
 // =============================================================================
+// Helper Functions
+// =============================================================================
+
+/**
+ * Extract valid image URLs from post media
+ * Prefers storedUrl (from our storage) over original URL
+ */
+function extractImageUrls(media: ContentPostMediaJson[]): string[] {
+  return media
+    .map((m) => m.storedUrl || m.url)
+    .filter((url): url is string => !!url);
+}
+
+// =============================================================================
 // CRUD Operations
 // =============================================================================
 
@@ -378,17 +392,33 @@ export async function publishPost(
       const resolved = await resolveCredentials(connection);
       let result: PlatformPublishResult;
 
-      if (connection.platform === "facebook") {
-        const pageData = buildMetaPageData(resolved);
-        result = await publishToFacebook(post, pageData);
-      } else if (connection.platform === "instagram") {
-        const pageData = buildMetaPageData(resolved);
-        result = await publishToInstagram(post, pageData);
-      } else {
-        result = {
-          success: false,
-          error: `Platform ${connection.platform} not yet supported`,
-        };
+      switch (connection.platform) {
+        case "facebook": {
+          const pageData = buildMetaPageData(resolved);
+          result = await publishToFacebook(post, pageData);
+          break;
+        }
+        case "instagram": {
+          const pageData = buildMetaPageData(resolved);
+          result = await publishToInstagram(post, pageData);
+          break;
+        }
+        case "gmb":
+        case "linkedin":
+        case "twitter":
+          result = {
+            success: false,
+            error: `Platform ${connection.platform} publishing not yet implemented`,
+          };
+          break;
+        default: {
+          // Type assertion to ensure exhaustive checking
+          const _exhaustiveCheck: never = connection.platform;
+          result = {
+            success: false,
+            error: `Unknown platform: ${_exhaustiveCheck}`,
+          };
+        }
       }
 
       results[connection.platform] = result;
@@ -440,16 +470,29 @@ export async function publishPost(
 
 /**
  * Helper: Build MetaPageRow-compatible object from resolved credentials
+ * @throws TRPCError if required credentials are missing
  */
 function buildMetaPageData(
   resolved: Awaited<ReturnType<typeof resolveCredentials>>
 ): MetaPageRow {
+  if (!resolved.credentials?.pageId) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Missing pageId in resolved credentials",
+    });
+  }
+
+  if (!resolved.accessToken) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Missing access token in resolved credentials",
+    });
+  }
+
   return {
-    pageId: resolved.credentials?.pageId as string,
-    pageAccessToken: resolved.accessToken!,
-    instagramAccountId: resolved.credentials?.instagramAccountId as
-      | string
-      | null,
+    pageId: resolved.credentials.pageId,
+    pageAccessToken: resolved.accessToken,
+    instagramAccountId: resolved.credentials.instagramAccountId ?? null,
   } as MetaPageRow;
 }
 
@@ -479,11 +522,7 @@ async function publishToFacebook(
 ): Promise<PlatformPublishResult> {
   const adapter = getAdapter("facebook");
   const caption = adapter.formatCaption(post.caption, post.hashtags);
-
-  // Get stored URLs from media
-  const imageUrls = post.media
-    .map((m: ContentPostMediaJson) => m.storedUrl || m.url)
-    .filter((url: string | undefined): url is string => !!url);
+  const imageUrls = extractImageUrls(post.media);
 
   if (imageUrls.length === 0) {
     return {
@@ -525,8 +564,12 @@ async function publishToFacebook(
         page.pageAccessToken
       );
       permalink = postDetails.permalink_url;
-    } catch {
-      // Permalink fetch failed, but post was successful
+    } catch (error) {
+      // Permalink fetch failed, but post was successful - log for debugging
+      console.warn(
+        `Failed to fetch Facebook permalink for post ${result.id}:`,
+        error instanceof Error ? error.message : error
+      );
     }
 
     return {
@@ -558,11 +601,7 @@ async function publishToInstagram(
 
   const adapter = getAdapter("instagram");
   const caption = adapter.formatCaption(post.caption, post.hashtags);
-
-  // Get stored URLs from media
-  const imageUrls = post.media
-    .map((m: ContentPostMediaJson) => m.storedUrl || m.url)
-    .filter((url: string | undefined): url is string => !!url);
+  const imageUrls = extractImageUrls(post.media);
 
   if (imageUrls.length === 0) {
     return {

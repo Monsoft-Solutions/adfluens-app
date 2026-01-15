@@ -135,7 +135,7 @@ export const MetaConnectionSettings: React.FC = () => {
       {successMessage && (
         <div
           className={cn(
-            "bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400",
+            "bg-success/10 border border-success/20 text-success",
             "px-4 py-3 rounded-lg flex items-center gap-3"
           )}
         >
@@ -170,19 +170,19 @@ export const MetaConnectionSettings: React.FC = () => {
               "flex items-start gap-4 p-4 rounded-lg",
               hasError
                 ? "bg-destructive/5 border border-destructive/20"
-                : "bg-emerald-500/5 border border-emerald-500/20"
+                : "bg-success/5 border border-success/20"
             )}
           >
             <div
               className={cn(
                 "p-2 rounded-lg",
-                hasError ? "bg-destructive/10" : "bg-emerald-500/10"
+                hasError ? "bg-destructive/10" : "bg-success/10"
               )}
             >
               {hasError ? (
                 <AlertCircle className="w-6 h-6 text-destructive" />
               ) : (
-                <CheckCircle className="w-6 h-6 text-emerald-500" />
+                <CheckCircle className="w-6 h-6 text-success" />
               )}
             </div>
             <div className="flex-1 min-w-0">
@@ -242,7 +242,7 @@ export const MetaConnectionSettings: React.FC = () => {
                         key={page.id}
                         className="text-sm text-foreground flex items-center gap-2"
                       >
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-success" />
                         {page.pageName}
                         {page.instagramUsername && (
                           <span className="text-muted-foreground">

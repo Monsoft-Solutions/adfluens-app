@@ -121,10 +121,10 @@ export const ContentView: React.FC = () => {
       {isLoadingAccounts ? (
         <Skeleton className="h-16 w-full" />
       ) : !hasConnectedAccounts ? (
-        <Card className="border-amber-500/50 bg-amber-500/5">
+        <Card className="border-warning/50 bg-warning/5">
           <CardContent className="py-4">
             <div className="flex items-start gap-3">
-              <div className="w-2 h-2 mt-2 rounded-full bg-amber-500" />
+              <div className="w-2 h-2 mt-2 rounded-full bg-warning" />
               <div>
                 <p className="font-medium text-foreground">
                   No Connected Accounts
@@ -139,10 +139,10 @@ export const ContentView: React.FC = () => {
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-green-500/50 bg-green-500/5">
+        <Card className="border-success/50 bg-success/5">
           <CardContent className="py-3">
             <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <div className="w-2 h-2 rounded-full bg-success" />
               <p className="text-sm text-muted-foreground">
                 <span className="font-medium text-foreground">
                   {accountsSummary.facebook.count +

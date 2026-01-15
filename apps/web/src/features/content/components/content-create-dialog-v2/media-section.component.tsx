@@ -128,7 +128,7 @@ const StepIndicator: React.FC<{
       className={cn(
         "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium",
         isComplete
-          ? "bg-green-500 text-white"
+          ? "bg-success text-success-foreground"
           : isActive
             ? "bg-primary text-primary-foreground"
             : "bg-muted text-muted-foreground"
@@ -557,7 +557,7 @@ export const MediaSection: React.FC<MediaSectionProps> = ({
               {generatedImages.length > 0 && (
                 <div className="space-y-2">
                   <Label className="text-sm font-medium flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <CheckCircle2 className="w-4 h-4 text-success" />
                     Generated Images
                     <span className="text-muted-foreground font-normal">
                       (click to add)
