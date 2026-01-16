@@ -242,16 +242,21 @@ async function getGMBOverviewData(
       performanceData.totals.totalDirectionRequests;
 
     // Calculate trends (compare first half to second half)
-    const impressionsTrend = calculateTrendFromMetrics([
-      ...performanceData.metrics.searchImpressionsMaps,
-      ...performanceData.metrics.searchImpressionsSearch,
-    ]);
+    // Combine parallel time-series by summing values at corresponding indices
+    const impressionsTrend = calculateTrendFromMetrics(
+      combineParallelTimeSeries([
+        performanceData.metrics.searchImpressionsMaps,
+        performanceData.metrics.searchImpressionsSearch,
+      ])
+    );
 
-    const actionsTrend = calculateTrendFromMetrics([
-      ...performanceData.metrics.websiteClicks,
-      ...performanceData.metrics.phoneClicks,
-      ...performanceData.metrics.directionRequests,
-    ]);
+    const actionsTrend = calculateTrendFromMetrics(
+      combineParallelTimeSeries([
+        performanceData.metrics.websiteClicks,
+        performanceData.metrics.phoneClicks,
+        performanceData.metrics.directionRequests,
+      ])
+    );
 
     return {
       totalImpressions,
@@ -263,6 +268,34 @@ async function getGMBOverviewData(
     console.warn("[Dashboard] GMB data fetch failed:", error);
     return null;
   }
+}
+
+/**
+ * Combine parallel time-series arrays by summing values at corresponding indices.
+ * Assumes all arrays are sorted chronologically and represent the same time period.
+ */
+function combineParallelTimeSeries(
+  seriesArrays: Array<Array<{ value: number }>>
+): Array<{ value: number }> {
+  if (seriesArrays.length === 0) return [];
+
+  // Find the longest array to determine the time period length
+  const maxLength = Math.max(...seriesArrays.map((arr) => arr.length));
+  if (maxLength === 0) return [];
+
+  // Sum values at each index across all series
+  const combined: Array<{ value: number }> = [];
+  for (let i = 0; i < maxLength; i++) {
+    let sum = 0;
+    for (const series of seriesArrays) {
+      if (i < series.length) {
+        sum += series[i]!.value;
+      }
+    }
+    combined.push({ value: sum });
+  }
+
+  return combined;
 }
 
 /**
