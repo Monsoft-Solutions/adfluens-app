@@ -17,6 +17,10 @@ import {
 } from "./features/gmb/gmb.service";
 import { handleOAuthCallback as handleMetaOAuthCallback } from "./features/meta/meta.service";
 import {
+  handleOAuthCallback as handleGAOAuthCallback,
+  createPendingGAConnection,
+} from "./features/ga/ga.service";
+import {
   handleVerification as handleMetaWebhookVerification,
   handleWebhook as handleMetaWebhook,
   verifyWebhookSignature,
@@ -162,6 +166,67 @@ app.get("/api/auth/meta/callback", async (req, res) => {
       err instanceof Error ? err.message : "Failed to complete OAuth flow"
     );
     return res.redirect(`${appUrl}/settings?meta_error=${errorMessage}`);
+  }
+});
+
+/**
+ * Google Analytics OAuth callback
+ * Handles the redirect from Google after user grants GA access
+ * Exchanges the code for tokens and stores them in a secure setup session.
+ */
+app.get("/api/auth/ga/callback", async (req, res) => {
+  const { code, state, error: oauthError } = req.query;
+  const appUrl = env.APP_URL;
+
+  // Handle OAuth errors
+  if (oauthError) {
+    const errorMessage = encodeURIComponent(
+      typeof oauthError === "string" ? oauthError : "OAuth authorization failed"
+    );
+    return res.redirect(`${appUrl}/analytics?ga_error=${errorMessage}`);
+  }
+
+  // Validate required parameters
+  if (typeof code !== "string" || typeof state !== "string") {
+    return res.redirect(
+      `${appUrl}/analytics?ga_error=${encodeURIComponent("Missing required OAuth parameters")}`
+    );
+  }
+
+  try {
+    // Decode state to get organization ID, user ID, and redirect path
+    const stateData = JSON.parse(Buffer.from(state, "base64").toString("utf8"));
+    const { organizationId, userId, redirectPath = "/analytics" } = stateData;
+
+    if (!organizationId || !userId) {
+      throw new Error("Organization ID or User ID not found in state");
+    }
+
+    // Exchange code for tokens
+    const tokens = await handleGAOAuthCallback(code);
+
+    // Create a pending connection to store tokens server-side
+    const pendingConnection = await createPendingGAConnection({
+      organizationId,
+      userId,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      accessTokenExpiresAt: tokens.expiresAt,
+      scope: tokens.scope,
+    });
+
+    // Redirect to frontend with ONLY the connection ID - NOT tokens
+    const params = new URLSearchParams({
+      ga_setup_code: pendingConnection.id,
+    });
+
+    return res.redirect(`${appUrl}${redirectPath}?${params.toString()}`);
+  } catch (err) {
+    console.error("[GA OAuth] Callback error:", err);
+    const errorMessage = encodeURIComponent(
+      err instanceof Error ? err.message : "Failed to complete OAuth flow"
+    );
+    return res.redirect(`${appUrl}/analytics?ga_error=${errorMessage}`);
   }
 });
 

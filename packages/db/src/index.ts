@@ -14,6 +14,11 @@ export {
   socialMediaPostTableRelations,
   gmbConnectionTable,
   gmbConnectionTableRelations,
+  // Google Analytics tables
+  gaConnectionTable,
+  gaConnectionTableRelations,
+  gaPropertyTable,
+  gaPropertyTableRelations,
   // Meta tables
   metaConnectionTable,
   metaConnectionTableRelations,
@@ -97,6 +102,19 @@ export type {
   GmbConnectionInsert,
   GmbConnectionRow,
 } from "./schema/gmb-connection.table";
+
+// Re-export Google Analytics connection types
+export type {
+  GaConnectionInsert,
+  GaConnectionRow,
+} from "./schema/ga-connection.table";
+
+// Re-export Google Analytics property types
+export type {
+  GaPropertyInsert,
+  GaPropertyRow,
+  GaPropertyData,
+} from "./schema/ga-property.table";
 
 // Re-export Meta connection types
 export type {

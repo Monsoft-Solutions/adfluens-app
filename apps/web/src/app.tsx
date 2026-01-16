@@ -19,6 +19,7 @@ import { MetaView } from "./features/meta/views/meta.view";
 import { SignInView } from "./features/auth/views/sign-in.view";
 import { SignUpView } from "./features/auth/views/sign-up.view";
 import { ContentView } from "./features/content/views/content.view";
+import { AnalyticsDashboardView } from "./features/analytics-dashboard/views/analytics-dashboard.view";
 
 /**
  * React Query client configuration with optimized defaults
@@ -78,6 +79,10 @@ const App: React.FC = () => {
                       <Route path="/gmb" element={<GMBView />} />
                       <Route path="/meta" element={<MetaView />} />
                       <Route path="/content" element={<ContentView />} />
+                      <Route
+                        path="/analytics"
+                        element={<AnalyticsDashboardView />}
+                      />
                     </Route>
                   </Route>
                 </Routes>

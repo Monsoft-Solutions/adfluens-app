@@ -42,7 +42,10 @@ import {
   deleteMedia as deleteMediaApi,
   GMB_SCOPE,
 } from "./gmb-api.utils";
-import type { GMBPerformanceData } from "@repo/types/gmb/gmb-performance.type";
+import type {
+  GMBPerformanceData,
+  GMBPerformanceMetrics,
+} from "@repo/types/gmb/gmb-performance.type";
 import type {
   GMBReviewAnalysis,
   GMBReplyTone,
@@ -631,13 +634,27 @@ export async function getPerformanceMetrics(
   // Build the location name for Performance API (uses locations/ prefix)
   const locationName = `locations/${connection.gmbLocationId}`;
 
-  // Fetch daily metrics
-  const metrics = await fetchPerformanceMetrics(
-    accessToken,
-    locationName,
-    startDateStr,
-    endDateStr
-  );
+  // Initialize empty metrics for graceful degradation
+  let metrics: GMBPerformanceMetrics = {
+    searchImpressionsMaps: [],
+    searchImpressionsSearch: [],
+    websiteClicks: [],
+    phoneClicks: [],
+    directionRequests: [],
+  };
+
+  // Fetch daily metrics with error handling
+  try {
+    metrics = await fetchPerformanceMetrics(
+      accessToken,
+      locationName,
+      startDateStr,
+      endDateStr
+    );
+  } catch (error) {
+    // Log the error but don't fail the request - return empty metrics instead
+    console.error("[gmb] Failed to fetch performance metrics:", error);
+  }
 
   // Fetch search keywords for current month
   const currentYearMonth = `${endDate.getFullYear()}${String(endDate.getMonth() + 1).padStart(2, "0")}`;

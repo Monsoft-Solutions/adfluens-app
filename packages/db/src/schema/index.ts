@@ -15,6 +15,10 @@ export * from "./social-media-post.table";
 // GMB (Google Business Profile) tables
 export * from "./gmb-connection.table";
 
+// Google Analytics tables
+export * from "./ga-connection.table";
+export * from "./ga-property.table";
+
 // Meta (Facebook/Instagram) enums
 export * from "./meta-enums";
 

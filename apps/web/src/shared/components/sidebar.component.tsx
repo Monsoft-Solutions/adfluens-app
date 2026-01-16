@@ -13,6 +13,7 @@ import {
   Instagram,
   Facebook,
   PenSquare,
+  BarChart3,
 } from "lucide-react";
 import { Button, cn, Skeleton, Separator, ThemeToggleIcon } from "@repo/ui";
 import { GoogleBusinessIcon } from "@/shared/components/icons/google-business.icon";
@@ -99,6 +100,11 @@ export const Sidebar: React.FC = () => {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <NavItem
+          to="/analytics"
+          icon={<BarChart3 className="w-5 h-5" />}
+          label="Analytics Dashboard"
+        />
         <NavItem
           to="/"
           icon={<LayoutDashboard className="w-5 h-5" />}
