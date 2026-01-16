@@ -54,6 +54,8 @@ export {
   count,
   lte,
   gte,
+  ne,
+  not,
 } from "drizzle-orm";
 
 // Inferred types from schema

@@ -11,6 +11,7 @@ import {
   and,
   desc,
   inArray,
+  ne,
   contentPostTable,
   contentPostAccountTable,
   platformConnectionTable,
@@ -341,12 +342,36 @@ export async function publishPost(
   postId: string,
   organizationId: string
 ): Promise<Record<string, PlatformPublishResult>> {
-  const post = await getPostOrThrow(postId, organizationId);
+  // Atomic check and lock: mark as pending only if not already published or pending
+  const [post] = await db
+    .update(contentPostTable)
+    .set({ status: "pending" })
+    .where(
+      and(
+        eq(contentPostTable.id, postId),
+        eq(contentPostTable.organizationId, organizationId),
+        ne(contentPostTable.status, "published"),
+        ne(contentPostTable.status, "pending")
+      )
+    )
+    .returning();
 
-  if (post.status === "published") {
+  if (!post) {
+    // Check if it exists at all to give a better error message
+    const existing = await getPost(postId, organizationId);
+    if (!existing) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Post not found",
+      });
+    }
+
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: "Post is already published",
+      message:
+        existing.status === "published"
+          ? "Post is already published"
+          : "Post is currently being published or modified",
     });
   }
 
@@ -361,12 +386,6 @@ export async function publishPost(
       message: "No platform accounts linked to this post",
     });
   }
-
-  // Mark as pending
-  await db
-    .update(contentPostTable)
-    .set({ status: "pending" })
-    .where(eq(contentPostTable.id, postId));
 
   const results: Record<string, PlatformPublishResult> = {};
   let hasSuccess = false;
