@@ -29,6 +29,7 @@ import {
   getConversationConfig,
   updateConversationConfig,
 } from "./meta.service";
+import { syncFromMetaPages } from "../platform-connection/platform-connection.service";
 import {
   getNotifications,
   getUnreadNotificationCount,
@@ -157,6 +158,10 @@ export const metaRouter = router({
         ctx.user.id,
         input.pages
       );
+
+      // Sync platform connections for content creation
+      await syncFromMetaPages(ctx.organization.id);
+
       return { connectionId };
     }),
 

@@ -54,6 +54,8 @@ export {
   count,
   lte,
   gte,
+  ne,
+  not,
 } from "drizzle-orm";
 
 // Inferred types from schema
@@ -203,3 +205,64 @@ export type {
   NotificationRow,
   NotificationPayload,
 } from "./schema/notification.table";
+
+// Re-export Content creation tables
+export {
+  contentPostTable,
+  contentPostTableRelations,
+} from "./schema/content-post.table";
+export {
+  contentPlatformEnum,
+  contentPostStatusEnum,
+  contentMediaSourceEnum,
+} from "./schema/content-enums";
+export {
+  contentPostAccountTable,
+  contentPostAccountTableRelations,
+} from "./schema/content-post-account.table";
+export {
+  contentPublishResultTable,
+  contentPublishResultTableRelations,
+} from "./schema/content-publish-result.table";
+
+// Re-export Platform connection tables
+export {
+  platformConnectionTable,
+  platformConnectionTableRelations,
+  platformConnectionStatusEnum,
+  platformSourceTypeEnum,
+} from "./schema/platform-connection.table";
+
+// Re-export Content creation types
+export type {
+  ContentPostRow,
+  ContentPostInsert,
+  ContentPostMediaJson,
+} from "./schema/content-post.table";
+
+// Re-export Content post account types
+export type {
+  ContentPostAccountRow,
+  ContentPostAccountInsert,
+} from "./schema/content-post-account.table";
+
+// Re-export Content publish result types
+export type {
+  ContentPublishResultRow,
+  ContentPublishResultInsert,
+} from "./schema/content-publish-result.table";
+
+// Re-export Platform connection types
+export type {
+  PlatformConnectionRow,
+  PlatformConnectionInsert,
+  PlatformConnectionStatusDb,
+  PlatformSourceTypeDb,
+} from "./schema/platform-connection.table";
+
+// Re-export Content enum types
+export type {
+  ContentPlatformDb,
+  ContentPostStatusDb,
+  ContentMediaSourceDb,
+} from "./schema/content-enums";

@@ -4,7 +4,7 @@
  * Visual node-based flow editor using @xyflow/react
  */
 
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import {
   ReactFlow,
   Controls,
@@ -147,19 +147,15 @@ function FlowEditorInner({
   // Selected node for editing
   const [selectedNode, setSelectedNode] = useState<FlowEditorNode | null>(null);
 
-  // Handle node deletion
-  const handleDeleteNode = useCallback((nodeId: string) => {
-    setNodes((nds) => nds.filter((n) => n.id !== nodeId));
-    setEdges((eds) =>
-      eds.filter((e) => e.source !== nodeId && e.target !== nodeId)
-    );
-    setSelectedNode(null);
-  }, []);
-
-  // Initialize nodes and edges
+  // Initialize nodes and edges first (without delete handler)
   const initialData = useMemo(() => {
+    // Create a placeholder delete handler that will be replaced
+    const placeholderDelete = (nodeId: string) => {
+      console.warn("Delete handler not yet initialized:", nodeId);
+    };
+
     if (initialNodes && initialNodes.length > 0) {
-      return convertApiToEditorNodes(initialNodes, handleDeleteNode);
+      return convertApiToEditorNodes(initialNodes, placeholderDelete);
     }
     // Default: single entry node
     const entryNode: FlowEditorNode = {
@@ -171,11 +167,11 @@ function FlowEditorInner({
         nodeType: "entry",
         actions: [],
         triggers: [],
-        onDelete: handleDeleteNode,
+        onDelete: placeholderDelete,
       },
     };
     return { nodes: [entryNode], edges: [] };
-  }, [initialNodes, handleDeleteNode]);
+  }, [initialNodes]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<FlowEditorNode>(
     initialData.nodes
@@ -183,6 +179,28 @@ function FlowEditorInner({
   const [edges, setEdges, onEdgesChange] = useEdgesState<FlowEditorEdge>(
     initialData.edges
   );
+
+  // Handle node deletion (defined after state hooks)
+  const handleDeleteNode = useCallback(
+    (nodeId: string) => {
+      setNodes((nds) => nds.filter((n) => n.id !== nodeId));
+      setEdges((eds) =>
+        eds.filter((e) => e.source !== nodeId && e.target !== nodeId)
+      );
+      setSelectedNode(null);
+    },
+    [setNodes, setEdges]
+  );
+
+  // Update all nodes with the real delete handler
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((node) => ({
+        ...node,
+        data: { ...node.data, onDelete: handleDeleteNode },
+      }))
+    );
+  }, [handleDeleteNode, setNodes]);
 
   // Handle connections
   const onConnect: OnConnect = useCallback(

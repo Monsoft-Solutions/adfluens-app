@@ -162,7 +162,7 @@ export const MetaView: React.FC = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="pages" className="space-y-6">
-        <TabsList className="grid w-full max-w-3xl grid-cols-6">
+        <TabsList className="grid w-full max-w-4xl grid-cols-6">
           <TabsTrigger value="pages" className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
             <span className="hidden sm:inline">Pages</span>

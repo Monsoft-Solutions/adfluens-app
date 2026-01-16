@@ -167,6 +167,18 @@
     "./gmb/gmb-media.type": {
       "import": "./src/gmb/gmb-media.type.ts",
       "types": "./src/gmb/gmb-media.type.ts"
+    },
+    "./content/content-platform.enum": {
+      "import": "./src/content/content-platform.enum.ts",
+      "types": "./src/content/content-platform.enum.ts"
+    },
+    "./content/content-post.type": {
+      "import": "./src/content/content-post.type.ts",
+      "types": "./src/content/content-post.type.ts"
+    },
+    "./content/platform-specs.type": {
+      "import": "./src/content/platform-specs.type.ts",
+      "types": "./src/content/platform-specs.type.ts"
     }
   },
   "scripts": {

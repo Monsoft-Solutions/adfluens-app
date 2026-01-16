@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "turbo dev",
+    "dev": "turbo dev --filter=!@repo/marketing",
+    "dev:all": "turbo dev",
+    "dev:marketing": "turbo dev --filter=@repo/marketing",
     "build": "turbo build",
     "lint": "turbo lint",
     "lint:fix": "turbo lint -- --fix",

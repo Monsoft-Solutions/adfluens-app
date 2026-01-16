@@ -28,6 +28,7 @@ import {
   getPendingGMBConnection,
   completePendingGMBConnection,
 } from "./gmb.service";
+import { syncFromGmbConnections } from "../platform-connection/platform-connection.service";
 
 /**
  * Schema for pagination options
@@ -164,6 +165,9 @@ export const gmbRouter = router({
         gmbLocationId: input.gmbLocationId,
         gmbLocationName: input.gmbLocationName,
       });
+
+      // Sync platform connections for content creation
+      await syncFromGmbConnections(ctx.organization.id);
 
       return { connection };
     }),

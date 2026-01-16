@@ -6,6 +6,8 @@ import { socialMediaRouter } from "../features/social-media/social-media.router"
 import { gmbRouter } from "../features/gmb/gmb.router";
 import { metaRouter } from "../features/meta/meta.router";
 import { metaBotRouter } from "../features/meta-bot/meta-bot.router";
+import { contentRouter } from "../features/content/content.router";
+import { platformConnectionRouter } from "../features/platform-connection/platform-connection.router";
 
 export const appRouter = router({
   youtube: youtubeRouter,
@@ -15,6 +17,8 @@ export const appRouter = router({
   gmb: gmbRouter,
   meta: metaRouter,
   metaBot: metaBotRouter,
+  content: contentRouter,
+  platformConnection: platformConnectionRouter,
 });
 
 /**

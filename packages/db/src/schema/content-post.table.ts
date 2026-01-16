@@ -1,0 +1,113 @@
+/**
+ * Content Post Table
+ *
+ * Stores social media content posts that can be published to multiple platforms.
+ * Designed to be platform-agnostic with platform-specific results stored in JSONB.
+ */
+import { relations } from "drizzle-orm";
+import {
+  pgTable,
+  text,
+  timestamp,
+  jsonb,
+  index,
+  uuid,
+} from "drizzle-orm/pg-core";
+import { contentPlatformEnum, contentPostStatusEnum } from "./content-enums";
+import { contentPostAccountTable } from "./content-post-account.table";
+
+// =============================================================================
+// JSON Types for JSONB Columns
+// =============================================================================
+
+/**
+ * Media item attached to a content post
+ */
+export type ContentPostMediaJson = {
+  /** Original URL (user-provided or generated) */
+  url: string;
+  /** Stored URL in GCS after upload */
+  storedUrl?: string;
+  /** Image width in pixels */
+  width?: number;
+  /** Image height in pixels */
+  height?: number;
+  /** Alt text for accessibility */
+  altText?: string;
+  /** MIME type of the media */
+  mimeType?: string;
+  /** How the media was sourced */
+  source: "upload" | "fal_generated" | "url";
+};
+
+// =============================================================================
+// Table Definition
+// =============================================================================
+
+export const contentPostTable = pgTable(
+  "content_post",
+  {
+    /** Unique identifier */
+    id: uuid("id").primaryKey().defaultRandom(),
+
+    /** Organization that owns this post */
+    organizationId: text("organization_id").notNull(),
+
+    /** Target platforms for publishing (array of enum values) */
+    platforms: contentPlatformEnum("platforms").array().notNull(),
+
+    /** Post caption/text content */
+    caption: text("caption").notNull(),
+
+    /** Hashtags (without # symbol) */
+    hashtags: text("hashtags").array(),
+
+    /** Media attachments */
+    media: jsonb("media").$type<ContentPostMediaJson[]>().notNull(),
+
+    /** Current status of the post */
+    status: contentPostStatusEnum("status").notNull().default("draft"),
+
+    /** Last error message (for quick access without joins) */
+    lastError: text("last_error"),
+
+    /** User who created the post */
+    createdByUserId: text("created_by_user_id").notNull(),
+
+    /** When the post was created */
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+
+    /** When the post was last updated */
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("content_post_org_idx").on(table.organizationId),
+    index("content_post_status_idx").on(table.status),
+    index("content_post_created_idx").on(table.createdAt),
+  ]
+);
+
+// =============================================================================
+// Relations
+// =============================================================================
+
+export const contentPostTableRelations = relations(
+  contentPostTable,
+  ({ many }) => ({
+    /** Platform accounts this post is linked to */
+    accounts: many(contentPostAccountTable),
+  })
+);
+
+// =============================================================================
+// Type Exports
+// =============================================================================
+
+/** Type for inserting a new content post */
+export type ContentPostInsert = typeof contentPostTable.$inferInsert;
+
+/** Type for selecting a content post */
+export type ContentPostRow = typeof contentPostTable.$inferSelect;

@@ -12,6 +12,7 @@ import {
   Building2,
   Instagram,
   Facebook,
+  PenSquare,
 } from "lucide-react";
 import { Button, cn, Skeleton, Separator, ThemeToggleIcon } from "@repo/ui";
 import { GoogleBusinessIcon } from "@/shared/components/icons/google-business.icon";
@@ -113,6 +114,18 @@ export const Sidebar: React.FC = () => {
           icon={<Settings className="w-5 h-5" />}
           label="Settings"
         />
+
+        {/* Content Section */}
+        <div className="pt-4">
+          <p className="px-4 pb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Content
+          </p>
+          <NavItem
+            to="/content"
+            icon={<PenSquare className="w-5 h-5" />}
+            label="Content Studio"
+          />
+        </div>
 
         {/* Social Media Section */}
         <div className="pt-4">

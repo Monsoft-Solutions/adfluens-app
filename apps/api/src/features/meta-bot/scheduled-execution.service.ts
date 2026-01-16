@@ -115,7 +115,7 @@ export async function cancelPendingExecutions(
     .returning({ id: metaFlowScheduledExecutionTable.id });
 
   if (result.length > 0) {
-    console.log(
+    console.warn(
       `[scheduled-execution] Cancelled ${result.length} pending executions for conversation ${conversationId}`
     );
   }
@@ -142,7 +142,7 @@ export async function cancelPendingExecutionsForFlow(
     .returning({ id: metaFlowScheduledExecutionTable.id });
 
   if (result.length > 0) {
-    console.log(
+    console.warn(
       `[scheduled-execution] Cancelled ${result.length} pending executions for flow ${flowId}`
     );
   }
@@ -176,7 +176,7 @@ export async function processScheduledExecutions(): Promise<void> {
     return;
   }
 
-  console.log(
+  console.warn(
     `[scheduled-execution] Processing ${dueExecutions.length} due executions`
   );
 
@@ -214,7 +214,7 @@ async function processExecution(executionId: string): Promise<void> {
 
   // If no rows were updated, another worker already claimed this execution
   if (!claimed) {
-    console.log(
+    console.warn(
       `[scheduled-execution] Execution ${executionId} already claimed by another worker or not pending`
     );
     return;
@@ -236,7 +236,7 @@ async function processExecution(executionId: string): Promise<void> {
     });
 
     if (!flow || !flow.isActive) {
-      console.log(
+      console.warn(
         `[scheduled-execution] Flow ${execution.flowId} not found or inactive, marking as cancelled`
       );
       await markExecutionStatus(executionId, "cancelled");
@@ -252,7 +252,7 @@ async function processExecution(executionId: string): Promise<void> {
     });
 
     if (!state) {
-      console.log(
+      console.warn(
         `[scheduled-execution] Conversation state not found for ${execution.conversationId}`
       );
       await markExecutionStatus(
@@ -268,7 +268,7 @@ async function processExecution(executionId: string): Promise<void> {
       state.botMode !== "flow" ||
       state.context.currentFlowId !== execution.flowId
     ) {
-      console.log(
+      console.warn(
         `[scheduled-execution] Conversation is no longer in the expected flow, marking as cancelled`
       );
       await markExecutionStatus(executionId, "cancelled");
@@ -278,7 +278,7 @@ async function processExecution(executionId: string): Promise<void> {
     // Find the next node
     const nextNode = flow.nodes.find((n) => n.id === execution.nextNodeId);
     if (!nextNode) {
-      console.log(
+      console.warn(
         `[scheduled-execution] Next node ${execution.nextNodeId} not found in flow`
       );
       await markExecutionStatus(executionId, "failed", "Next node not found");
@@ -311,7 +311,7 @@ async function processExecution(executionId: string): Promise<void> {
     // Mark as completed
     await markExecutionStatus(executionId, "completed");
 
-    console.log(
+    console.warn(
       `[scheduled-execution] Successfully processed execution ${executionId}`
     );
 
@@ -496,7 +496,7 @@ async function sendDelayedResponse(
       message
     );
 
-    console.log(
+    console.warn(
       `[scheduled-execution] Sent delayed message to conversation ${execution.conversationId}`
     );
   } catch (error) {

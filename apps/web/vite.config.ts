@@ -1,7 +1,11 @@
 import path from "path";
+import { config } from "dotenv";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+
+// Load .env from monorepo root before config is processed
+config({ path: path.resolve(__dirname, "../../.env") });
 
 export default defineConfig({
   server: {

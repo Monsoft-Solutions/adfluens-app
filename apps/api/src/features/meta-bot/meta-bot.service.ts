@@ -207,7 +207,7 @@ export async function processIncomingMessage(
       },
     });
     state.context.detectedLanguage = userLanguage;
-    console.log(
+    console.warn(
       `[meta-bot] Detected language: ${detected.name} (${detected.code}) with confidence ${detected.confidence}`
     );
   }
@@ -231,7 +231,7 @@ export async function processIncomingMessage(
             userMemory: recalledMemory,
           },
         });
-        console.log(
+        console.warn(
           `[meta-bot] Recalled memory for returning customer: ${recalledMemory.name || "unnamed"}`
         );
       }
@@ -958,7 +958,7 @@ async function executeNode(
           });
 
           state.context.variables = updatedVariables;
-          console.log(
+          console.warn(
             `[meta-bot] AI node stored result in variable: ${aiConfig.outputVariable}`
           );
         }
@@ -995,7 +995,7 @@ async function executeNode(
             conversationContext: state.context,
           });
 
-          console.log(
+          console.warn(
             `[meta-bot] Scheduled delay: ${delayAmount} ${delayUnit} for conversation ${flowContext.conversationId}`
           );
         }
@@ -1039,7 +1039,7 @@ async function executeNode(
 
         // Update local state reference for subsequent actions
         state.context.variables[variableName] = resolvedValue;
-        console.log(
+        console.warn(
           `[meta-bot] Set variable: ${variableName} = ${JSON.stringify(resolvedValue)}`
         );
         break;
@@ -1137,7 +1137,7 @@ async function executeNode(
             state.context.variables = updatedVariables;
           }
 
-          console.log(
+          console.warn(
             `[meta-bot] HTTP ${config.method} ${url} - ${response.status}`
           );
         } catch (error) {
@@ -1180,7 +1180,7 @@ async function executeNode(
             },
           });
 
-          console.log(`[meta-bot] Goto node: ${config.targetNodeId}`);
+          console.warn(`[meta-bot] Goto node: ${config.targetNodeId}`);
 
           // Execute the target node immediately (with any collected responses)
           // Pass depth+1 and visitedNodes to detect circular references
