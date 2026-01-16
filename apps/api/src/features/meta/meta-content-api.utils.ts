@@ -86,7 +86,7 @@ async function metaContentFetch<T>(
 
   const text = await response.text();
   if (!text) {
-    return {} as T;
+    throw new Error("Meta API returned empty response when data was expected");
   }
 
   return JSON.parse(text) as T;
