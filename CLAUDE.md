@@ -46,6 +46,7 @@ packages/
 ├── auth/             # @repo/auth - Better Auth with OAuth
 ├── db/               # @repo/db - Drizzle ORM + PostgreSQL
 ├── env/              # @repo/env - Typed env vars (t3-oss/env-core)
+├── logger/           # @repo/logger - Winston structured logging
 ├── types/            # @repo/types - Shared types with Zod schemas
 ├── ui/               # @repo/ui - shadcn/ui component library
 ├── media-storage/    # @repo/media-storage - Google Cloud Storage
@@ -146,6 +147,43 @@ export type OrganizationProfileInsert = typeof organizationProfileTable.$inferIn
 - Use type imports: `import type { ... }`
 - Boolean vars: prefix with `is`, `has`, `can`, `should`
 - Event handlers: prefix with `handle` or `on`
+
+## Logging (@repo/logger)
+
+Use structured logging for all backend services. Log important business logic with `info` level.
+
+```typescript
+import { Logger } from "@repo/logger";
+
+const logger = new Logger({ context: "feature-name" });
+
+// Log important business events
+logger.info("User completed action", { userId, actionType });
+
+// Log errors with context
+logger.error("Operation failed", error, { operationId });
+
+// Log warnings for recoverable issues
+logger.warn("Rate limit approaching", { currentRate, limit });
+
+// Debug for development
+logger.debug("Processing payload", { payload });
+```
+
+### Log Level Guidelines
+
+| Level   | When to Use                                   |
+| ------- | --------------------------------------------- |
+| `error` | Unrecoverable failures, exceptions            |
+| `warn`  | Recoverable issues, rate limits, deprecations |
+| `info`  | Important business events, state changes      |
+| `debug` | Development details, variable values          |
+
+### When to Log
+
+- **Always log**: Service method entry/exit for important operations, errors with context, webhook receipts, background job progress
+- **Use `info`**: User actions, business events, state transitions, API calls to external services
+- **Never log**: Passwords, tokens, PII, or sensitive data
 
 ## AI Package (@monsoft/ai)
 
