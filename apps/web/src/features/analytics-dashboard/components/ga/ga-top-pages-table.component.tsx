@@ -41,8 +41,8 @@ export const GATopPagesTable: React.FC<GATopPagesTableProps> = ({ pages }) => {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {pages.map((page, index) => (
-          <TableRow key={index}>
+        {pages.map((page) => (
+          <TableRow key={page.pagePath}>
             <TableCell className="font-medium">
               <span className="truncate max-w-md block" title={page.pagePath}>
                 {page.pagePath}

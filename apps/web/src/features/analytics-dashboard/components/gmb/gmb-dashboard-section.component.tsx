@@ -74,12 +74,12 @@ export const GMBDashboardSection: React.FC<GMBDashboardSectionProps> = ({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Link to="/gmb">
-            <Button>
+          <Button asChild>
+            <Link to="/gmb">
               <ExternalLink className="w-4 h-4 mr-2" />
               Connect Google Business
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </CardContent>
       </Card>
     );
@@ -113,12 +113,12 @@ export const GMBDashboardSection: React.FC<GMBDashboardSectionProps> = ({
             {connection.gmbLocationName || "Business Location"}
           </p>
         </div>
-        <Link to="/gmb">
-          <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/gmb">
             <ExternalLink className="w-4 h-4 mr-2" />
             Full Dashboard
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
 
       {/* Metrics Cards */}
