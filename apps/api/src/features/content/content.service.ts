@@ -44,6 +44,7 @@ import {
   resolveCredentials,
 } from "../platform-connection/platform-connection.service";
 import { mediaStorage } from "@repo/media-storage";
+import { validateExternalUrl } from "./url-validation.utils";
 
 // =============================================================================
 // Helper Functions
@@ -743,6 +744,9 @@ export async function uploadMediaFromUrl(
   organizationId: string,
   sourceUrl: string
 ): Promise<{ url: string; storedUrl: string }> {
+  // Validate URL to prevent SSRF attacks
+  validateExternalUrl(sourceUrl);
+
   try {
     const storedUrl = await mediaStorage.uploadFromUrl(
       sourceUrl,
