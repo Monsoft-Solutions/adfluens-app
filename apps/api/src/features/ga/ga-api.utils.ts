@@ -235,47 +235,61 @@ export async function fetchGA4Properties(
     accountsPageToken = accountsResponse.data.nextPageToken || undefined;
   } while (accountsPageToken);
 
-  // For each account, get its properties (paginated)
+  // For each account, get its properties (paginated, in parallel)
+  const fetchPropertiesForAccount = async (
+    accountName: string
+  ): Promise<GA4Property[]> => {
+    const properties: GA4Property[] = [];
+    let propertiesPageToken: string | undefined;
+
+    do {
+      const propertiesResponse = await analyticsAdmin.properties.list({
+        filter: `parent:${accountName}`,
+        pageToken: propertiesPageToken,
+      });
+
+      const pageProperties = propertiesResponse.data.properties || [];
+
+      for (const property of pageProperties) {
+        properties.push({
+          name: property.name || "",
+          displayName: property.displayName || "",
+          industryCategory: property.industryCategory || undefined,
+          timeZone: property.timeZone || undefined,
+          currencyCode: property.currencyCode || undefined,
+          createTime: property.createTime || undefined,
+          serviceLevel: property.serviceLevel || undefined,
+          account: property.account || undefined,
+        });
+      }
+
+      propertiesPageToken = propertiesResponse.data.nextPageToken || undefined;
+    } while (propertiesPageToken);
+
+    return properties;
+  };
+
+  const accountsWithNames = accounts.filter(
+    (account): account is { name: string } => !!account.name
+  );
+
+  const results = await Promise.allSettled(
+    accountsWithNames.map((account) => fetchPropertiesForAccount(account.name))
+  );
+
   const allProperties: GA4Property[] = [];
 
-  for (const account of accounts) {
-    if (!account.name) continue;
-
-    try {
-      let propertiesPageToken: string | undefined;
-
-      do {
-        const propertiesResponse = await analyticsAdmin.properties.list({
-          filter: `parent:${account.name}`,
-          pageToken: propertiesPageToken,
-        });
-
-        const properties = propertiesResponse.data.properties || [];
-
-        for (const property of properties) {
-          allProperties.push({
-            name: property.name || "",
-            displayName: property.displayName || "",
-            industryCategory: property.industryCategory || undefined,
-            timeZone: property.timeZone || undefined,
-            currencyCode: property.currencyCode || undefined,
-            createTime: property.createTime || undefined,
-            serviceLevel: property.serviceLevel || undefined,
-            account: property.account || undefined,
-          });
-        }
-
-        propertiesPageToken =
-          propertiesResponse.data.nextPageToken || undefined;
-      } while (propertiesPageToken);
-    } catch (error) {
+  results.forEach((result, i) => {
+    if (result.status === "fulfilled") {
+      allProperties.push(...result.value);
+    } else {
       // Log but continue with other accounts
       console.error(
-        `[GA API] Error fetching properties for account ${account.name}:`,
-        error
+        `[GA API] Error fetching properties for account ${accountsWithNames[i]?.name}:`,
+        result.reason
       );
     }
-  }
+  });
 
   return allProperties;
 }
