@@ -51,6 +51,22 @@ import { validateExternalUrl } from "./url-validation.utils";
 // =============================================================================
 
 /**
+ * Get the platform for a connection by ID
+ *
+ * Used when the full connection lookup fails (e.g., deleted or org mismatch)
+ * but we still need the platform for accurate error reporting.
+ */
+async function getPlatformByConnectionId(
+  connectionId: string
+): Promise<string | null> {
+  const connection = await db.query.platformConnectionTable.findFirst({
+    where: eq(platformConnectionTable.id, connectionId),
+    columns: { platform: true },
+  });
+  return connection?.platform ?? null;
+}
+
+/**
  * Extract valid image URLs from post media
  * Prefers storedUrl (from our storage) over original URL
  */
@@ -420,12 +436,19 @@ export async function publishPost(
       // Update account status
       await updateAccountStatus(account.id, "failed");
 
+      // Try to get the platform from the connection record directly
+      // Falls back to the first platform in the post if connection is completely gone
+      const platform =
+        (await getPlatformByConnectionId(account.platformConnectionId)) ??
+        post.platforms[0] ??
+        "facebook";
+
       // Insert into publish result table
       await db
         .insert(contentPublishResultTable)
         .values({
           contentPostAccountId: account.id,
-          platform: "facebook", // Default fallback since connection not found
+          platform: platform as ContentPostRow["platforms"][number],
           accountName: "Unknown Account",
           success: false,
           error: "Platform connection not found",
