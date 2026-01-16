@@ -6,7 +6,6 @@ import {
 } from "../../trpc/init";
 import { TRPCError } from "@trpc/server";
 import {
-  getGAOAuthUrl,
   getGAConnection,
   disconnectGA,
   listPropertiesForPendingConnection,
@@ -46,20 +45,6 @@ export const gaRouter = router({
     const connection = await getGAConnection(ctx.organization.id);
     return { connection };
   }),
-
-  /**
-   * Get the OAuth URL to start GA connection flow
-   */
-  getOAuthUrl: organizationProcedure
-    .input(z.object({ redirectPath: z.string().optional() }).optional())
-    .query(({ ctx, input }) => {
-      const url = getGAOAuthUrl(
-        ctx.organization.id,
-        ctx.user.id,
-        input?.redirectPath
-      );
-      return { url };
-    }),
 
   /**
    * List available GA4 properties (using pending connection ID)

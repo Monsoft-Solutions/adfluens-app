@@ -8,7 +8,7 @@ import {
   boolean,
   uuid,
 } from "drizzle-orm/pg-core";
-import { gaConnectionTable } from "./ga-connection.table";
+import { googleConnectionTable } from "./google-connection.table";
 
 /**
  * GA4 Property metadata cached from the API
@@ -26,7 +26,7 @@ export type GaPropertyData = {
 /**
  * Google Analytics Property table
  *
- * Stores individual GA4 properties linked to a GA connection.
+ * Stores individual GA4 properties linked to a Google connection.
  * Each connection can have multiple properties, but only one can be active at a time.
  */
 export const gaPropertyTable = pgTable(
@@ -35,10 +35,10 @@ export const gaPropertyTable = pgTable(
     /** Unique identifier */
     id: uuid("id").primaryKey().defaultRandom(),
 
-    /** Reference to the parent GA connection */
-    gaConnectionId: uuid("ga_connection_id")
+    /** Reference to the parent Google connection */
+    googleConnectionId: uuid("google_connection_id")
       .notNull()
-      .references(() => gaConnectionTable.id, { onDelete: "cascade" }),
+      .references(() => googleConnectionTable.id, { onDelete: "cascade" }),
 
     /** Reference to the organization */
     organizationId: text("organization_id").notNull(),
@@ -72,7 +72,7 @@ export const gaPropertyTable = pgTable(
       .notNull(),
   },
   (table) => [
-    index("ga_property_connection_idx").on(table.gaConnectionId),
+    index("ga_property_connection_idx").on(table.googleConnectionId),
     index("ga_property_org_idx").on(table.organizationId),
     index("ga_property_id_idx").on(table.propertyId),
     index("ga_property_active_idx").on(table.organizationId, table.isActive),
@@ -85,9 +85,9 @@ export const gaPropertyTable = pgTable(
 export const gaPropertyTableRelations = relations(
   gaPropertyTable,
   ({ one }) => ({
-    gaConnection: one(gaConnectionTable, {
-      fields: [gaPropertyTable.gaConnectionId],
-      references: [gaConnectionTable.id],
+    googleConnection: one(googleConnectionTable, {
+      fields: [gaPropertyTable.googleConnectionId],
+      references: [googleConnectionTable.id],
     }),
   })
 );

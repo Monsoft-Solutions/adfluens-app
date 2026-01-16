@@ -1,12 +1,7 @@
 import React from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  BarChart3,
-  ExternalLink,
-  RefreshCw,
-  Settings,
-  AlertCircle,
-} from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import { BarChart3, Settings, AlertCircle, ArrowRight } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -16,9 +11,8 @@ import {
   Button,
   Skeleton,
 } from "@repo/ui";
-import { useTRPC, trpcClient } from "@/lib/trpc";
+import { useTRPC } from "@/lib/trpc";
 import { useAuth } from "@/lib/auth.provider";
-import { GAPropertySelector } from "./ga-property-selector.component";
 import { GATrafficChart } from "./ga-traffic-chart.component";
 import { GATopPagesTable } from "./ga-top-pages-table.component";
 
@@ -28,28 +22,13 @@ type GASectionProps = {
 
 /**
  * Google Analytics section of the dashboard
+ *
+ * Displays GA traffic metrics and top pages.
+ * Connection management is handled in Settings > Google tab.
  */
 export const GASection: React.FC<GASectionProps> = ({ days }) => {
   const trpc = useTRPC();
   const { organization } = useAuth();
-  const queryClient = useQueryClient();
-  const [showPropertySelector, setShowPropertySelector] = React.useState(false);
-  const [pendingSetupCode, setPendingSetupCode] = React.useState<string | null>(
-    null
-  );
-
-  // Check URL for setup code (redirected from OAuth)
-  React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const setupCode = params.get("ga_setup_code");
-    if (setupCode) {
-      setPendingSetupCode(setupCode);
-      // Clean up URL
-      const url = new URL(window.location.href);
-      url.searchParams.delete("ga_setup_code");
-      window.history.replaceState({}, "", url.toString());
-    }
-  }, []);
 
   const { data: connectionData, isLoading: isLoadingConnection } = useQuery({
     ...trpc.ga.getConnection.queryOptions(),
@@ -68,29 +47,6 @@ export const GASection: React.FC<GASectionProps> = ({ days }) => {
     enabled: !!organization && connection?.status === "active",
   });
 
-  const connectMutation = useMutation({
-    mutationFn: async () => {
-      const result = await trpcClient.ga.getOAuthUrl.query({
-        redirectPath: "/analytics",
-      });
-      window.location.href = result.url;
-    },
-  });
-
-  const disconnectMutation = useMutation({
-    mutationFn: async () => {
-      await trpcClient.ga.disconnect.mutate();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: trpc.ga.getConnection.queryKey(),
-      });
-      queryClient.invalidateQueries({
-        queryKey: trpc.analyticsDashboard.getConnectionStatus.queryKey(),
-      });
-    },
-  });
-
   if (isLoadingConnection) {
     return (
       <div className="space-y-4">
@@ -100,33 +56,14 @@ export const GASection: React.FC<GASectionProps> = ({ days }) => {
     );
   }
 
-  // Pending property selection from OAuth redirect
-  if (pendingSetupCode) {
-    return (
-      <GAPropertySelector
-        setupCode={pendingSetupCode}
-        onComplete={() => {
-          setPendingSetupCode(null);
-          queryClient.invalidateQueries({
-            queryKey: trpc.ga.getConnection.queryKey(),
-          });
-          queryClient.invalidateQueries({
-            queryKey: trpc.analyticsDashboard.getConnectionStatus.queryKey(),
-          });
-        }}
-        onCancel={() => setPendingSetupCode(null)}
-      />
-    );
-  }
-
-  // Not connected
+  // Not connected - direct to Settings
   if (!connection) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5" />
-            Connect Google Analytics
+            Google Analytics
           </CardTitle>
           <CardDescription>
             Connect your Google Analytics 4 property to see traffic metrics,
@@ -134,28 +71,25 @@ export const GASection: React.FC<GASectionProps> = ({ days }) => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button
-            onClick={() => connectMutation.mutate()}
-            disabled={connectMutation.isPending}
-          >
-            {connectMutation.isPending ? (
-              <>
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                Connecting...
-              </>
-            ) : (
-              <>
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Connect Google Analytics
-              </>
-            )}
-          </Button>
+          <div className="flex flex-col items-start gap-4">
+            <p className="text-sm text-muted-foreground">
+              Set up Google Analytics in Settings to start tracking your website
+              traffic.
+            </p>
+            <Button asChild>
+              <Link to="/settings?tab=google">
+                <Settings className="w-4 h-4 mr-2" />
+                Go to Settings
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
-  // Connection error
+  // Connection error - direct to Settings
   if (connection.status === "error") {
     return (
       <Card className="border-destructive">
@@ -166,15 +100,14 @@ export const GASection: React.FC<GASectionProps> = ({ days }) => {
               <p className="font-medium">Connection Error</p>
               <p className="text-sm text-muted-foreground">
                 {connection.lastError ||
-                  "Unknown error. Please try reconnecting."}
+                  "Unknown error. Please reconnect in Settings."}
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => connectMutation.mutate()}
-            >
-              Reconnect
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/settings?tab=google">
+                <Settings className="w-4 h-4 mr-2" />
+                Go to Settings
+              </Link>
             </Button>
           </div>
         </CardContent>
@@ -182,25 +115,70 @@ export const GASection: React.FC<GASectionProps> = ({ days }) => {
     );
   }
 
-  // Pending - needs property selection
+  // Pending - needs property selection in Settings
   if (connection.status === "pending") {
     return (
-      <GAPropertySelector
-        setupCode={connection.id}
-        onComplete={() => {
-          queryClient.invalidateQueries({
-            queryKey: trpc.ga.getConnection.queryKey(),
-          });
-          queryClient.invalidateQueries({
-            queryKey: trpc.analyticsDashboard.getConnectionStatus.queryKey(),
-          });
-        }}
-        onCancel={() => {}}
-      />
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" />
+            Google Analytics
+          </CardTitle>
+          <CardDescription>
+            Your Google account is connected. Select a GA4 property to start
+            tracking.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-start gap-4">
+            <p className="text-sm text-muted-foreground">
+              Complete the setup by selecting a property in Settings.
+            </p>
+            <Button asChild>
+              <Link to="/settings?tab=google">
+                <Settings className="w-4 h-4 mr-2" />
+                Select Property in Settings
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   const activeProperty = connection.properties?.find((p) => p.isActive);
+
+  // No active property selected - direct to Settings
+  if (!activeProperty) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" />
+            Google Analytics
+          </CardTitle>
+          <CardDescription>
+            Select a GA4 property to view your analytics data.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-start gap-4">
+            <p className="text-sm text-muted-foreground">
+              No property selected. Choose a GA4 property in Settings.
+            </p>
+            <Button asChild>
+              <Link to="/settings?tab=google">
+                <Settings className="w-4 h-4 mr-2" />
+                Select Property in Settings
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -212,46 +190,16 @@ export const GASection: React.FC<GASectionProps> = ({ days }) => {
             Google Analytics
           </h2>
           <p className="text-sm text-muted-foreground">
-            {activeProperty?.propertyName || "No property selected"} &bull;{" "}
-            {connection.googleEmail}
+            {activeProperty.propertyName} &bull; {connection.googleEmail}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowPropertySelector(!showPropertySelector)}
-          >
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/settings?tab=google">
             <Settings className="w-4 h-4 mr-2" />
-            Change Property
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => disconnectMutation.mutate()}
-            disabled={disconnectMutation.isPending}
-          >
-            Disconnect
-          </Button>
-        </div>
+            Manage
+          </Link>
+        </Button>
       </div>
-
-      {/* Property selector (if open) */}
-      {showPropertySelector && (
-        <GAPropertySelector
-          setupCode={connection.id}
-          onComplete={() => {
-            setShowPropertySelector(false);
-            queryClient.invalidateQueries({
-              queryKey: trpc.ga.getConnection.queryKey(),
-            });
-            queryClient.invalidateQueries({
-              queryKey: trpc.ga.getTrafficMetrics.queryKey(),
-            });
-          }}
-          onCancel={() => setShowPropertySelector(false)}
-        />
-      )}
 
       {/* Traffic Chart */}
       <Card>

@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { Settings, Building2, AlertCircle } from "lucide-react";
 import { useTRPC } from "@/lib/trpc";
 import { useAuth } from "@/lib/auth.provider";
@@ -21,7 +22,7 @@ import {
   type ProfileFormData,
 } from "../components/profile-form.component";
 import { BusinessInfoDisplay } from "../components/business-info-display.component";
-import { GMBConnectionSettings } from "../components/gmb-connection-settings.component";
+import { GoogleServicesSettings } from "../components/google-services-settings.component";
 import { MetaConnectionSettings } from "../components/meta-connection-settings.component";
 
 /**
@@ -33,8 +34,24 @@ export const OrganizationSettingsView: React.FC = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { organization } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("profile");
+
+  // Handle URL parameter for tab selection (e.g., ?tab=google)
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (
+      tab &&
+      ["profile", "business-info", "google", "meta-business"].includes(tab)
+    ) {
+      setActiveTab(tab);
+      // Clean up URL params after using them
+      searchParams.delete("tab");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   // Fetch organization profile
   const {
@@ -179,11 +196,15 @@ export const OrganizationSettingsView: React.FC = () => {
       )}
 
       {/* Tabs */}
-      <Tabs defaultValue="profile" className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-6"
+      >
         <TabsList className="grid w-full max-w-2xl grid-cols-4">
           <TabsTrigger value="profile">Profile & Links</TabsTrigger>
           <TabsTrigger value="business-info">Business Info</TabsTrigger>
-          <TabsTrigger value="google-business">Google Business</TabsTrigger>
+          <TabsTrigger value="google">Google</TabsTrigger>
           <TabsTrigger value="meta-business">Meta Business</TabsTrigger>
         </TabsList>
 
@@ -256,18 +277,18 @@ export const OrganizationSettingsView: React.FC = () => {
           </Card>
         </TabsContent>
 
-        {/* Google Business Tab */}
-        <TabsContent value="google-business" className="space-y-6">
+        {/* Google Tab */}
+        <TabsContent value="google" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Google Business Profile</CardTitle>
+              <CardTitle>Google Services</CardTitle>
               <CardDescription>
-                Connect your Google Business Profile to manage posts and respond
-                to reviews directly from this app.
+                Connect your Google account to enable Analytics tracking and
+                Business Profile management.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <GMBConnectionSettings />
+              <GoogleServicesSettings />
             </CardContent>
           </Card>
         </TabsContent>

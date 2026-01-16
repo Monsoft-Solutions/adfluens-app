@@ -3,6 +3,7 @@ import { youtubeRouter } from "../features/youtube/youtube.router";
 import { aiRouter } from "../features/ai/ai.router";
 import { organizationRouter } from "../features/organization/organization.router";
 import { socialMediaRouter } from "../features/social-media/social-media.router";
+import { googleRouter } from "../features/google/google.router";
 import { gmbRouter } from "../features/gmb/gmb.router";
 import { gaRouter } from "../features/ga/ga.router";
 import { metaRouter } from "../features/meta/meta.router";
@@ -16,6 +17,7 @@ export const appRouter = router({
   ai: aiRouter,
   organization: organizationRouter,
   socialMedia: socialMediaRouter,
+  google: googleRouter,
   gmb: gmbRouter,
   ga: gaRouter,
   meta: metaRouter,
