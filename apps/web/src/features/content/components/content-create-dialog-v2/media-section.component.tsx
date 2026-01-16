@@ -568,7 +568,7 @@ export const MediaSection: React.FC<MediaSectionProps> = ({
                       const isAdded = mediaUrls.includes(image.storedUrl);
                       return (
                         <button
-                          key={index}
+                          key={image.storedUrl}
                           type="button"
                           onClick={() => !isAdded && onAddGeneratedImage(image)}
                           className={cn(
@@ -619,7 +619,7 @@ export const MediaSection: React.FC<MediaSectionProps> = ({
           <div className="grid grid-cols-4 gap-2">
             {mediaUrls.map((url, index) => (
               <div
-                key={index}
+                key={url}
                 className="relative aspect-square rounded-lg overflow-hidden border-2 border-primary/20 group"
               >
                 <img
