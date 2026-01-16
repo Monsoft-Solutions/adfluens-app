@@ -78,6 +78,27 @@
       "when": 1768526713602,
       "tag": "0010_cheerful_micromax",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1768563938762,
+      "tag": "0011_familiar_vulture",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1768573448796,
+      "tag": "0012_watery_ezekiel_stane",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1768584049338,
+      "tag": "0013_bored_warlock",
+      "breakpoints": true
     }
   ]
 }

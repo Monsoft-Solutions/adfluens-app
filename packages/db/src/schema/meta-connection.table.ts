@@ -52,10 +52,7 @@ export const metaConnectionTable = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [
-    index("meta_connection_org_id_idx").on(table.organizationId),
-    index("meta_connection_status_idx").on(table.status),
-  ]
+  (table) => [index("meta_connection_status_idx").on(table.status)]
 );
 
 /**

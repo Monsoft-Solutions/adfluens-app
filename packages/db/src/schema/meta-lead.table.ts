@@ -94,7 +94,6 @@ export const metaLeadTable = pgTable(
   (table) => [
     index("meta_lead_page_idx").on(table.metaPageId),
     index("meta_lead_org_idx").on(table.organizationId),
-    index("meta_lead_lead_id_idx").on(table.leadId),
     index("meta_lead_status_idx").on(table.status),
     index("meta_lead_created_idx").on(table.leadCreatedAt),
     index("meta_lead_email_idx").on(table.email),

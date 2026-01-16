@@ -90,10 +90,7 @@ export const metaAppointmentConfigTable = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [
-    index("meta_appt_config_page_idx").on(table.metaPageId),
-    index("meta_appt_config_org_idx").on(table.organizationId),
-  ]
+  (table) => [index("meta_appt_config_org_idx").on(table.organizationId)]
 );
 
 /**

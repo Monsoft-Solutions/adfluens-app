@@ -12,8 +12,14 @@ export * from "./scraped-page.table";
 export * from "./social-media-account.table";
 export * from "./social-media-post.table";
 
+// Unified Google OAuth connection
+export * from "./google-connection.table";
+
 // GMB (Google Business Profile) tables
-export * from "./gmb-connection.table";
+export * from "./gmb-location.table";
+
+// Google Analytics tables
+export * from "./ga-property.table";
 
 // Meta (Facebook/Instagram) enums
 export * from "./meta-enums";

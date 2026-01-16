@@ -6,7 +6,6 @@ import {
 } from "../../trpc/init";
 import { TRPCError } from "@trpc/server";
 import {
-  getGMBOAuthUrl,
   getGMBConnection,
   disconnectGMB,
   listGMBAccounts,
@@ -25,7 +24,7 @@ import {
   listMedia,
   uploadMedia,
   deleteMediaItem,
-  getPendingGMBConnection,
+  getConnectionForGMBSetup,
   completePendingGMBConnection,
 } from "./gmb.service";
 import { syncFromGmbConnections } from "../platform-connection/platform-connection.service";
@@ -95,34 +94,21 @@ export const gmbRouter = router({
   }),
 
   /**
-   * Get the OAuth URL to start GMB connection flow
-   */
-  getOAuthUrl: organizationProcedure
-    .input(z.object({ redirectPath: z.string().optional() }).optional())
-    .query(({ ctx, input }) => {
-      const url = getGMBOAuthUrl(
-        ctx.organization.id,
-        ctx.user.id,
-        input?.redirectPath
-      );
-      return { url };
-    }),
-
-  /**
-   * List GMB accounts for a user (using pending connection ID)
+   * List GMB accounts for a user (using connection ID)
    * Called after OAuth callback with the setup code (connection ID)
+   * Works with both pending and active connections.
    */
   listAccounts: protectedProcedure
     .input(z.object({ setupCode: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const connection = await getPendingGMBConnection(
+      const connection = await getConnectionForGMBSetup(
         input.setupCode,
         ctx.user.id
       );
       if (!connection) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Pending connection not found",
+          message: "Connection not found",
         });
       }
       const accounts = await listGMBAccounts(connection.accessToken);
@@ -130,19 +116,20 @@ export const gmbRouter = router({
     }),
 
   /**
-   * List locations for a GMB account (using pending connection ID)
+   * List locations for a GMB account (using connection ID)
+   * Works with both pending and active connections.
    */
   listLocations: protectedProcedure
     .input(z.object({ setupCode: z.string().uuid(), accountName: z.string() }))
     .query(async ({ ctx, input }) => {
-      const connection = await getPendingGMBConnection(
+      const connection = await getConnectionForGMBSetup(
         input.setupCode,
         ctx.user.id
       );
       if (!connection) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Pending connection not found",
+          message: "Connection not found",
         });
       }
       const locations = await listGMBLocations(

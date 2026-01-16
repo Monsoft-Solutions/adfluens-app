@@ -3,17 +3,17 @@
  *
  * Business logic for GMB operations including connection management,
  * reviews, and posts.
+ *
+ * Uses the shared Google connection for OAuth tokens.
  */
 
-import { db, eq, gmbConnectionTable } from "@repo/db";
-import type { GmbConnectionRow } from "@repo/db";
-import { env } from "@repo/env";
+import { db, eq, and, googleConnectionTable, gmbLocationTable } from "@repo/db";
+import type { GmbLocationRow, GoogleConnectionRow } from "@repo/db";
 import type { GMBConnection } from "@repo/types/gmb/gmb-connection.type";
 import type { GMBLocationData } from "@repo/types/gmb/gmb-location-data.type";
 import type {
   GMBAccount,
   GMBLocationSummary,
-  GMBOAuthTokens,
 } from "@repo/types/gmb/gmb-account.type";
 import type { GMBReviewsResponse } from "@repo/types/gmb/gmb-review.type";
 import type {
@@ -23,9 +23,13 @@ import type {
 } from "@repo/types/gmb/gmb-post.type";
 
 import {
-  getGMBAuthUrl,
-  exchangeCodeForTokens,
-  refreshAccessToken as refreshAccessTokenApi,
+  getValidAccessTokenForService,
+  getPendingGoogleConnection,
+  activateConnection,
+  getGoogleConnectionRow,
+} from "../google/google.service";
+
+import {
   fetchAccounts,
   fetchLocations,
   fetchLocationDetails,
@@ -40,9 +44,11 @@ import {
   fetchMedia,
   uploadMediaFromUrl,
   deleteMedia as deleteMediaApi,
-  GMB_SCOPE,
 } from "./gmb-api.utils";
-import type { GMBPerformanceData } from "@repo/types/gmb/gmb-performance.type";
+import type {
+  GMBPerformanceData,
+  GMBPerformanceMetrics,
+} from "@repo/types/gmb/gmb-performance.type";
 import type {
   GMBReviewAnalysis,
   GMBReplyTone,
@@ -61,123 +67,52 @@ import type {
 // Constants
 // ============================================================================
 
-/** Buffer time before token expiration to trigger refresh (5 minutes) */
-const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000;
-
 /** Cache duration for location data (24 hours) */
 const LOCATION_CACHE_DURATION_MS = 24 * 60 * 60 * 1000;
-
-// ============================================================================
-// OAuth & Connection Management
-// ============================================================================
-
-/**
- * Generate the OAuth URL for connecting GMB
- */
-export function getGMBOAuthUrl(
-  organizationId: string,
-  userId: string,
-  redirectPath: string = "/settings"
-): string {
-  const redirectUri = `${env.BETTER_AUTH_URL}/api/auth/gmb/callback`;
-
-  // Encode state with organization ID, user ID, and redirect path
-  const state = Buffer.from(
-    JSON.stringify({ organizationId, userId, redirectPath })
-  ).toString("base64");
-
-  return getGMBAuthUrl(
-    env.GOOGLE_CLIENT_ID,
-    env.GOOGLE_CLIENT_SECRET,
-    redirectUri,
-    state
-  );
-}
-
-/**
- * Handle OAuth callback - exchange code for tokens
- */
-export async function handleOAuthCallback(
-  code: string
-): Promise<GMBOAuthTokens> {
-  const redirectUri = `${env.BETTER_AUTH_URL}/api/auth/gmb/callback`;
-
-  return exchangeCodeForTokens(
-    code,
-    env.GOOGLE_CLIENT_ID,
-    env.GOOGLE_CLIENT_SECRET,
-    redirectUri
-  );
-}
 
 // ============================================================================
 // Pending Connection Management (Secure OAuth Flow)
 // ============================================================================
 
 /**
- * Create a pending GMB connection to store OAuth tokens securely.
- * This prevents tokens from being exposed in URL parameters.
- * The connection remains "pending" until the user selects a location.
- */
-export async function createPendingGMBConnection(input: {
-  organizationId: string;
-  userId: string;
-  accessToken: string;
-  refreshToken?: string;
-  accessTokenExpiresAt?: Date;
-  scope?: string;
-}): Promise<GmbConnectionRow> {
-  // Delete any existing connection for this organization (will be replaced)
-  await db
-    .delete(gmbConnectionTable)
-    .where(eq(gmbConnectionTable.organizationId, input.organizationId));
-
-  const result = await db
-    .insert(gmbConnectionTable)
-    .values({
-      organizationId: input.organizationId,
-      connectedByUserId: input.userId,
-      // Placeholder values for required fields - will be set when location is selected
-      gmbAccountId: "pending",
-      gmbLocationId: "pending",
-      accessToken: input.accessToken,
-      refreshToken: input.refreshToken,
-      accessTokenExpiresAt: input.accessTokenExpiresAt,
-      scope: input.scope || GMB_SCOPE,
-      status: "pending",
-    })
-    .returning();
-
-  const connection = result[0];
-  if (!connection) {
-    throw new Error("Failed to create pending GMB connection");
-  }
-
-  return connection;
-}
-
-/**
- * Get a pending connection by ID, validating it belongs to the user.
+ * Get a pending connection for GMB setup (uses shared Google connection)
  */
 export async function getPendingGMBConnection(
   connectionId: string,
   userId: string
-): Promise<GmbConnectionRow | null> {
-  const connection = await db.query.gmbConnectionTable.findFirst({
-    where: eq(gmbConnectionTable.id, connectionId),
+): Promise<GoogleConnectionRow | null> {
+  return getPendingGoogleConnection(connectionId, userId);
+}
+
+/**
+ * Get a connection for GMB setup - works with both pending and active connections.
+ * This allows users to select a location when they already have an active Google connection.
+ */
+export async function getConnectionForGMBSetup(
+  connectionId: string,
+  userId: string
+): Promise<GoogleConnectionRow | null> {
+  // First try to get a pending connection
+  const pending = await getPendingGoogleConnection(connectionId, userId);
+  if (pending) {
+    return pending;
+  }
+
+  // If not pending, try to get an active connection by ID
+  const connection = await db.query.googleConnectionTable.findFirst({
+    where: eq(googleConnectionTable.id, connectionId),
   });
 
   if (!connection) {
     return null;
   }
 
-  // Validate the connection belongs to this user
+  // Validate the connection belongs to this user and is active
   if (connection.connectedByUserId !== userId) {
     return null;
   }
 
-  // Only return if it's in pending status
-  if (connection.status !== "pending") {
+  if (connection.status !== "active") {
     return null;
   }
 
@@ -185,7 +120,8 @@ export async function getPendingGMBConnection(
 }
 
 /**
- * Complete a pending connection by setting the account/location details.
+ * Complete GMB connection setup by setting the account/location details.
+ * Works with both pending and active connections.
  */
 export async function completePendingGMBConnection(input: {
   connectionId: string;
@@ -195,113 +131,65 @@ export async function completePendingGMBConnection(input: {
   gmbLocationName?: string;
   locationData?: GMBLocationData;
 }): Promise<GMBConnection> {
-  // Verify the pending connection exists and belongs to user
-  const pending = await getPendingGMBConnection(
+  // Get the connection (works with both pending and active)
+  const existingConnection = await getConnectionForGMBSetup(
     input.connectionId,
     input.userId
   );
-  if (!pending) {
-    throw new Error("Pending connection not found or expired");
+  if (!existingConnection) {
+    throw new Error("Connection not found or expired");
   }
 
-  const result = await db
-    .update(gmbConnectionTable)
-    .set({
-      gmbAccountId: input.gmbAccountId,
-      gmbLocationId: input.gmbLocationId,
-      gmbLocationName: input.gmbLocationName,
-      locationData: input.locationData,
-      status: "active",
-      lastSyncedAt: new Date(),
-    })
-    .where(eq(gmbConnectionTable.id, input.connectionId))
-    .returning();
+  let connection: GoogleConnectionRow;
 
-  const connection = result[0];
-  if (!connection) {
-    throw new Error("Failed to complete GMB connection");
+  if (existingConnection.status === "pending") {
+    // Activate the pending connection and enable GMB service
+    connection = await activateConnection(input.connectionId, "gmb");
+  } else {
+    // For active connections, just enable GMB service
+    const currentServices = existingConnection.enabledServices || [];
+    const updatedServices = currentServices.includes("gmb")
+      ? currentServices
+      : ([...currentServices, "gmb"] as typeof currentServices);
+
+    const result = await db
+      .update(googleConnectionTable)
+      .set({ enabledServices: updatedServices })
+      .where(eq(googleConnectionTable.id, input.connectionId))
+      .returning();
+
+    connection = result[0]!;
   }
 
-  return mapConnectionToType(connection);
-}
+  // Delete any existing GMB locations for this organization
+  await db
+    .delete(gmbLocationTable)
+    .where(eq(gmbLocationTable.organizationId, connection.organizationId));
 
-/**
- * Get a valid access token, refreshing if necessary
- */
-export async function getValidAccessToken(
-  organizationId: string
-): Promise<string> {
-  const connection = await db.query.gmbConnectionTable.findFirst({
-    where: eq(gmbConnectionTable.organizationId, organizationId),
+  // Create the selected location as active
+  await db.insert(gmbLocationTable).values({
+    googleConnectionId: connection.id,
+    organizationId: connection.organizationId,
+    gmbAccountId: input.gmbAccountId,
+    gmbLocationId: input.gmbLocationId,
+    locationName: input.gmbLocationName,
+    isActive: true,
+    locationData: input.locationData,
+    status: "active",
+    lastSyncedAt: new Date(),
   });
 
-  if (!connection) {
-    throw new Error("GMB not connected for this organization");
-  }
-
-  if (connection.status !== "active") {
-    throw new Error(
-      `GMB connection is ${connection.status}. Please reconnect.`
-    );
-  }
-
-  // Check if token is expired or about to expire
-  const expiresAt = connection.accessTokenExpiresAt;
-  const isExpired =
-    !expiresAt ||
-    new Date() >= new Date(expiresAt.getTime() - TOKEN_REFRESH_BUFFER_MS);
-
-  if (isExpired) {
-    if (!connection.refreshToken) {
-      // Mark connection as error
-      await db
-        .update(gmbConnectionTable)
-        .set({
-          status: "error",
-          lastError: "Refresh token not available. Please reconnect.",
-        })
-        .where(eq(gmbConnectionTable.organizationId, organizationId));
-
-      throw new Error("GMB access expired. Please reconnect.");
-    }
-
-    try {
-      const newTokens = await refreshAccessTokenApi(
-        connection.refreshToken,
-        env.GOOGLE_CLIENT_ID,
-        env.GOOGLE_CLIENT_SECRET
-      );
-
-      // Update database with new tokens
-      await db
-        .update(gmbConnectionTable)
-        .set({
-          accessToken: newTokens.accessToken,
-          accessTokenExpiresAt: newTokens.expiresAt,
-          lastError: null,
-        })
-        .where(eq(gmbConnectionTable.organizationId, organizationId));
-
-      return newTokens.accessToken;
-    } catch (error) {
-      // Mark connection as error
-      const errorMessage =
-        error instanceof Error ? error.message : "Token refresh failed";
-
-      await db
-        .update(gmbConnectionTable)
-        .set({
-          status: "error",
-          lastError: errorMessage,
-        })
-        .where(eq(gmbConnectionTable.organizationId, organizationId));
-
-      throw new Error(`GMB token refresh failed: ${errorMessage}`);
-    }
-  }
-
-  return connection.accessToken;
+  return mapConnectionToGMBType(connection, {
+    gmbAccountId: input.gmbAccountId,
+    gmbLocationId: input.gmbLocationId,
+    gmbLocationName: input.gmbLocationName,
+    locationData: input.locationData,
+  });
 }
+
+// ============================================================================
+// Connection Status
+// ============================================================================
 
 /**
  * Get GMB connection for an organization
@@ -309,82 +197,77 @@ export async function getValidAccessToken(
 export async function getGMBConnection(
   organizationId: string
 ): Promise<GMBConnection | null> {
-  const connection = await db.query.gmbConnectionTable.findFirst({
-    where: eq(gmbConnectionTable.organizationId, organizationId),
-  });
+  const connection = await getGoogleConnectionRow(organizationId);
 
   if (!connection) {
     return null;
   }
 
-  return mapConnectionToType(connection);
-}
-
-/**
- * Create or update GMB connection
- */
-export async function createGMBConnection(input: {
-  organizationId: string;
-  connectedByUserId: string;
-  gmbAccountId: string;
-  gmbLocationId: string;
-  gmbLocationName?: string;
-  accessToken: string;
-  refreshToken?: string;
-  accessTokenExpiresAt?: Date;
-  scope?: string;
-  locationData?: GMBLocationData;
-}): Promise<GMBConnection> {
-  const result = await db
-    .insert(gmbConnectionTable)
-    .values({
-      organizationId: input.organizationId,
-      connectedByUserId: input.connectedByUserId,
-      gmbAccountId: input.gmbAccountId,
-      gmbLocationId: input.gmbLocationId,
-      gmbLocationName: input.gmbLocationName,
-      accessToken: input.accessToken,
-      refreshToken: input.refreshToken,
-      accessTokenExpiresAt: input.accessTokenExpiresAt,
-      scope: input.scope || GMB_SCOPE,
-      locationData: input.locationData,
-      status: "active",
-      lastSyncedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: gmbConnectionTable.organizationId,
-      set: {
-        connectedByUserId: input.connectedByUserId,
-        gmbAccountId: input.gmbAccountId,
-        gmbLocationId: input.gmbLocationId,
-        gmbLocationName: input.gmbLocationName,
-        accessToken: input.accessToken,
-        refreshToken: input.refreshToken,
-        accessTokenExpiresAt: input.accessTokenExpiresAt,
-        scope: input.scope || GMB_SCOPE,
-        locationData: input.locationData,
-        status: "active",
-        lastError: null,
-        lastSyncedAt: new Date(),
-      },
-    })
-    .returning();
-
-  const connection = result[0];
-  if (!connection) {
-    throw new Error("Failed to create GMB connection");
+  // Check if GMB is enabled
+  if (!connection.enabledServices.includes("gmb")) {
+    return null;
   }
 
-  return mapConnectionToType(connection);
+  // Get the active location
+  const location = await getActiveLocation(organizationId);
+
+  if (!location) {
+    return null;
+  }
+
+  return mapConnectionToGMBType(connection, {
+    gmbAccountId: location.gmbAccountId,
+    gmbLocationId: location.gmbLocationId,
+    gmbLocationName: location.locationName,
+    locationData: location.locationData,
+    lastSyncedAt: location.lastSyncedAt,
+  });
 }
 
 /**
- * Disconnect GMB from an organization
+ * Get the active GMB location for an organization
+ */
+export async function getActiveLocation(
+  organizationId: string
+): Promise<GmbLocationRow | null> {
+  const connection = await getGoogleConnectionRow(organizationId);
+
+  if (!connection || !connection.enabledServices.includes("gmb")) {
+    return null;
+  }
+
+  const location = await db.query.gmbLocationTable.findFirst({
+    where: and(
+      eq(gmbLocationTable.googleConnectionId, connection.id),
+      eq(gmbLocationTable.isActive, true)
+    ),
+  });
+
+  return location || null;
+}
+
+/**
+ * Disconnect GMB from an organization (disables service, removes locations)
  */
 export async function disconnectGMB(organizationId: string): Promise<void> {
+  const connection = await getGoogleConnectionRow(organizationId);
+
+  if (!connection) {
+    return;
+  }
+
+  // Delete all GMB locations for this connection
   await db
-    .delete(gmbConnectionTable)
-    .where(eq(gmbConnectionTable.organizationId, organizationId));
+    .delete(gmbLocationTable)
+    .where(eq(gmbLocationTable.googleConnectionId, connection.id));
+
+  // Disable GMB service on the connection
+  const updatedServices = connection.enabledServices.filter((s) => s !== "gmb");
+
+  await db
+    .update(googleConnectionTable)
+    .set({ enabledServices: updatedServices })
+    .where(eq(googleConnectionTable.organizationId, organizationId));
 }
 
 // ============================================================================
@@ -392,7 +275,7 @@ export async function disconnectGMB(organizationId: string): Promise<void> {
 // ============================================================================
 
 /**
- * List GMB accounts for a user (using temporary access token)
+ * List GMB accounts for a user (using pending connection token)
  */
 export async function listGMBAccounts(
   accessToken: string
@@ -410,7 +293,7 @@ export async function listGMBAccounts(
 }
 
 /**
- * List locations for a GMB account (using temporary access token)
+ * List locations for a GMB account (using pending connection token)
  */
 export async function listGMBLocations(
   accessToken: string,
@@ -434,23 +317,23 @@ export async function listGMBLocations(
 export async function refreshLocationData(
   organizationId: string
 ): Promise<GMBLocationData> {
-  const { connection, accessToken } =
-    await getValidConnectionWithToken(organizationId);
+  const { location, accessToken } =
+    await getValidLocationWithToken(organizationId);
 
   const locationData = await fetchLocationDetails(
     accessToken,
-    buildLocationName(connection)
+    buildLocationName(location)
   );
 
   // Update cached data
   await db
-    .update(gmbConnectionTable)
+    .update(gmbLocationTable)
     .set({
       locationData,
-      gmbLocationName: locationData.title,
+      locationName: locationData.title,
       lastSyncedAt: new Date(),
     })
-    .where(eq(gmbConnectionTable.organizationId, organizationId));
+    .where(eq(gmbLocationTable.id, location.id));
 
   return locationData;
 }
@@ -461,20 +344,18 @@ export async function refreshLocationData(
 export async function getLocationInfo(
   organizationId: string
 ): Promise<GMBLocationData | null> {
-  const connection = await db.query.gmbConnectionTable.findFirst({
-    where: eq(gmbConnectionTable.organizationId, organizationId),
-  });
+  const location = await getActiveLocation(organizationId);
 
-  if (!connection) {
+  if (!location) {
     return null;
   }
 
   // Return cached data if available and recent
-  if (connection.locationData && connection.lastSyncedAt) {
-    const ageMs = Date.now() - connection.lastSyncedAt.getTime();
+  if (location.locationData && location.lastSyncedAt) {
+    const ageMs = Date.now() - location.lastSyncedAt.getTime();
 
     if (ageMs < LOCATION_CACHE_DURATION_MS) {
-      return connection.locationData;
+      return location.locationData;
     }
   }
 
@@ -484,7 +365,7 @@ export async function getLocationInfo(
   } catch (error) {
     // Return cached data on error
     console.error("[gmb] Failed to refresh location data:", error);
-    return connection.locationData;
+    return location.locationData;
   }
 }
 
@@ -499,13 +380,13 @@ export async function listReviews(
   organizationId: string,
   options?: { pageSize?: number; pageToken?: string }
 ): Promise<GMBReviewsResponse> {
-  const { connection, accessToken } =
-    await getValidConnectionWithToken(organizationId);
+  const { location, accessToken } =
+    await getValidLocationWithToken(organizationId);
 
   return fetchReviews(
     accessToken,
-    buildAccountName(connection),
-    connection.gmbLocationId,
+    buildAccountName(location),
+    location.gmbLocationId,
     options
   );
 }
@@ -518,12 +399,12 @@ export async function replyToReview(
   reviewId: string,
   comment: string
 ): Promise<void> {
-  const { connection, accessToken } =
-    await getValidConnectionWithToken(organizationId);
+  const { location, accessToken } =
+    await getValidLocationWithToken(organizationId);
 
   await createReviewReply(
     accessToken,
-    buildReviewName(connection, reviewId),
+    buildReviewName(location, reviewId),
     comment
   );
 }
@@ -535,10 +416,10 @@ export async function deleteReply(
   organizationId: string,
   reviewId: string
 ): Promise<void> {
-  const { connection, accessToken } =
-    await getValidConnectionWithToken(organizationId);
+  const { location, accessToken } =
+    await getValidLocationWithToken(organizationId);
 
-  await deleteReviewReply(accessToken, buildReviewName(connection, reviewId));
+  await deleteReviewReply(accessToken, buildReviewName(location, reviewId));
 }
 
 // ============================================================================
@@ -552,13 +433,13 @@ export async function listPosts(
   organizationId: string,
   options?: { pageSize?: number; pageToken?: string }
 ): Promise<GMBPostsResponse> {
-  const { connection, accessToken } =
-    await getValidConnectionWithToken(organizationId);
+  const { location, accessToken } =
+    await getValidLocationWithToken(organizationId);
 
   return fetchPosts(
     accessToken,
-    buildAccountName(connection),
-    connection.gmbLocationId,
+    buildAccountName(location),
+    location.gmbLocationId,
     options
   );
 }
@@ -570,13 +451,13 @@ export async function createPost(
   organizationId: string,
   input: GMBCreatePostInput
 ): Promise<GMBPost> {
-  const { connection, accessToken } =
-    await getValidConnectionWithToken(organizationId);
+  const { location, accessToken } =
+    await getValidLocationWithToken(organizationId);
 
   return createLocalPost(
     accessToken,
-    buildAccountName(connection),
-    connection.gmbLocationId,
+    buildAccountName(location),
+    location.gmbLocationId,
     {
       summary: input.summary,
       languageCode: input.languageCode,
@@ -597,7 +478,10 @@ export async function deletePost(
   organizationId: string,
   postName: string
 ): Promise<void> {
-  const accessToken = await getValidAccessToken(organizationId);
+  const accessToken = await getValidAccessTokenForService(
+    organizationId,
+    "gmb"
+  );
 
   await deleteLocalPost(accessToken, postName);
 }
@@ -613,8 +497,8 @@ export async function getPerformanceMetrics(
   organizationId: string,
   days: number = 30
 ): Promise<GMBPerformanceData> {
-  const { connection, accessToken } =
-    await getValidConnectionWithToken(organizationId);
+  const { location, accessToken } =
+    await getValidLocationWithToken(organizationId);
 
   // Calculate date range
   const endDate = new Date();
@@ -629,15 +513,29 @@ export async function getPerformanceMetrics(
   const endDateStr = formatDate(endDate);
 
   // Build the location name for Performance API (uses locations/ prefix)
-  const locationName = `locations/${connection.gmbLocationId}`;
+  const locationName = `locations/${location.gmbLocationId}`;
 
-  // Fetch daily metrics
-  const metrics = await fetchPerformanceMetrics(
-    accessToken,
-    locationName,
-    startDateStr,
-    endDateStr
-  );
+  // Initialize empty metrics for graceful degradation
+  let metrics: GMBPerformanceMetrics = {
+    searchImpressionsMaps: [],
+    searchImpressionsSearch: [],
+    websiteClicks: [],
+    phoneClicks: [],
+    directionRequests: [],
+  };
+
+  // Fetch daily metrics with error handling
+  try {
+    metrics = await fetchPerformanceMetrics(
+      accessToken,
+      locationName,
+      startDateStr,
+      endDateStr
+    );
+  } catch (error) {
+    // Log the error but don't fail the request - return empty metrics instead
+    console.error("[gmb] Failed to fetch performance metrics:", error);
+  }
 
   // Fetch search keywords for current month
   const currentYearMonth = `${endDate.getFullYear()}${String(endDate.getMonth() + 1).padStart(2, "0")}`;
@@ -690,19 +588,15 @@ export async function generateReplySuggestion(
   reviewId: string,
   tone?: GMBReplyTone
 ): Promise<string> {
-  // Get the connection and location data
-  const connection = await db.query.gmbConnectionTable.findFirst({
-    where: eq(gmbConnectionTable.organizationId, organizationId),
-  });
+  // Get the location
+  const location = await getActiveLocation(organizationId);
 
-  if (!connection) {
+  if (!location) {
     throw new Error("GMB not connected");
   }
 
   const businessName =
-    connection.gmbLocationName ||
-    connection.locationData?.title ||
-    "our business";
+    location.locationName || location.locationData?.title || "our business";
 
   // Fetch the specific review
   const reviewsResponse = await listReviews(organizationId);
@@ -722,19 +616,15 @@ export async function analyzeReviewSentiment(
   organizationId: string,
   reviewId: string
 ): Promise<GMBReviewAnalysis> {
-  // Get the connection and location data
-  const connection = await db.query.gmbConnectionTable.findFirst({
-    where: eq(gmbConnectionTable.organizationId, organizationId),
-  });
+  // Get the location
+  const location = await getActiveLocation(organizationId);
 
-  if (!connection) {
+  if (!location) {
     throw new Error("GMB not connected");
   }
 
   const businessName =
-    connection.gmbLocationName ||
-    connection.locationData?.title ||
-    "our business";
+    location.locationName || location.locationData?.title || "our business";
 
   // Fetch the specific review
   const reviewsResponse = await listReviews(organizationId);
@@ -758,13 +648,13 @@ export async function listMedia(
   organizationId: string,
   pageToken?: string
 ): Promise<GMBMediaResponse> {
-  const { connection, accessToken } =
-    await getValidConnectionWithToken(organizationId);
+  const { location, accessToken } =
+    await getValidLocationWithToken(organizationId);
 
   return fetchMedia(
     accessToken,
-    buildAccountName(connection),
-    connection.gmbLocationId,
+    buildAccountName(location),
+    location.gmbLocationId,
     pageToken
   );
 }
@@ -778,13 +668,13 @@ export async function uploadMedia(
   category: GMBMediaCategory,
   description?: string
 ): Promise<GMBMediaItem> {
-  const { connection, accessToken } =
-    await getValidConnectionWithToken(organizationId);
+  const { location, accessToken } =
+    await getValidLocationWithToken(organizationId);
 
   return uploadMediaFromUrl(
     accessToken,
-    buildAccountName(connection),
-    connection.gmbLocationId,
+    buildAccountName(location),
+    location.gmbLocationId,
     sourceUrl,
     category,
     description
@@ -798,7 +688,10 @@ export async function deleteMediaItem(
   organizationId: string,
   mediaName: string
 ): Promise<void> {
-  const accessToken = await getValidAccessToken(organizationId);
+  const accessToken = await getValidAccessTokenForService(
+    organizationId,
+    "gmb"
+  );
 
   await deleteMediaApi(accessToken, mediaName);
 }
@@ -808,62 +701,69 @@ export async function deleteMediaItem(
 // ============================================================================
 
 /**
- * Get a valid connection with access token for an organization.
- * Consolidates the common pattern of validating token and fetching connection.
+ * Get a valid location with access token for an organization.
+ * Consolidates the common pattern of validating token and fetching location.
  */
-async function getValidConnectionWithToken(organizationId: string): Promise<{
-  connection: GmbConnectionRow;
+async function getValidLocationWithToken(organizationId: string): Promise<{
+  location: GmbLocationRow;
   accessToken: string;
 }> {
-  const accessToken = await getValidAccessToken(organizationId);
-  const connection = await db.query.gmbConnectionTable.findFirst({
-    where: eq(gmbConnectionTable.organizationId, organizationId),
-  });
+  const accessToken = await getValidAccessTokenForService(
+    organizationId,
+    "gmb"
+  );
+  const location = await getActiveLocation(organizationId);
 
-  if (!connection) {
+  if (!location) {
     throw new Error("GMB not connected");
   }
 
-  return { connection, accessToken };
+  return { location, accessToken };
 }
 
 /**
  * Build the full location resource name for GMB API calls.
  */
-function buildLocationName(connection: GmbConnectionRow): string {
-  return `accounts/${connection.gmbAccountId}/locations/${connection.gmbLocationId}`;
+function buildLocationName(location: GmbLocationRow): string {
+  return `accounts/${location.gmbAccountId}/locations/${location.gmbLocationId}`;
 }
 
 /**
  * Build the full account resource name for GMB API calls.
  */
-function buildAccountName(connection: GmbConnectionRow): string {
-  return `accounts/${connection.gmbAccountId}`;
+function buildAccountName(location: GmbLocationRow): string {
+  return `accounts/${location.gmbAccountId}`;
 }
 
 /**
  * Build the full review resource name for GMB API calls.
  */
-function buildReviewName(
-  connection: GmbConnectionRow,
-  reviewId: string
-): string {
-  return `${buildLocationName(connection)}/reviews/${reviewId}`;
+function buildReviewName(location: GmbLocationRow, reviewId: string): string {
+  return `${buildLocationName(location)}/reviews/${reviewId}`;
 }
 
 /**
- * Map database row to GMBConnection type
+ * Map database rows to GMBConnection type
  */
-function mapConnectionToType(row: GmbConnectionRow): GMBConnection {
+function mapConnectionToGMBType(
+  row: GoogleConnectionRow,
+  locationData: {
+    gmbAccountId: string;
+    gmbLocationId: string;
+    gmbLocationName?: string | null;
+    locationData?: GMBLocationData | null;
+    lastSyncedAt?: Date | null;
+  }
+): GMBConnection {
   return {
     id: row.id,
     organizationId: row.organizationId,
-    gmbAccountId: row.gmbAccountId,
-    gmbLocationId: row.gmbLocationId,
-    gmbLocationName: row.gmbLocationName,
-    locationData: row.locationData,
+    gmbAccountId: locationData.gmbAccountId,
+    gmbLocationId: locationData.gmbLocationId,
+    gmbLocationName: locationData.gmbLocationName ?? null,
+    locationData: locationData.locationData ?? null,
     status: row.status as GMBConnection["status"],
-    lastSyncedAt: row.lastSyncedAt,
+    lastSyncedAt: locationData.lastSyncedAt ?? null,
     lastError: row.lastError,
     connectedByUserId: row.connectedByUserId,
     createdAt: row.createdAt,

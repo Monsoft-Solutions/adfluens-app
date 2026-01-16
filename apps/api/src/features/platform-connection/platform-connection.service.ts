@@ -12,7 +12,8 @@ import {
   inArray,
   platformConnectionTable,
   metaPageTable,
-  gmbConnectionTable,
+  gmbLocationTable,
+  googleConnectionTable,
 } from "@repo/db";
 import type {
   PlatformConnectionRow,
@@ -165,21 +166,34 @@ export async function resolveCredentials(
     }
 
     case "gmb_connection": {
-      const gmbConnection = await db.query.gmbConnectionTable.findFirst({
-        where: eq(gmbConnectionTable.id, connection.sourceId),
+      // GMB now uses gmbLocationTable + googleConnectionTable
+      const gmbLocation = await db.query.gmbLocationTable.findFirst({
+        where: eq(gmbLocationTable.id, connection.sourceId),
       });
 
-      if (!gmbConnection) {
+      if (!gmbLocation) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Source GMB connection not found",
+          message: "Source GMB location not found",
         });
       }
 
-      result.accessToken = gmbConnection.accessToken;
+      // Get the access token from the Google connection
+      const googleConnection = await db.query.googleConnectionTable.findFirst({
+        where: eq(googleConnectionTable.id, gmbLocation.googleConnectionId),
+      });
+
+      if (!googleConnection) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Source Google connection not found",
+        });
+      }
+
+      result.accessToken = googleConnection.accessToken;
       result.credentials = {
-        accountId: gmbConnection.gmbAccountId,
-        locationId: gmbConnection.gmbLocationId,
+        accountId: gmbLocation.gmbAccountId,
+        locationId: gmbLocation.gmbLocationId,
       };
       break;
     }
@@ -324,30 +338,32 @@ export async function syncFromMetaPages(
 
 /**
  * Sync platform connections from GMB
+ *
+ * Uses the new gmbLocationTable to sync GMB connections.
  */
 export async function syncFromGmbConnections(
   organizationId: string
 ): Promise<{ created: number; updated: number }> {
-  // Get all active GMB connections for the organization
-  const gmbConnections = await db.query.gmbConnectionTable.findMany({
+  // Get active GMB locations for the organization
+  const gmbLocations = await db.query.gmbLocationTable.findMany({
     where: and(
-      eq(gmbConnectionTable.organizationId, organizationId),
-      eq(gmbConnectionTable.status, "active")
+      eq(gmbLocationTable.organizationId, organizationId),
+      eq(gmbLocationTable.isActive, true)
     ),
   });
 
   let created = 0;
   let updated = 0;
 
-  for (const gmb of gmbConnections) {
+  for (const location of gmbLocations) {
     const result = await upsertConnection({
       organizationId,
       platform: "gmb",
-      platformAccountId: gmb.gmbLocationId ?? gmb.gmbAccountId,
-      accountName: gmb.gmbLocationName ?? "Google Business Profile",
+      platformAccountId: location.gmbLocationId ?? location.gmbAccountId,
+      accountName: location.locationName ?? "Google Business Profile",
       accountImageUrl: null,
       sourceType: "gmb_connection",
-      sourceId: gmb.id,
+      sourceId: location.id,
       status: "active",
     });
     if (result.created) created++;

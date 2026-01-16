@@ -12,8 +12,16 @@ export {
   socialMediaAccountTableRelations,
   socialMediaPostTable,
   socialMediaPostTableRelations,
-  gmbConnectionTable,
-  gmbConnectionTableRelations,
+  // Unified Google connection
+  googleConnectionTable,
+  googleConnectionTableRelations,
+  GoogleService,
+  // GMB tables
+  gmbLocationTable,
+  gmbLocationTableRelations,
+  // Google Analytics tables
+  gaPropertyTable,
+  gaPropertyTableRelations,
   // Meta tables
   metaConnectionTable,
   metaConnectionTableRelations,
@@ -92,11 +100,25 @@ export type {
   SocialMediaPostRow,
 } from "./schema/social-media-post.table";
 
-// Re-export GMB connection types
+// Re-export Google connection types
 export type {
-  GmbConnectionInsert,
-  GmbConnectionRow,
-} from "./schema/gmb-connection.table";
+  GoogleConnectionInsert,
+  GoogleConnectionRow,
+  GoogleServiceType,
+} from "./schema/google-connection.table";
+
+// Re-export GMB location types
+export type {
+  GmbLocationInsert,
+  GmbLocationRow,
+} from "./schema/gmb-location.table";
+
+// Re-export Google Analytics property types
+export type {
+  GaPropertyInsert,
+  GaPropertyRow,
+  GaPropertyData,
+} from "./schema/ga-property.table";
 
 // Re-export Meta connection types
 export type {

@@ -107,8 +107,14 @@ export async function exchangeCodeForTokens(
 
   const { tokens } = await oauth2Client.getToken(code);
 
+  if (!tokens.access_token) {
+    throw new Error(
+      "Failed to exchange code for tokens: access_token is missing"
+    );
+  }
+
   return {
-    accessToken: tokens.access_token || "",
+    accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token || undefined,
     expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : undefined,
     scope: tokens.scope || undefined,
@@ -128,8 +134,12 @@ export async function refreshAccessToken(
 
   const { credentials } = await oauth2Client.refreshAccessToken();
 
+  if (!credentials.access_token) {
+    throw new Error("Failed to refresh access token: access_token is missing");
+  }
+
   return {
-    accessToken: credentials.access_token || "",
+    accessToken: credentials.access_token,
     // Refresh token is not returned on refresh, keep the old one
     refreshToken: refreshToken,
     expiresAt: credentials.expiry_date
@@ -601,10 +611,12 @@ export async function deleteLocalPost(
 
 /**
  * Raw daily metrics response from Performance API
+ * See: https://developers.google.com/my-business/reference/performance/rest/v1/locations/fetchMultiDailyMetricsTimeSeries
  */
 type PerformanceMetricsApiResponse = {
   multiDailyMetricTimeSeries?: Array<{
-    dailyMetricTimeSeries?: {
+    // dailyMetricTimeSeries is an ARRAY of metric-timeseries tuples
+    dailyMetricTimeSeries?: Array<{
       dailyMetric?: string;
       timeSeries?: {
         datedValues?: Array<{
@@ -612,7 +624,7 @@ type PerformanceMetricsApiResponse = {
           value?: string;
         }>;
       };
-    };
+    }>;
   }>;
 };
 
@@ -650,20 +662,22 @@ export async function fetchPerformanceMetrics(
   ];
 
   const params = new URLSearchParams();
+  // Note: Parameter is "dailyMetrics" (plural) for fetchMultiDailyMetricsTimeSeries
   dailyMetrics.forEach((metric) => params.append("dailyMetrics", metric));
 
   // Parse dates for the API format
   const [startYear, startMonth, startDay] = startDate.split("-").map(Number);
   const [endYear, endMonth, endDay] = endDate.split("-").map(Number);
 
-  params.set("dailyRange.startDate.year", String(startYear));
-  params.set("dailyRange.startDate.month", String(startMonth));
-  params.set("dailyRange.startDate.day", String(startDay));
-  params.set("dailyRange.endDate.year", String(endYear));
-  params.set("dailyRange.endDate.month", String(endMonth));
-  params.set("dailyRange.endDate.day", String(endDay));
+  // Note: API uses snake_case (start_date, end_date), not camelCase
+  params.set("dailyRange.start_date.year", String(startYear));
+  params.set("dailyRange.start_date.month", String(startMonth));
+  params.set("dailyRange.start_date.day", String(startDay));
+  params.set("dailyRange.end_date.year", String(endYear));
+  params.set("dailyRange.end_date.month", String(endMonth));
+  params.set("dailyRange.end_date.day", String(endDay));
 
-  const url = `${PERFORMANCE_API_URL}/${locationName}:getDailyMetricsTimeSeries?${params.toString()}`;
+  const url = `${PERFORMANCE_API_URL}/${locationName}:fetchMultiDailyMetricsTimeSeries?${params.toString()}`;
 
   const response = await gmbFetch<PerformanceMetricsApiResponse>(
     url,
@@ -684,48 +698,52 @@ export async function fetchPerformanceMetrics(
   const searchImpressionsMap = new Map<string, number>();
 
   // Process each metric time series
+  // multiDailyMetricTimeSeries contains groups, each with a dailyMetricTimeSeries ARRAY
   for (const series of response.multiDailyMetricTimeSeries || []) {
-    const metricType = series.dailyMetricTimeSeries?.dailyMetric;
-    const values = series.dailyMetricTimeSeries?.timeSeries?.datedValues || [];
+    // Iterate over each metric in the dailyMetricTimeSeries array
+    for (const metricSeries of series.dailyMetricTimeSeries || []) {
+      const metricType = metricSeries.dailyMetric;
+      const values = metricSeries.timeSeries?.datedValues || [];
 
-    for (const dv of values) {
-      if (!dv.date?.year || !dv.date?.month || !dv.date?.day) continue;
+      for (const dv of values) {
+        if (!dv.date?.year || !dv.date?.month || !dv.date?.day) continue;
 
-      const dateKey = `${dv.date.year}-${dv.date.month}-${dv.date.day}`;
-      const value = parseInt(dv.value || "0", 10);
-      const dailyMetric: GMBDailyMetric = {
-        date: {
-          year: dv.date.year,
-          month: dv.date.month,
-          day: dv.date.day,
-        },
-        value,
-      };
+        const dateKey = `${dv.date.year}-${dv.date.month}-${dv.date.day}`;
+        const value = parseInt(dv.value || "0", 10);
+        const dailyMetric: GMBDailyMetric = {
+          date: {
+            year: dv.date.year,
+            month: dv.date.month,
+            day: dv.date.day,
+          },
+          value,
+        };
 
-      switch (metricType) {
-        case "BUSINESS_IMPRESSIONS_DESKTOP_MAPS":
-        case "BUSINESS_IMPRESSIONS_MOBILE_MAPS":
-          mapsImpressionsMap.set(
-            dateKey,
-            (mapsImpressionsMap.get(dateKey) || 0) + value
-          );
-          break;
-        case "BUSINESS_IMPRESSIONS_DESKTOP_SEARCH":
-        case "BUSINESS_IMPRESSIONS_MOBILE_SEARCH":
-          searchImpressionsMap.set(
-            dateKey,
-            (searchImpressionsMap.get(dateKey) || 0) + value
-          );
-          break;
-        case "WEBSITE_CLICKS":
-          metrics.websiteClicks.push(dailyMetric);
-          break;
-        case "CALL_CLICKS":
-          metrics.phoneClicks.push(dailyMetric);
-          break;
-        case "BUSINESS_DIRECTION_REQUESTS":
-          metrics.directionRequests.push(dailyMetric);
-          break;
+        switch (metricType) {
+          case "BUSINESS_IMPRESSIONS_DESKTOP_MAPS":
+          case "BUSINESS_IMPRESSIONS_MOBILE_MAPS":
+            mapsImpressionsMap.set(
+              dateKey,
+              (mapsImpressionsMap.get(dateKey) || 0) + value
+            );
+            break;
+          case "BUSINESS_IMPRESSIONS_DESKTOP_SEARCH":
+          case "BUSINESS_IMPRESSIONS_MOBILE_SEARCH":
+            searchImpressionsMap.set(
+              dateKey,
+              (searchImpressionsMap.get(dateKey) || 0) + value
+            );
+            break;
+          case "WEBSITE_CLICKS":
+            metrics.websiteClicks.push(dailyMetric);
+            break;
+          case "CALL_CLICKS":
+            metrics.phoneClicks.push(dailyMetric);
+            break;
+          case "BUSINESS_DIRECTION_REQUESTS":
+            metrics.directionRequests.push(dailyMetric);
+            break;
+        }
       }
     }
   }
@@ -775,9 +793,12 @@ export async function fetchSearchKeywords(
   const year = parseInt(yearMonth.substring(0, 4), 10);
   const month = parseInt(yearMonth.substring(4, 6), 10);
 
+  // Use the correct API parameter format: monthlyRange with start_month and end_month
   const params = new URLSearchParams();
-  params.set("searchKeywords.year", String(year));
-  params.set("searchKeywords.month", String(month));
+  params.set("monthlyRange.start_month.year", String(year));
+  params.set("monthlyRange.start_month.month", String(month));
+  params.set("monthlyRange.end_month.year", String(year));
+  params.set("monthlyRange.end_month.month", String(month));
 
   const url = `${PERFORMANCE_API_URL}/${locationName}/searchkeywords/impressions/monthly?${params.toString()}`;
 

@@ -181,7 +181,6 @@ export const metaConversationConfigTable = pgTable(
       .notNull(),
   },
   (table) => [
-    index("meta_conversation_config_page_idx").on(table.metaPageId),
     index("meta_conversation_config_org_idx").on(table.organizationId),
   ]
 );

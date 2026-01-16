@@ -468,9 +468,15 @@ export async function publishInstagramSingleImage(
   // Step 4: Get permalink
   const media = await getInstagramMediaPermalink(result.id, pageAccessToken);
 
+  if (!media.permalink) {
+    throw new Error(
+      "Failed to get Instagram media permalink: permalink is missing"
+    );
+  }
+
   return {
     mediaId: result.id,
-    permalink: media.permalink || "",
+    permalink: media.permalink,
   };
 }
 
@@ -542,8 +548,14 @@ export async function publishInstagramCarousel(
   // Step 6: Get permalink
   const media = await getInstagramMediaPermalink(result.id, pageAccessToken);
 
+  if (!media.permalink) {
+    throw new Error(
+      "Failed to get Instagram carousel permalink: permalink is missing"
+    );
+  }
+
   return {
     mediaId: result.id,
-    permalink: media.permalink || "",
+    permalink: media.permalink,
   };
 }

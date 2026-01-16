@@ -12,9 +12,10 @@ import { mediaStorage } from "@repo/media-storage";
 import { db } from "@repo/db/client";
 import { sql } from "drizzle-orm";
 import {
-  handleOAuthCallback,
-  createPendingGMBConnection,
-} from "./features/gmb/gmb.service";
+  handleOAuthCallback as handleGoogleOAuthCallback,
+  parseOAuthState,
+  createPendingGoogleConnection,
+} from "./features/google/google.service";
 import { handleOAuthCallback as handleMetaOAuthCallback } from "./features/meta/meta.service";
 import {
   handleVerification as handleMetaWebhookVerification,
@@ -40,8 +41,8 @@ app.set("trust proxy", true);
 if (isDev) {
   mediaStorage
     .configureBucketCors()
-    // .then(() => console.log("✅ GCS Bucket CORS configured"))
-    .catch((err) => console.error("❌ Failed to configure GCS CORS:", err));
+    // .then(() => console.log("GCS Bucket CORS configured"))
+    .catch((err) => console.error("Failed to configure GCS CORS:", err));
 }
 
 // CORS Middleware - must be before auth handler
@@ -53,12 +54,14 @@ app.use(
 );
 
 /**
- * Google Business Profile OAuth callback
- * Handles the redirect from Google after user grants GMB access
+ * Unified Google OAuth callback
+ * Handles the redirect from Google after user grants access for any Google service.
  * Exchanges the code for tokens and stores them in a secure setup session.
  * Only a setup code is passed to the frontend - NOT the actual tokens.
+ *
+ * The 'service' in the state determines which service is being connected (ga, gmb, gsc).
  */
-app.get("/api/auth/gmb/callback", async (req, res) => {
+app.get("/api/auth/google/callback", async (req, res) => {
   const { code, state, error: oauthError } = req.query;
   const appUrl = env.APP_URL;
 
@@ -67,51 +70,56 @@ app.get("/api/auth/gmb/callback", async (req, res) => {
     const errorMessage = encodeURIComponent(
       typeof oauthError === "string" ? oauthError : "OAuth authorization failed"
     );
-    return res.redirect(`${appUrl}/settings?gmb_error=${errorMessage}`);
+    return res.redirect(`${appUrl}/settings?google_error=${errorMessage}`);
   }
 
   // Validate required parameters
   if (typeof code !== "string" || typeof state !== "string") {
     return res.redirect(
-      `${appUrl}/settings?gmb_error=${encodeURIComponent("Missing required OAuth parameters")}`
+      `${appUrl}/settings?google_error=${encodeURIComponent("Missing required OAuth parameters")}`
     );
   }
 
   try {
-    // Decode state to get organization ID, user ID, and redirect path
-    const stateData = JSON.parse(Buffer.from(state, "base64").toString("utf8"));
-    const { organizationId, userId, redirectPath = "/settings" } = stateData;
+    // Parse state to get organization ID, user ID, service, and redirect path
+    const { organizationId, userId, service, redirectPath } =
+      parseOAuthState(state);
 
     if (!organizationId || !userId) {
       throw new Error("Organization ID or User ID not found in state");
     }
 
     // Exchange code for tokens
-    const tokens = await handleOAuthCallback(code);
+    const tokens = await handleGoogleOAuthCallback(code);
 
     // Create a pending connection to store tokens server-side
     // This prevents tokens from being exposed in URL parameters
-    const pendingConnection = await createPendingGMBConnection({
+    const pendingConnection = await createPendingGoogleConnection({
       organizationId,
       userId,
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       accessTokenExpiresAt: tokens.expiresAt,
       scope: tokens.scope,
+      service,
     });
+
+    // Determine redirect parameter based on service
+    const setupParam =
+      service === "gmb" ? "gmb_setup_code" : "google_setup_code";
 
     // Redirect to frontend with ONLY the connection ID - NOT tokens
     const params = new URLSearchParams({
-      gmb_setup_code: pendingConnection.id,
+      [setupParam]: pendingConnection.id,
     });
 
     return res.redirect(`${appUrl}${redirectPath}?${params.toString()}`);
   } catch (err) {
-    console.error("[GMB OAuth] Callback error:", err);
+    console.error("[Google OAuth] Callback error:", err);
     const errorMessage = encodeURIComponent(
       err instanceof Error ? err.message : "Failed to complete OAuth flow"
     );
-    return res.redirect(`${appUrl}/settings?gmb_error=${errorMessage}`);
+    return res.redirect(`${appUrl}/settings?google_error=${errorMessage}`);
   }
 });
 
@@ -243,12 +251,12 @@ if (!isDev) {
 
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
   if (isDev) {
     // eslint-disable-next-line no-console
-    console.log(`📦 tRPC API available at http://localhost:${PORT}/trpc`);
+    console.log(`tRPC API available at http://localhost:${PORT}/trpc`);
     // eslint-disable-next-line no-console
-    console.log(`🔐 Auth API available at http://localhost:${PORT}/api/auth`);
+    console.log(`Auth API available at http://localhost:${PORT}/api/auth`);
   }
 });
 
@@ -264,5 +272,5 @@ cron.schedule("* * * * *", async () => {
 
 // eslint-disable-next-line no-console
 console.log(
-  "⏰ Scheduled execution processor cron job started (runs every minute)"
+  "Scheduled execution processor cron job started (runs every minute)"
 );
