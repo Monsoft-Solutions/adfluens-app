@@ -29,7 +29,7 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 }) => {
   return (
     <Select value={String(value)} onValueChange={(v) => onChange(Number(v))}>
-      <SelectTrigger className="w-[160px]">
+      <SelectTrigger className="w-40">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

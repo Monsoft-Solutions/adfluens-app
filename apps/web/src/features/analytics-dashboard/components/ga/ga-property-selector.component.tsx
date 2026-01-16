@@ -34,7 +34,12 @@ export const GAPropertySelector: React.FC<GAPropertySelectorProps> = ({
     string | null
   >(null);
 
-  const { data: propertiesData, isLoading } = useQuery({
+  const {
+    data: propertiesData,
+    isLoading,
+    error: queryError,
+    refetch,
+  } = useQuery({
     ...trpc.ga.listProperties.queryOptions({ setupCode }),
     enabled: !!setupCode,
   });
@@ -63,6 +68,8 @@ export const GAPropertySelector: React.FC<GAPropertySelectorProps> = ({
     },
   });
 
+  const { error: mutationError, isPending: isMutating } = selectMutation;
+
   if (isLoading) {
     return (
       <Card>
@@ -74,6 +81,34 @@ export const GAPropertySelector: React.FC<GAPropertySelectorProps> = ({
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-16" />
           ))}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (queryError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Error Loading Properties</CardTitle>
+          <CardDescription>
+            Failed to load your GA4 properties. Please try again.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 mb-4">
+            <p className="text-sm text-destructive">
+              {queryError instanceof Error
+                ? queryError.message
+                : "An unknown error occurred"}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onCancel}>
+              Go Back
+            </Button>
+            <Button onClick={() => refetch()}>Retry</Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -118,9 +153,13 @@ export const GAPropertySelector: React.FC<GAPropertySelectorProps> = ({
                 "w-full flex items-center justify-between p-4 rounded-lg border transition-colors text-left",
                 selectedPropertyId === property.name
                   ? "border-primary bg-primary/5"
-                  : "border-border hover:border-primary/50 hover:bg-muted/50"
+                  : "border-border hover:border-primary/50 hover:bg-muted/50",
+                isMutating && "opacity-50 cursor-not-allowed"
               )}
-              onClick={() => setSelectedPropertyId(property.name)}
+              onClick={() =>
+                !isMutating && setSelectedPropertyId(property.name)
+              }
+              disabled={isMutating}
             >
               <div>
                 <p className="font-medium text-foreground">
@@ -142,17 +181,30 @@ export const GAPropertySelector: React.FC<GAPropertySelectorProps> = ({
           ))}
         </div>
 
+        {mutationError && (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 mt-4">
+            <p className="text-sm font-medium text-destructive mb-1">
+              Failed to Connect Property
+            </p>
+            <p className="text-sm text-destructive/80">
+              {mutationError instanceof Error
+                ? mutationError.message
+                : "An unknown error occurred"}
+            </p>
+          </div>
+        )}
+
         <div className="flex justify-end gap-2 mt-6">
-          <Button variant="outline" onClick={onCancel}>
+          <Button variant="outline" onClick={onCancel} disabled={isMutating}>
             Cancel
           </Button>
           <Button
             onClick={() =>
               selectedPropertyId && selectMutation.mutate(selectedPropertyId)
             }
-            disabled={!selectedPropertyId || selectMutation.isPending}
+            disabled={!selectedPropertyId || isMutating}
           >
-            {selectMutation.isPending ? (
+            {isMutating ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Connecting...

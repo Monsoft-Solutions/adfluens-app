@@ -1,6 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLink, Users, Heart, Share2 } from "lucide-react";
+import { ExternalLink, Users, Heart, Share2, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   Card,
@@ -28,7 +28,13 @@ export const MetaDashboardSection: React.FC<MetaDashboardSectionProps> = () => {
   const trpc = useTRPC();
   const { organization } = useAuth();
 
-  const { data: connectionData, isLoading: isLoadingConnection } = useQuery({
+  const {
+    data: connectionData,
+    isLoading: isLoadingConnection,
+    error,
+    isError,
+    refetch,
+  } = useQuery({
     ...trpc.meta.getConnection.queryOptions(),
     enabled: !!organization,
   });
@@ -39,6 +45,37 @@ export const MetaDashboardSection: React.FC<MetaDashboardSectionProps> = () => {
         <Skeleton className="h-32" />
         <Skeleton className="h-64" />
       </div>
+    );
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <AlertCircle className="w-5 h-5" />
+            Failed to Load Meta Connection
+          </CardTitle>
+          <CardDescription>
+            There was an error loading your Meta connection. Please try again.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {error && (
+              <p className="text-sm text-muted-foreground">
+                {error instanceof Error
+                  ? error.message
+                  : "An unexpected error occurred"}
+              </p>
+            )}
+            <Button onClick={() => refetch()} variant="outline">
+              Retry
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -62,12 +99,12 @@ export const MetaDashboardSection: React.FC<MetaDashboardSectionProps> = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Link to="/meta">
-            <Button>
+          <Button asChild>
+            <Link to="/meta">
               <ExternalLink className="w-4 h-4 mr-2" />
               Connect Meta
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </CardContent>
       </Card>
     );
@@ -93,12 +130,12 @@ export const MetaDashboardSection: React.FC<MetaDashboardSectionProps> = () => {
             page(s)
           </p>
         </div>
-        <Link to="/meta">
-          <Button variant="outline" size="sm">
+        <Button asChild variant="outline" size="sm">
+          <Link to="/meta">
             <ExternalLink className="w-4 h-4 mr-2" />
             Full Dashboard
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
 
       {/* Connected Pages */}
@@ -141,9 +178,9 @@ export const MetaDashboardSection: React.FC<MetaDashboardSectionProps> = () => {
             <p className="text-muted-foreground">
               No pages connected. Visit the Meta dashboard to connect pages.
             </p>
-            <Link to="/meta" className="mt-4 inline-block">
-              <Button variant="outline">Connect Pages</Button>
-            </Link>
+            <Button asChild variant="outline" className="mt-4">
+              <Link to="/meta">Connect Pages</Link>
+            </Button>
           </CardContent>
         </Card>
       )}
