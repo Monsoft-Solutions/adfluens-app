@@ -108,7 +108,7 @@ function TrendBadge({ value, invertColors = false }: TrendBadgeProps) {
       )}
       <span>
         {isPositive ? "+" : ""}
-        {value}%
+        {value.toFixed(1)}%
       </span>
     </div>
   );
