@@ -61,6 +61,7 @@ export const META_SCOPES = [
   "instagram_content_publish", // Content publishing to Instagram
   "leads_retrieval",
   "ads_read",
+  "pages_manage_ads",
 ].join(",");
 
 // ============================================================================
