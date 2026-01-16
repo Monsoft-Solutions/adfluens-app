@@ -6,6 +6,9 @@
 
 import { db, eq, and, notificationTable, metaLeadTable } from "@repo/db";
 import { env } from "@repo/env";
+import { Logger } from "@repo/logger";
+
+const logger = new Logger({ context: "meta-notification" });
 
 /**
  * Create an in-app notification
@@ -49,7 +52,7 @@ async function _sendEmailNotification(
   //   html: htmlBody,
   // });
 
-  console.warn(`[notification] Email would be sent to ${to}: ${subject}`);
+  logger.debug(`Email would be sent to ${to}: ${subject}`);
 }
 
 /**
@@ -94,8 +97,8 @@ export async function notifyNewLead(input: {
   const emailBody = buildLeadEmailHtml(input);
 
   // For now, just log - implement actual email sending with your provider
-  console.warn(`[notification] Would send email: ${emailSubject}`);
-  console.warn(`[notification] Email body: ${emailBody.substring(0, 200)}...`);
+  logger.debug(`Would send email: ${emailSubject}`);
+  logger.debug(`Email body: ${emailBody.substring(0, 200)}...`);
 }
 
 /**

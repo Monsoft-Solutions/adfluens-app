@@ -62,6 +62,9 @@ import type {
   GMBMediaItem,
   GMBMediaCategory,
 } from "@repo/types/gmb/gmb-media.type";
+import { Logger } from "@repo/logger";
+
+const logger = new Logger({ context: "gmb" });
 
 // ============================================================================
 // Constants
@@ -364,7 +367,7 @@ export async function getLocationInfo(
     return await refreshLocationData(organizationId);
   } catch (error) {
     // Return cached data on error
-    console.error("[gmb] Failed to refresh location data:", error);
+    logger.error("Failed to refresh location data", error);
     return location.locationData;
   }
 }
@@ -534,7 +537,7 @@ export async function getPerformanceMetrics(
     );
   } catch (error) {
     // Log the error but don't fail the request - return empty metrics instead
-    console.error("[gmb] Failed to fetch performance metrics:", error);
+    logger.error("Failed to fetch performance metrics", error);
   }
 
   // Fetch search keywords for current month
@@ -549,7 +552,7 @@ export async function getPerformanceMetrics(
     );
   } catch (error) {
     // Keywords API may fail if no data or not enough impressions
-    console.warn("[gmb] Failed to fetch search keywords:", error);
+    logger.warn("Failed to fetch search keywords", { error });
   }
 
   // Calculate totals

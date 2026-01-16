@@ -6,6 +6,7 @@
  */
 
 import { randomUUID } from "crypto";
+import { Logger } from "@repo/logger";
 import {
   db,
   eq,
@@ -46,6 +47,8 @@ import {
   fetchInstagramConversations,
   fetchConversationMessages,
 } from "./meta-api.utils";
+
+const logger = new Logger({ context: "meta" });
 
 // Token refresh buffer - refresh 10 days before expiration
 const TOKEN_REFRESH_BUFFER_DAYS = 10;
@@ -293,7 +296,9 @@ export async function completeConnection(
         fanCount: details.fanCount,
       };
     } catch (error) {
-      console.error(`Failed to fetch page details for ${page.pageId}:`, error);
+      logger.error("Failed to fetch page details", error, {
+        pageId: page.pageId,
+      });
     }
 
     // Subscribe to webhooks
@@ -304,10 +309,9 @@ export async function completeConnection(
         page.pageAccessToken
       );
     } catch (error) {
-      console.error(
-        `Failed to subscribe to webhooks for ${page.pageId}:`,
-        error
-      );
+      logger.error("Failed to subscribe to webhooks", error, {
+        pageId: page.pageId,
+      });
     }
 
     if (existingPage) {
@@ -511,7 +515,9 @@ export async function syncPageLeads(
           synced++;
         }
       } catch (formError) {
-        console.error(`Failed to sync leads from form ${form.id}:`, formError);
+        logger.error("Failed to sync leads from form", formError, {
+          formId: form.id,
+        });
         errors++;
       }
     }
@@ -522,7 +528,7 @@ export async function syncPageLeads(
       .set({ lastSyncedAt: new Date() })
       .where(eq(metaPageTable.id, pageId));
   } catch (error) {
-    console.error(`Failed to sync leads for page ${pageId}:`, error);
+    logger.error("Failed to sync leads for page", error, { pageId });
     throw error;
   }
 
@@ -576,7 +582,7 @@ export async function syncPageConversations(
     let platformSynced = 0;
     let platformErrors = 0;
 
-    console.warn("Syncing conversations for platform:", targetPlatform);
+    logger.debug("Syncing conversations", { platform: targetPlatform });
 
     for (const conv of conversations) {
       try {
@@ -660,10 +666,10 @@ export async function syncPageConversations(
         await db.insert(metaConversationTable).values(conversationInsert);
         platformSynced++;
       } catch (convError) {
-        console.error(
-          `Failed to sync ${targetPlatform} conversation ${conv.id}:`,
-          convError
-        );
+        logger.error("Failed to sync conversation", convError, {
+          platform: targetPlatform,
+          conversationId: conv.id,
+        });
         platformErrors++;
       }
     }
@@ -692,10 +698,7 @@ export async function syncPageConversations(
         synced += result.synced;
         errors += result.errors;
       } catch (messengerError) {
-        console.error(
-          `Failed to fetch Messenger conversations:`,
-          messengerError
-        );
+        logger.error("Failed to fetch Messenger conversations", messengerError);
       }
     }
 
@@ -721,10 +724,7 @@ export async function syncPageConversations(
         synced += result.synced;
         errors += result.errors;
       } catch (instagramError) {
-        console.error(
-          `Failed to fetch Instagram conversations:`,
-          instagramError
-        );
+        logger.error("Failed to fetch Instagram conversations", instagramError);
         // Capture user-friendly error message
         const errorMsg =
           instagramError instanceof Error
@@ -745,7 +745,7 @@ export async function syncPageConversations(
       .set({ lastSyncedAt: new Date() })
       .where(eq(metaPageTable.id, pageId));
   } catch (error) {
-    console.error(`Failed to sync conversations for page ${pageId}:`, error);
+    logger.error("Failed to sync conversations for page", error, { pageId });
     throw error;
   }
 
@@ -865,7 +865,7 @@ export async function processLeadWebhook(
   });
 
   if (!page) {
-    console.error(`Page not found for lead webhook: ${pageId}`);
+    logger.error("Page not found for lead webhook", null, { pageId });
     return null;
   }
 
@@ -938,7 +938,7 @@ export async function processLeadWebhook(
 
     return insertedLead!;
   } catch (error) {
-    console.error(`Failed to process lead ${leadgenId}:`, error);
+    logger.error("Failed to process lead", error, { leadgenId });
     return null;
   }
 }

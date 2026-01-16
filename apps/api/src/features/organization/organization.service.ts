@@ -12,6 +12,9 @@ import {
   scrapeAndSaveFacebookProfile,
   scrapeTiktokProfileAndInitialPosts,
 } from "../social-media/social-media.service";
+import { Logger } from "@repo/logger";
+
+const logger = new Logger({ context: "organization" });
 
 /**
  * Rate limiting for scraping operations
@@ -138,8 +141,8 @@ export async function upsertOrganizationProfile(
   // Fire and forget - don't block the response
   if (websiteChanged && input.websiteUrl) {
     void scrapeAndUpdateProfile(profile.id, input.websiteUrl).catch((error) => {
-      console.error(
-        `[organization] Background website scrape failed for org ${organizationId}:`,
+      logger.error(
+        `Background website scrape failed for org ${organizationId}`,
         error
       );
     });
@@ -150,8 +153,8 @@ export async function upsertOrganizationProfile(
       profile.id,
       input.instagramUrl
     ).catch((error) => {
-      console.error(
-        `[organization] Background Instagram scrape failed for org ${organizationId}:`,
+      logger.error(
+        `Background Instagram scrape failed for org ${organizationId}`,
         error
       );
     });
@@ -162,8 +165,8 @@ export async function upsertOrganizationProfile(
   if (facebookChanged && input.facebookUrl) {
     void scrapeAndSaveFacebookProfile(profile.id, input.facebookUrl).catch(
       (error) => {
-        console.error(
-          `[organization] Background Facebook scrape failed for org ${organizationId}:`,
+        logger.error(
+          `Background Facebook scrape failed for org ${organizationId}`,
           error
         );
       }
@@ -173,8 +176,8 @@ export async function upsertOrganizationProfile(
   if (tiktokChanged && input.tiktokUrl) {
     void scrapeTiktokProfileAndInitialPosts(profile.id, input.tiktokUrl).catch(
       (error) => {
-        console.error(
-          `[organization] Background TikTok scrape failed for org ${organizationId}:`,
+        logger.error(
+          `Background TikTok scrape failed for org ${organizationId}`,
           error
         );
       }
@@ -216,14 +219,11 @@ async function scrapeAndUpdateProfile(
         });
       }
     } else {
-      console.error(
-        `[organization] Failed to scrape website ${websiteUrl}:`,
-        result.error
-      );
+      logger.error(`Failed to scrape website ${websiteUrl}`, result.error);
     }
   } catch (error) {
-    console.error(
-      `[organization] Error scraping website ${websiteUrl}:`,
+    logger.error(
+      `Error scraping website ${websiteUrl}`,
       error instanceof Error ? error.message : error
     );
   }

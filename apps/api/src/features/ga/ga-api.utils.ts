@@ -7,6 +7,9 @@
 
 import { google } from "googleapis";
 import type { OAuth2Client } from "google-auth-library";
+import { Logger } from "@repo/logger";
+
+const logger = new Logger({ context: "ga" });
 
 // Required scope for GA4 API access (read-only)
 export const GA_SCOPE = "https://www.googleapis.com/auth/analytics.readonly";
@@ -284,8 +287,8 @@ export async function fetchGA4Properties(
       allProperties.push(...result.value);
     } else {
       // Log but continue with other accounts
-      console.error(
-        `[GA API] Error fetching properties for account ${accountsWithNames[i]?.name}:`,
+      logger.error(
+        `Error fetching properties for account ${accountsWithNames[i]?.name}`,
         result.reason
       );
     }
@@ -333,7 +336,7 @@ export async function fetchGA4Property(
       account: property.account || undefined,
     };
   } catch (error) {
-    console.error(`[GA API] Error fetching property ${propertyId}:`, error);
+    logger.error(`Error fetching property ${propertyId}`, error);
     return null;
   }
 }

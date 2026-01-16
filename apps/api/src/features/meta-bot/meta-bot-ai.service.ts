@@ -21,6 +21,9 @@ import type {
   MetaAppointmentContext,
 } from "@repo/db";
 import { z } from "zod";
+import { Logger } from "@repo/logger";
+
+const logger = new Logger({ context: "meta-bot-ai" });
 
 // =============================================================================
 // Intent Detection
@@ -96,7 +99,7 @@ Extract entities like products, services, dates, and times mentioned.`,
 
     return result.object;
   } catch (error) {
-    console.error("[meta-bot-ai] Intent detection failed:", error);
+    logger.error("Intent detection failed", error);
     // Default to general intent on error
     return {
       category: "general",
@@ -541,7 +544,7 @@ export async function generateAiResponse(
       updatedContext,
     };
   } catch (error) {
-    console.error("[meta-bot-ai] Response generation failed:", error);
+    logger.error("Response generation failed", error);
     throw error;
   }
 }
@@ -709,7 +712,7 @@ zh=Chinese, ja=Japanese, ko=Korean, ar=Arabic, ru=Russian, hi=Hindi, nl=Dutch.`,
 
     return result.object;
   } catch (error) {
-    console.error("[meta-bot-ai] Language detection failed:", error);
+    logger.error("Language detection failed", error);
     // Default to English on error
     return {
       code: "en",
@@ -749,7 +752,7 @@ Rules:
 
     return result.text.trim();
   } catch (error) {
-    console.error("[meta-bot-ai] Translation failed:", error);
+    logger.error("Translation failed", error);
     // Return original text on error
     return text;
   }
@@ -833,7 +836,7 @@ export async function testAiResponse(
 
     return result.response;
   } catch (error) {
-    console.error("[meta-bot-ai] Test response failed:", error);
+    logger.error("Test response failed", error);
     return "Unable to generate response. Please check your configuration.";
   }
 }
@@ -908,7 +911,7 @@ export async function executeAiNodeOperation(
         return { success: false, error: `Unknown operation: ${operation}` };
     }
   } catch (error) {
-    console.error(`[ai-node] Operation ${operation} failed:`, error);
+    logger.error(`Operation ${operation} failed`, error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",

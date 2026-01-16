@@ -15,6 +15,9 @@ import {
   metaConversationStateTable,
 } from "@repo/db";
 import type { MetaUserMemory } from "@repo/db";
+import { Logger } from "@repo/logger";
+
+const logger = new Logger({ context: "meta-bot-memory" });
 
 // =============================================================================
 // Types
@@ -165,7 +168,7 @@ export async function recallUserMemory(
 
     return memory;
   } catch (error) {
-    console.error("[meta-bot-memory] Failed to recall memory:", error);
+    logger.error("Failed to recall memory", error);
     return null;
   }
 }

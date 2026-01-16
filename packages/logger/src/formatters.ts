@@ -1,4 +1,4 @@
-import { format } from "winston";
+import { format, type Logform } from "winston";
 import type { LogEntry } from "./types";
 
 const LEVEL_COLORS: Record<string, string> = {
@@ -12,7 +12,7 @@ const RESET = "\x1b[0m";
 const DIM = "\x1b[2m";
 const BOLD = "\x1b[1m";
 
-export const jsonFormat = format.combine(
+export const jsonFormat: Logform.Format = format.combine(
   format.timestamp({ format: "YYYY-MM-DDTHH:mm:ss.SSSZ" }),
   format.errors({ stack: true }),
   format.printf((info) => {
@@ -53,7 +53,7 @@ export const jsonFormat = format.combine(
   })
 );
 
-export const prettyFormat = format.combine(
+export const prettyFormat: Logform.Format = format.combine(
   format.timestamp({ format: "HH:mm:ss.SSS" }),
   format.errors({ stack: true }),
   format.printf((info) => {
@@ -69,7 +69,7 @@ export const prettyFormat = format.combine(
       : "";
 
     const requestIdStr = info["requestId"]
-      ? `${DIM}(${info["requestId"].slice(0, 8)})${RESET} `
+      ? `${DIM}(${String(info["requestId"]).slice(0, 8)})${RESET} `
       : "";
 
     const message = info.message;

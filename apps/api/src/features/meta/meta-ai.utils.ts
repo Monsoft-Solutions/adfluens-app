@@ -13,6 +13,9 @@ import {
   metaConversationTable,
 } from "@repo/db";
 import type { MetaConversationConfigRow } from "@repo/db";
+import { Logger } from "@repo/logger";
+
+const logger = new Logger({ context: "meta-ai" });
 
 /**
  * Build AI context from organization profile and scraped data
@@ -289,7 +292,7 @@ ${conversationHistory ? `CONVERSATION HISTORY:\n${conversationHistory}\n` : ""}`
 
     return result.text.trim();
   } catch (error) {
-    console.error("[meta-ai] Failed to generate response:", error);
+    logger.error("Failed to generate response", error);
     return null;
   }
 }

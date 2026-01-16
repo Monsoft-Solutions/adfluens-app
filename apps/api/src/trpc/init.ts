@@ -2,6 +2,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import { fromNodeHeaders } from "better-auth/node";
 import { auth } from "@repo/auth";
+import { Logger, updateContext } from "@repo/logger";
 
 /**
  * User type from Better Auth session
@@ -52,6 +53,8 @@ export type Context = {
   organization: Organization | null;
 };
 
+const logger = new Logger({ context: "trpc" });
+
 /**
  * Creates the tRPC context for each request
  * Extracts session from request headers using Better Auth
@@ -78,6 +81,12 @@ export const createContext = async ({
   };
   const user = sessionData.user as User;
 
+  // Update logging context with user info
+  updateContext({
+    userId: user.id,
+    organizationId: session.activeOrganizationId ?? undefined,
+  });
+
   // Fetch organization if there's an active organization ID in the session
   let organization: Organization | null = null;
   if (session.activeOrganizationId) {
@@ -92,7 +101,7 @@ export const createContext = async ({
         organization = orgData as unknown as Organization;
       }
     } catch (error) {
-      console.error("Failed to fetch organization:", error);
+      logger.error("Failed to fetch organization", error);
       // Continue without organization
     }
   }
