@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams, Link } from "react-router-dom";
 import {
@@ -22,6 +22,38 @@ import { GAPropertySelector } from "@/features/analytics-dashboard/components/ga
 import { GMBLocationSelector } from "@/features/gmb/components/gmb-location-selector.component";
 
 /**
+ * Custom hook to safely use setTimeout with automatic cleanup on unmount
+ */
+const useSafeTimeout = () => {
+  const timeoutsRef = useRef<Set<NodeJS.Timeout>>(new Set());
+
+  useEffect(() => {
+    // Cleanup all timeouts on unmount
+    return () => {
+      timeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
+      timeoutsRef.current.clear();
+    };
+  }, []);
+
+  const setSafeTimeout = useCallback((callback: () => void, delay: number) => {
+    const timeout = setTimeout(() => {
+      callback();
+      timeoutsRef.current.delete(timeout);
+    }, delay);
+
+    timeoutsRef.current.add(timeout);
+    return timeout;
+  }, []);
+
+  const clearSafeTimeout = useCallback((timeout: NodeJS.Timeout) => {
+    clearTimeout(timeout);
+    timeoutsRef.current.delete(timeout);
+  }, []);
+
+  return { setSafeTimeout, clearSafeTimeout };
+};
+
+/**
  * Google Services Settings Component
  *
  * Unified settings panel for all Google services (GA, GMB).
@@ -33,6 +65,7 @@ export const GoogleServicesSettings: React.FC = () => {
   const queryClient = useQueryClient();
   const { organization } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { setSafeTimeout } = useSafeTimeout();
 
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -121,7 +154,7 @@ export const GoogleServicesSettings: React.FC = () => {
       setSuccessMessage("Google disconnected successfully");
       setError(null);
       invalidateQueries();
-      setTimeout(() => setSuccessMessage(null), 3000);
+      setSafeTimeout(() => setSuccessMessage(null), 3000);
     },
     onError: (err) => {
       setError(err.message || "Failed to disconnect");
@@ -175,7 +208,7 @@ export const GoogleServicesSettings: React.FC = () => {
     onSuccess: () => {
       setSuccessMessage("Google Analytics disabled");
       invalidateQueries();
-      setTimeout(() => setSuccessMessage(null), 3000);
+      setSafeTimeout(() => setSuccessMessage(null), 3000);
     },
     onError: (err) => {
       setError(err.message || "Failed to disable Google Analytics");
@@ -188,7 +221,7 @@ export const GoogleServicesSettings: React.FC = () => {
     onSuccess: () => {
       setSuccessMessage("Google Business Profile disabled");
       invalidateQueries();
-      setTimeout(() => setSuccessMessage(null), 3000);
+      setSafeTimeout(() => setSuccessMessage(null), 3000);
     },
     onError: (err) => {
       setError(err.message || "Failed to disable Google Business Profile");
@@ -260,7 +293,7 @@ export const GoogleServicesSettings: React.FC = () => {
     setGaSetupCode(null);
     setSuccessMessage("Google Analytics connected successfully!");
     invalidateQueries();
-    setTimeout(() => setSuccessMessage(null), 3000);
+    setSafeTimeout(() => setSuccessMessage(null), 3000);
   };
 
   const handleGMBLocationSelected = () => {
@@ -268,7 +301,7 @@ export const GoogleServicesSettings: React.FC = () => {
     setGmbSetupCode(null);
     setSuccessMessage("Google Business Profile connected successfully!");
     invalidateQueries();
-    setTimeout(() => setSuccessMessage(null), 3000);
+    setSafeTimeout(() => setSuccessMessage(null), 3000);
   };
 
   const connection = connectionData?.connection;
