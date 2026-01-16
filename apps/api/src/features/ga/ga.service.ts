@@ -231,6 +231,19 @@ export async function setActiveProperty(
     throw new Error("Google not connected");
   }
 
+  // Verify the property exists before making any changes
+  const propertyExists = await db.query.gaPropertyTable.findFirst({
+    where: and(
+      eq(gaPropertyTable.googleConnectionId, connection.id),
+      eq(gaPropertyTable.propertyId, propertyId)
+    ),
+    columns: { id: true },
+  });
+
+  if (!propertyExists) {
+    throw new Error(`Property ${propertyId} not found for this connection`);
+  }
+
   // Deactivate all properties first
   await db
     .update(gaPropertyTable)
