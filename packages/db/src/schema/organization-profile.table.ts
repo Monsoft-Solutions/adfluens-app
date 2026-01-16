@@ -45,10 +45,7 @@ export const organizationProfileTable = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [
-    index("organization_profile_org_id_idx").on(table.organizationId),
-    index("organization_profile_scraped_at_idx").on(table.scrapedAt),
-  ]
+  (table) => [index("organization_profile_scraped_at_idx").on(table.scrapedAt)]
 );
 
 /**

@@ -9,6 +9,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { googleConnectionTable } from "./google-connection.table";
+import { connectionStatusEnum } from "./meta-enums";
 
 /**
  * GA4 Property metadata cached from the API
@@ -56,7 +57,7 @@ export const gaPropertyTable = pgTable(
     propertyData: jsonb("property_data").$type<GaPropertyData>(),
 
     /** Property status */
-    status: text("status").notNull().default("active"),
+    status: connectionStatusEnum("status").notNull().default("active"),
 
     /** Last error message if status is error */
     lastError: text("last_error"),

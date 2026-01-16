@@ -158,7 +158,6 @@ export const metaConversationStateTable = pgTable(
       .notNull(),
   },
   (table) => [
-    index("meta_conv_state_conv_idx").on(table.metaConversationId),
     index("meta_conv_state_org_idx").on(table.organizationId),
     index("meta_conv_state_mode_idx").on(table.botMode),
     index("meta_conv_state_qual_idx").on(table.qualificationStatus),

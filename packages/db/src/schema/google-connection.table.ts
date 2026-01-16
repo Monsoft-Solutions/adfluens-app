@@ -88,10 +88,7 @@ export const googleConnectionTable = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [
-    index("google_connection_org_id_idx").on(table.organizationId),
-    index("google_connection_status_idx").on(table.status),
-  ]
+  (table) => [index("google_connection_status_idx").on(table.status)]
 );
 
 /**

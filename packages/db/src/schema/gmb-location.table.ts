@@ -9,6 +9,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { googleConnectionTable } from "./google-connection.table";
+import { connectionStatusEnum } from "./meta-enums";
 import type { GMBLocationData } from "@repo/types/gmb/gmb-location-data.type";
 
 /**
@@ -48,7 +49,7 @@ export const gmbLocationTable = pgTable(
     locationData: jsonb("location_data").$type<GMBLocationData>(),
 
     /** Location status */
-    status: text("status").notNull().default("active"),
+    status: connectionStatusEnum("status").notNull().default("active"),
 
     /** Last error message if status is error */
     lastError: text("last_error"),
