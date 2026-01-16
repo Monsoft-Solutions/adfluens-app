@@ -6,10 +6,15 @@ import {
 } from "./analytics-dashboard.service";
 
 /**
+ * Default number of days for date range queries
+ */
+const DEFAULT_DATE_RANGE_DAYS = 30;
+
+/**
  * Schema for date range input
  */
 const dateRangeSchema = z.object({
-  days: z.number().min(7).max(90).default(30),
+  days: z.number().min(7).max(90).default(DEFAULT_DATE_RANGE_DAYS),
 });
 
 export const analyticsDashboardRouter = router({
@@ -29,7 +34,7 @@ export const analyticsDashboardRouter = router({
     .query(async ({ ctx, input }) => {
       const overview = await getOverviewMetrics(
         ctx.organization.id,
-        input?.days ?? 30
+        input?.days ?? DEFAULT_DATE_RANGE_DAYS
       );
       return overview;
     }),
