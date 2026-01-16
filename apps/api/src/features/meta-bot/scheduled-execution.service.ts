@@ -89,7 +89,7 @@ export async function scheduleFlowExecution(
     throw new Error("Failed to schedule flow execution");
   }
 
-  console.warn(
+  console.log(
     `[scheduled-execution] Scheduled execution ${execution.id} for ${scheduledFor.toISOString()}`
   );
 
