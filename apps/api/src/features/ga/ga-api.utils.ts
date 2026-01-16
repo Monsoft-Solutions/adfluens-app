@@ -208,35 +208,52 @@ export async function fetchGA4Properties(
     auth: oauth2Client,
   });
 
-  // First, get all accounts
-  const accountsResponse = await analyticsAdmin.accounts.list();
-  const accounts = accountsResponse.data.accounts || [];
+  // First, get all accounts (paginated)
+  const accounts: { name?: string | null }[] = [];
+  let accountsPageToken: string | undefined;
 
-  // For each account, get its properties
+  do {
+    const accountsResponse = await analyticsAdmin.accounts.list({
+      pageToken: accountsPageToken,
+    });
+    const pageAccounts = accountsResponse.data.accounts || [];
+    accounts.push(...pageAccounts);
+    accountsPageToken = accountsResponse.data.nextPageToken || undefined;
+  } while (accountsPageToken);
+
+  // For each account, get its properties (paginated)
   const allProperties: GA4Property[] = [];
 
   for (const account of accounts) {
     if (!account.name) continue;
 
     try {
-      const propertiesResponse = await analyticsAdmin.properties.list({
-        filter: `parent:${account.name}`,
-      });
+      let propertiesPageToken: string | undefined;
 
-      const properties = propertiesResponse.data.properties || [];
-
-      for (const property of properties) {
-        allProperties.push({
-          name: property.name || "",
-          displayName: property.displayName || "",
-          industryCategory: property.industryCategory || undefined,
-          timeZone: property.timeZone || undefined,
-          currencyCode: property.currencyCode || undefined,
-          createTime: property.createTime || undefined,
-          serviceLevel: property.serviceLevel || undefined,
-          account: property.account || undefined,
+      do {
+        const propertiesResponse = await analyticsAdmin.properties.list({
+          filter: `parent:${account.name}`,
+          pageToken: propertiesPageToken,
         });
-      }
+
+        const properties = propertiesResponse.data.properties || [];
+
+        for (const property of properties) {
+          allProperties.push({
+            name: property.name || "",
+            displayName: property.displayName || "",
+            industryCategory: property.industryCategory || undefined,
+            timeZone: property.timeZone || undefined,
+            currencyCode: property.currencyCode || undefined,
+            createTime: property.createTime || undefined,
+            serviceLevel: property.serviceLevel || undefined,
+            account: property.account || undefined,
+          });
+        }
+
+        propertiesPageToken =
+          propertiesResponse.data.nextPageToken || undefined;
+      } while (propertiesPageToken);
     } catch (error) {
       // Log but continue with other accounts
       console.error(
