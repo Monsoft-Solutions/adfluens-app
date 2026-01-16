@@ -22,7 +22,12 @@ const BLOCKED_IP_PATTERNS = [
   /^255\.255\.255\.255$/,
   // IPv6 Loopback
   /^::1$/,
-  /^::ffff:127\./,
+  /^::ffff:127\./i,
+  // IPv4-mapped IPv6 addresses (private ranges)
+  /^::ffff:10\./i,
+  /^::ffff:172\.(1[6-9]|2\d|3[01])\./i,
+  /^::ffff:192\.168\./i,
+  /^::ffff:169\.254\./i,
   // IPv6 Private networks
   /^fe80:/i,
   /^fc00:/i,
@@ -110,11 +115,12 @@ export function validateExternalUrl(urlString: string): void {
   // 2. Maintaining an allow-list of trusted domains
   // 3. Using a proxy service that performs these checks
 
-  // Check for URL encoding bypass attempts
+  // Check for URL encoding bypass attempts (case-insensitive)
+  const lowerUrl = urlString.toLowerCase();
   if (
-    urlString.includes("%00") || // null byte
-    urlString.includes("%0d") || // carriage return
-    urlString.includes("%0a") // line feed
+    lowerUrl.includes("%00") || // null byte
+    lowerUrl.includes("%0d") || // carriage return
+    lowerUrl.includes("%0a") // line feed
   ) {
     throw new TRPCError({
       code: "BAD_REQUEST",
