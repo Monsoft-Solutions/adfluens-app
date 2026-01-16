@@ -120,6 +120,7 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
                       id={account.id}
                       checked={isSelected}
                       onCheckedChange={() => onToggle(account.id)}
+                      onClick={(e) => e.stopPropagation()}
                     />
                     {account.accountImageUrl ? (
                       <img
@@ -136,6 +137,7 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
                       <Label
                         htmlFor={account.id}
                         className="font-medium cursor-pointer"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         {account.accountName}
                       </Label>
