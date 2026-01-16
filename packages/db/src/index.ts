@@ -220,6 +220,10 @@ export {
   contentPostAccountTable,
   contentPostAccountTableRelations,
 } from "./schema/content-post-account.table";
+export {
+  contentPublishResultTable,
+  contentPublishResultTableRelations,
+} from "./schema/content-publish-result.table";
 
 // Re-export Platform connection tables
 export {
@@ -234,7 +238,6 @@ export type {
   ContentPostRow,
   ContentPostInsert,
   ContentPostMediaJson,
-  ContentPostPublishResultJson,
 } from "./schema/content-post.table";
 
 // Re-export Content post account types
@@ -242,6 +245,12 @@ export type {
   ContentPostAccountRow,
   ContentPostAccountInsert,
 } from "./schema/content-post-account.table";
+
+// Re-export Content publish result types
+export type {
+  ContentPublishResultRow,
+  ContentPublishResultInsert,
+} from "./schema/content-publish-result.table";
 
 // Re-export Platform connection types
 export type {

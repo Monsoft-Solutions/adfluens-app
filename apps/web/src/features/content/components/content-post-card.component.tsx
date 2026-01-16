@@ -42,11 +42,26 @@ type ContentPostMedia = {
   source: "upload" | "fal_generated" | "url";
 };
 
-type ContentPostPublishResult = {
-  postId?: string;
-  permalink?: string;
-  error?: string;
-  publishedAt?: string;
+type ContentPublishResult = {
+  id: string;
+  platform: string;
+  accountName: string;
+  success: boolean;
+  platformPostId?: string | null;
+  permalink?: string | null;
+  error?: string | null;
+  publishedAt?: string | null;
+};
+
+type ContentPostAccount = {
+  id: string;
+  status: "draft" | "pending" | "published" | "failed";
+  platformConnection: {
+    id: string;
+    platform: string;
+    accountName: string;
+  };
+  publishResult?: ContentPublishResult | null;
 };
 
 type ContentPost = {
@@ -57,7 +72,7 @@ type ContentPost = {
   hashtags: string[] | null;
   media: ContentPostMedia[];
   status: "draft" | "pending" | "published" | "failed";
-  publishResults: Record<string, ContentPostPublishResult> | null;
+  accounts?: ContentPostAccount[];
   lastError: string | null;
   createdByUserId: string;
   createdAt: string;
@@ -224,32 +239,36 @@ export const ContentPostCard: React.FC<ContentPostCardProps> = ({
                 </Button>
               )}
 
-              {post.status === "published" && post.publishResults && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <ExternalLink className="w-4 h-4 mr-1" />
-                      View
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    {Object.entries(post.publishResults).map(
-                      ([platform, result]) =>
-                        result.permalink && (
-                          <DropdownMenuItem key={platform} asChild>
+              {post.status === "published" &&
+                post.accounts &&
+                post.accounts.length > 0 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <ExternalLink className="w-4 h-4 mr-1" />
+                        View
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      {post.accounts
+                        .filter((acc) => acc.publishResult?.permalink)
+                        .map((account) => (
+                          <DropdownMenuItem key={account.id} asChild>
                             <a
-                              href={result.permalink}
+                              href={account.publishResult!.permalink!}
                               target="_blank"
                               rel="noopener noreferrer"
                             >
-                              {platformLabels[platform] || platform}
+                              {platformLabels[
+                                account.publishResult!.platform
+                              ] || account.publishResult!.platform}
+                              {` - ${account.publishResult!.accountName}`}
                             </a>
                           </DropdownMenuItem>
-                        )
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+                        ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

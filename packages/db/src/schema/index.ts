@@ -40,6 +40,7 @@ export * from "./content-enums";
 // Content creation tables
 export * from "./content-post.table";
 export * from "./content-post-account.table";
+export * from "./content-publish-result.table";
 
 // Platform connection tables
 export * from "./platform-connection.table";

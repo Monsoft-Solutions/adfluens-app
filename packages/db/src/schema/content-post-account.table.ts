@@ -14,17 +14,14 @@ import { relations } from "drizzle-orm";
 import {
   pgTable,
   timestamp,
-  jsonb,
   index,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 import { contentPostStatusEnum } from "./content-enums";
-import {
-  contentPostTable,
-  type ContentPostPublishResultJson,
-} from "./content-post.table";
+import { contentPostTable } from "./content-post.table";
 import { platformConnectionTable } from "./platform-connection.table";
+import { contentPublishResultTable } from "./content-publish-result.table";
 
 // =============================================================================
 // Table Definition
@@ -53,10 +50,6 @@ export const contentPostAccountTable = pgTable(
      * - failed: Publishing failed for this account
      */
     status: contentPostStatusEnum("status").notNull().default("pending"),
-
-    /** Publishing result for this specific account */
-    publishResult:
-      jsonb("publish_result").$type<ContentPostPublishResultJson>(),
 
     /** When this record was created */
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -95,6 +88,11 @@ export const contentPostAccountTableRelations = relations(
     platformConnection: one(platformConnectionTable, {
       fields: [contentPostAccountTable.platformConnectionId],
       references: [platformConnectionTable.id],
+    }),
+    /** The publish result for this account */
+    publishResult: one(contentPublishResultTable, {
+      fields: [contentPostAccountTable.id],
+      references: [contentPublishResultTable.contentPostAccountId],
     }),
   })
 );

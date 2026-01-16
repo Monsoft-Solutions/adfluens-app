@@ -14,13 +14,13 @@ import {
   ne,
   contentPostTable,
   contentPostAccountTable,
+  contentPublishResultTable,
   platformConnectionTable,
 } from "@repo/db";
 import type {
   ContentPostRow,
   ContentPostInsert,
   ContentPostMediaJson,
-  ContentPostPublishResultJson,
   ContentPostAccountInsert,
   PlatformConnectionRow,
   MetaPageRow,
@@ -44,15 +44,6 @@ import {
   resolveCredentials,
 } from "../platform-connection/platform-connection.service";
 import { mediaStorage } from "@repo/media-storage";
-
-// =============================================================================
-// Types
-// =============================================================================
-
-type ListPostsResult = {
-  posts: ContentPostRow[];
-  nextCursor?: string;
-};
 
 // =============================================================================
 // Helper Functions
@@ -167,15 +158,20 @@ export async function createPostV2(
 /**
  * Get a single post by ID
  */
-export async function getPost(
-  postId: string,
-  organizationId: string
-): Promise<ContentPostRow | null> {
+export async function getPost(postId: string, organizationId: string) {
   const post = await db.query.contentPostTable.findFirst({
     where: and(
       eq(contentPostTable.id, postId),
       eq(contentPostTable.organizationId, organizationId)
     ),
+    with: {
+      accounts: {
+        with: {
+          platformConnection: true,
+          publishResult: true,
+        },
+      },
+    },
   });
 
   return post || null;
@@ -184,10 +180,7 @@ export async function getPost(
 /**
  * Get a post or throw if not found
  */
-export async function getPostOrThrow(
-  postId: string,
-  organizationId: string
-): Promise<ContentPostRow> {
+export async function getPostOrThrow(postId: string, organizationId: string) {
   const post = await getPost(postId, organizationId);
 
   if (!post) {
@@ -206,7 +199,7 @@ export async function getPostOrThrow(
 export async function listPosts(
   organizationId: string,
   options?: ContentPostListInput
-): Promise<ListPostsResult> {
+) {
   const limit = options?.limit || 20;
 
   const conditions = [eq(contentPostTable.organizationId, organizationId)];
@@ -227,12 +220,28 @@ export async function listPosts(
         ...conditions,
         sql`${options.platform} = ANY(${contentPostTable.platforms})`
       ),
+      with: {
+        accounts: {
+          with: {
+            platformConnection: true,
+            publishResult: true,
+          },
+        },
+      },
       orderBy: [desc(contentPostTable.createdAt)],
       limit: limit + 1,
     });
   } else {
     posts = await db.query.contentPostTable.findMany({
       where: and(...conditions),
+      with: {
+        accounts: {
+          with: {
+            platformConnection: true,
+            publishResult: true,
+          },
+        },
+      },
       orderBy: [desc(contentPostTable.createdAt)],
       limit: limit + 1,
     });
@@ -401,9 +410,35 @@ export async function publishPost(
       (c) => c.id === account.platformConnectionId
     );
     if (!connection) {
-      await updateAccountStatus(account.id, "failed", {
+      const errorResult: PlatformPublishResult = {
+        success: false,
         error: "Platform connection not found",
-      });
+      };
+      results[account.id] = errorResult;
+
+      // Update account status
+      await updateAccountStatus(account.id, "failed");
+
+      // Insert into publish result table
+      await db
+        .insert(contentPublishResultTable)
+        .values({
+          contentPostAccountId: account.id,
+          platform: "facebook", // Default fallback since connection not found
+          accountName: "Unknown Account",
+          success: false,
+          error: "Platform connection not found",
+          publishedAt: null,
+        })
+        .onConflictDoUpdate({
+          target: contentPublishResultTable.contentPostAccountId,
+          set: {
+            success: false,
+            error: "Platform connection not found",
+            updatedAt: new Date(),
+          },
+        });
+
       continue;
     }
 
@@ -440,38 +475,70 @@ export async function publishPost(
         }
       }
 
-      results[connection.platform] = result;
+      results[account.id] = result;
+
+      // Update account status
       await updateAccountStatus(
         account.id,
-        result.success ? "published" : "failed",
-        {
-          postId: result.postId,
+        result.success ? "published" : "failed"
+      );
+
+      // Insert into publish result table
+      await db
+        .insert(contentPublishResultTable)
+        .values({
+          contentPostAccountId: account.id,
+          platform: connection.platform,
+          accountName: connection.accountName,
+          success: result.success,
+          platformPostId: result.postId,
           permalink: result.permalink,
           error: result.error,
-          publishedAt: result.success ? new Date().toISOString() : undefined,
-        }
-      );
+          publishedAt: result.success ? new Date() : null,
+        })
+        .onConflictDoUpdate({
+          target: contentPublishResultTable.contentPostAccountId,
+          set: {
+            success: result.success,
+            platformPostId: result.postId,
+            permalink: result.permalink,
+            error: result.error,
+            publishedAt: result.success ? new Date() : null,
+            updatedAt: new Date(),
+          },
+        });
 
       if (result.success) hasSuccess = true;
       else lastError = result.error || "Unknown error";
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
-      results[connection.platform] = { success: false, error: errorMessage };
+      results[account.id] = { success: false, error: errorMessage };
       lastError = errorMessage;
-      await updateAccountStatus(account.id, "failed", { error: errorMessage });
-    }
-  }
 
-  // Build publish results JSON
-  const publishResultsJson: Record<string, ContentPostPublishResultJson> = {};
-  for (const [platform, result] of Object.entries(results)) {
-    publishResultsJson[platform] = {
-      postId: result.postId,
-      permalink: result.permalink,
-      error: result.error,
-      publishedAt: result.success ? new Date().toISOString() : undefined,
-    };
+      // Update account status
+      await updateAccountStatus(account.id, "failed");
+
+      // Insert into publish result table
+      await db
+        .insert(contentPublishResultTable)
+        .values({
+          contentPostAccountId: account.id,
+          platform: connection.platform,
+          accountName: connection.accountName,
+          success: false,
+          error: errorMessage,
+          publishedAt: null,
+        })
+        .onConflictDoUpdate({
+          target: contentPublishResultTable.contentPostAccountId,
+          set: {
+            success: false,
+            error: errorMessage,
+            updatedAt: new Date(),
+          },
+        });
+    }
   }
 
   // Update post status
@@ -479,7 +546,6 @@ export async function publishPost(
     .update(contentPostTable)
     .set({
       status: hasSuccess ? "published" : "failed",
-      publishResults: publishResultsJson,
       lastError,
     })
     .where(eq(contentPostTable.id, postId));
@@ -520,14 +586,12 @@ function buildMetaPageData(
  */
 async function updateAccountStatus(
   accountId: string,
-  status: "published" | "failed",
-  publishResult: Record<string, unknown>
+  status: "published" | "failed"
 ): Promise<void> {
   await db
     .update(contentPostAccountTable)
     .set({
       status,
-      publishResult: publishResult as ContentPostPublishResultJson,
     })
     .where(eq(contentPostAccountTable.id, accountId));
 }

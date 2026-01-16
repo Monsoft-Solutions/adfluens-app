@@ -40,20 +40,6 @@ export type ContentPostMediaJson = {
   source: "upload" | "fal_generated" | "url";
 };
 
-/**
- * Result from publishing to a specific platform
- */
-export type ContentPostPublishResultJson = {
-  /** Platform-specific post ID */
-  postId?: string;
-  /** Permalink to the published post */
-  permalink?: string;
-  /** Error message if publishing failed */
-  error?: string;
-  /** When the post was published */
-  publishedAt?: string;
-};
-
 // =============================================================================
 // Table Definition
 // =============================================================================
@@ -82,13 +68,7 @@ export const contentPostTable = pgTable(
     /** Current status of the post */
     status: contentPostStatusEnum("status").notNull().default("draft"),
 
-    /** Results from publishing to each platform (keyed by platform name) */
-    publishResults:
-      jsonb("publish_results").$type<
-        Record<string, ContentPostPublishResultJson>
-      >(),
-
-    /** Last error message (for quick access without parsing publishResults) */
+    /** Last error message (for quick access without joins) */
     lastError: text("last_error"),
 
     /** User who created the post */
@@ -118,7 +98,7 @@ export const contentPostTableRelations = relations(
   contentPostTable,
   ({ many }) => ({
     /** Platform accounts this post is linked to */
-    postAccounts: many(contentPostAccountTable),
+    accounts: many(contentPostAccountTable),
   })
 );
 
