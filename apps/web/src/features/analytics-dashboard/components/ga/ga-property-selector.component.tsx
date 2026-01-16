@@ -10,6 +10,7 @@ import {
   Button,
   Skeleton,
   cn,
+  toast,
 } from "@repo/ui";
 import { useTRPC, trpcClient } from "@/lib/trpc";
 
@@ -53,6 +54,12 @@ export const GAPropertySelector: React.FC<GAPropertySelectorProps> = ({
     },
     onSuccess: () => {
       onComplete();
+    },
+    onError: (error) => {
+      toast.error("Failed to connect property", {
+        description:
+          error instanceof Error ? error.message : "Please try again",
+      });
     },
   });
 
