@@ -141,8 +141,14 @@ export async function exchangeCodeForTokens(
 
   const { tokens } = await oauth2Client.getToken(code);
 
+  if (!tokens.access_token) {
+    throw new Error(
+      "Failed to exchange code for tokens: access_token is missing"
+    );
+  }
+
   return {
-    accessToken: tokens.access_token || "",
+    accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token || undefined,
     expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : undefined,
     scope: tokens.scope || undefined,
@@ -162,8 +168,12 @@ export async function refreshAccessToken(
 
   const { credentials } = await oauth2Client.refreshAccessToken();
 
+  if (!credentials.access_token) {
+    throw new Error("Failed to refresh access token: access_token is missing");
+  }
+
   return {
-    accessToken: credentials.access_token || "",
+    accessToken: credentials.access_token,
     // Refresh token is not returned on refresh, keep the old one
     refreshToken: refreshToken,
     expiresAt: credentials.expiry_date
@@ -183,8 +193,12 @@ export async function fetchUserInfo(accessToken: string): Promise<GAUserInfo> {
   const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
   const userInfo = await oauth2.userinfo.get();
 
+  if (!userInfo.data.id) {
+    throw new Error("Failed to fetch user info: user ID is missing");
+  }
+
   return {
-    id: userInfo.data.id || "",
+    id: userInfo.data.id,
     email: userInfo.data.email || undefined,
     name: userInfo.data.name || undefined,
   };
@@ -288,9 +302,15 @@ export async function fetchGA4Property(
 
     const property = response.data;
 
+    if (!property.name || !property.displayName) {
+      throw new Error(
+        `Invalid property response: missing required fields (name: ${!!property.name}, displayName: ${!!property.displayName})`
+      );
+    }
+
     return {
-      name: property.name || "",
-      displayName: property.displayName || "",
+      name: property.name,
+      displayName: property.displayName,
       industryCategory: property.industryCategory || undefined,
       timeZone: property.timeZone || undefined,
       currencyCode: property.currencyCode || undefined,

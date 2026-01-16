@@ -107,8 +107,14 @@ export async function exchangeCodeForTokens(
 
   const { tokens } = await oauth2Client.getToken(code);
 
+  if (!tokens.access_token) {
+    throw new Error(
+      "Failed to exchange code for tokens: access_token is missing"
+    );
+  }
+
   return {
-    accessToken: tokens.access_token || "",
+    accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token || undefined,
     expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : undefined,
     scope: tokens.scope || undefined,
@@ -128,8 +134,12 @@ export async function refreshAccessToken(
 
   const { credentials } = await oauth2Client.refreshAccessToken();
 
+  if (!credentials.access_token) {
+    throw new Error("Failed to refresh access token: access_token is missing");
+  }
+
   return {
-    accessToken: credentials.access_token || "",
+    accessToken: credentials.access_token,
     // Refresh token is not returned on refresh, keep the old one
     refreshToken: refreshToken,
     expiresAt: credentials.expiry_date

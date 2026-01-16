@@ -193,8 +193,12 @@ export async function fetchUserInfo(
   const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
   const userInfo = await oauth2.userinfo.get();
 
+  if (!userInfo.data.id) {
+    throw new Error("Failed to fetch user info: user ID is missing");
+  }
+
   return {
-    id: userInfo.data.id || "",
+    id: userInfo.data.id,
     email: userInfo.data.email || undefined,
     name: userInfo.data.name || undefined,
     picture: userInfo.data.picture || undefined,
