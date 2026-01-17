@@ -34,7 +34,3 @@ export type SerializedError = {
 export type LoggerOptions = {
   context?: string;
 };
-
-export type ChildLoggerMeta = {
-  context: string;
-};
