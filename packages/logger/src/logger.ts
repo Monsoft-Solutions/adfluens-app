@@ -61,6 +61,9 @@ function logMessage(
     } else {
       logMeta.data = errorOrMeta;
     }
+    if (meta) {
+      Object.assign(logMeta, meta);
+    }
   }
 
   winstonLogger.log(level, message, logMeta);

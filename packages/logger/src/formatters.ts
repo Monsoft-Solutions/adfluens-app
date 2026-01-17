@@ -28,7 +28,8 @@ export const jsonFormat: Logform.Format = format.combine(
     if (info["organizationId"])
       entry.organizationId = info["organizationId"] as string;
     if (info["error"]) entry.error = info["error"] as LogEntry["error"];
-    if (info["duration"]) entry.duration = info["duration"] as number;
+    if (info["duration"] !== undefined)
+      entry.duration = info["duration"] as number;
 
     const knownKeys = new Set([
       "level",

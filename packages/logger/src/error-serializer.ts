@@ -67,7 +67,7 @@ export function serializeError(
 
     const value = errorObj[key];
     if (value !== undefined && value !== null) {
-      if (typeof value === "object" && !Array.isArray(value)) {
+      if (typeof value === "object") {
         if (!seen.has(value)) {
           result[key] = safeSerialize(value, seen, depth + 1);
         } else {
@@ -122,11 +122,11 @@ function safeSerialize(
     return CIRCULAR_MARKER;
   }
 
+  seen.add(value);
+
   if (Array.isArray(value)) {
     return value.map((item) => safeSerialize(item, seen, depth + 1));
   }
-
-  seen.add(value);
 
   const result: Record<string, unknown> = {};
   for (const key of Object.keys(value as Record<string, unknown>)) {
