@@ -21,17 +21,20 @@ export function loggingMiddleware(): RequestHandler {
         startTime,
       },
       () => {
+        // Capture context before registering async finish handler
+        // to preserve userId/organizationId across async boundary
+        const capturedContext = getContext();
+
         res.on("finish", () => {
           const duration = Date.now() - startTime;
-          const ctx = getContext();
 
           httpLogger.http(`${req.method} ${req.path}`, {
             statusCode: res.statusCode,
             duration,
             userAgent: req.headers["user-agent"],
             ip: req.ip,
-            userId: ctx?.userId,
-            organizationId: ctx?.organizationId,
+            userId: capturedContext?.userId,
+            organizationId: capturedContext?.organizationId,
           });
         });
 
