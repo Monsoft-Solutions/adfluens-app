@@ -201,11 +201,9 @@ export async function handleFileUpload(
 
     if (error instanceof multer.MulterError) {
       if (error.code === "LIMIT_FILE_SIZE") {
-        res
-          .status(400)
-          .json({
-            error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-          });
+        res.status(400).json({
+          error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+        });
         return;
       }
       if (error.code === "LIMIT_FILE_COUNT") {
