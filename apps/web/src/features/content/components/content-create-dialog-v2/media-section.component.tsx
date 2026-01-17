@@ -4,7 +4,7 @@
  * Media upload from URL and AI-powered image generation.
  */
 
-import React from "react";
+import React, { useCallback } from "react";
 import {
   Loader2,
   Plus,
@@ -18,6 +18,7 @@ import {
   Palette,
   ImageIcon,
   CheckCircle2,
+  Upload,
 } from "lucide-react";
 import {
   Button,
@@ -45,14 +46,22 @@ import type { GeneratedImage } from "./content-create-dialog.types";
 
 type MediaSectionProps = {
   // Tab state
-  mediaTab: "url" | "ai";
-  onTabChange: (tab: "url" | "ai") => void;
+  mediaTab: "url" | "upload" | "ai";
+  onTabChange: (tab: "url" | "upload" | "ai") => void;
 
   // URL upload
   mediaUrlInput: string;
   onMediaUrlInputChange: (value: string) => void;
   onAddMediaUrl: () => void;
   isUploadingMedia: boolean;
+
+  // File upload
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  isUploadingFiles: boolean;
+  uploadProgress: number;
+  onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onTriggerFileInput: () => void;
+  onFileDrop: (files: FileList) => void;
 
   // Media preview
   mediaUrls: string[];
@@ -155,6 +164,12 @@ export const MediaSection: React.FC<MediaSectionProps> = ({
   onMediaUrlInputChange,
   onAddMediaUrl,
   isUploadingMedia,
+  fileInputRef,
+  isUploadingFiles,
+  uploadProgress,
+  onFileSelect,
+  onTriggerFileInput,
+  onFileDrop,
   mediaUrls,
   onRemoveMediaUrl,
   generatedImages,
@@ -190,6 +205,35 @@ export const MediaSection: React.FC<MediaSectionProps> = ({
     }
   };
 
+  // Drag and drop state
+  const [isDragOver, setIsDragOver] = React.useState(false);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        onFileDrop(files);
+      }
+    },
+    [onFileDrop]
+  );
+
   // AI flow step completion tracking
   const hasPrompt = imagePrompt.trim().length > 0;
   const hasGeneratedImages = generatedImages.length > 0;
@@ -198,9 +242,17 @@ export const MediaSection: React.FC<MediaSectionProps> = ({
     <div className="space-y-4">
       <Tabs
         value={mediaTab}
-        onValueChange={(v) => onTabChange(v as "url" | "ai")}
+        onValueChange={(v) => onTabChange(v as "url" | "upload" | "ai")}
       >
-        <TabsList className="grid w-full grid-cols-2 h-11">
+        <TabsList className="grid w-full grid-cols-3 h-11">
+          <TabsTrigger
+            value="upload"
+            className="flex items-center gap-2 data-[state=active]:shadow-sm"
+          >
+            <Upload className="w-4 h-4" />
+            Upload
+          </TabsTrigger>
+
           <TabsTrigger
             value="url"
             className="flex items-center gap-2 data-[state=active]:shadow-sm"
@@ -221,6 +273,66 @@ export const MediaSection: React.FC<MediaSectionProps> = ({
             )}
           </TabsTrigger>
         </TabsList>
+
+        {/* Upload Tab */}
+        <TabsContent value="upload" className="space-y-4 mt-4">
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif"
+            multiple
+            onChange={onFileSelect}
+            className="hidden"
+          />
+
+          {/* Drag and drop zone */}
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={onTriggerFileInput}
+            className={cn(
+              "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all",
+              isDragOver
+                ? "border-primary bg-primary/5"
+                : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50"
+            )}
+          >
+            {isUploadingFiles ? (
+              <div className="space-y-3">
+                <Loader2 className="w-10 h-10 mx-auto animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">
+                  Uploading images...
+                </p>
+                {uploadProgress > 0 && (
+                  <div className="w-full max-w-xs mx-auto bg-muted rounded-full h-2">
+                    <div
+                      className="bg-primary h-2 rounded-full transition-all"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <Upload className="w-10 h-10 mx-auto text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">
+                    Drop images here or click to browse
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    JPEG, PNG, GIF, WebP, HEIC supported. Max 10MB per file.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <p className="text-xs text-muted-foreground text-center">
+            {10 - mediaUrls.length} images remaining
+          </p>
+        </TabsContent>
 
         {/* URL Tab */}
         <TabsContent value="url" className="space-y-4 mt-4">
@@ -654,6 +766,15 @@ export const MediaSection: React.FC<MediaSectionProps> = ({
           <ImageIcon className="w-10 h-10 mx-auto mb-2 opacity-50" />
           <p className="text-sm">No images added yet</p>
           <p className="text-xs">Paste an image URL above to get started</p>
+        </div>
+      )}
+      {mediaUrls.length === 0 && mediaTab === "upload" && (
+        <div className="text-center py-6 text-muted-foreground">
+          <ImageIcon className="w-10 h-10 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No images added yet</p>
+          <p className="text-xs">
+            Drag and drop images or click the upload area above
+          </p>
         </div>
       )}
     </div>

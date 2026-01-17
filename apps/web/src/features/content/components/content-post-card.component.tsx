@@ -15,7 +15,10 @@ import {
   Send,
   MoreVertical,
   ExternalLink,
+  Pencil,
+  Copy,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -30,10 +33,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   cn,
 } from "@repo/ui";
 import { trpcClient, useTRPC } from "@/lib/trpc";
+import { ContentEditDialog } from "./content-edit-dialog/content-edit-dialog.component";
 
 // Content post type based on the API response
 type ContentPostMedia = {
@@ -122,6 +127,7 @@ export const ContentPostCard: React.FC<ContentPostCardProps> = ({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const status = statusConfig[post.status];
   const StatusIcon = status.icon;
@@ -142,6 +148,23 @@ export const ContentPostCard: React.FC<ContentPostCardProps> = ({
       queryClient.invalidateQueries({ queryKey: trpc.content.list.queryKey() });
       setIsDeleteDialogOpen(false);
       onUpdate?.();
+    },
+  });
+
+  // Duplicate mutation
+  const duplicateMutation = useMutation({
+    mutationFn: () => trpcClient.content.duplicate.mutate({ postId: post.id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: trpc.content.list.queryKey() });
+      toast.success("Post duplicated", {
+        description: "A copy of the post has been created as a draft.",
+      });
+      onUpdate?.();
+    },
+    onError: (error) => {
+      toast.error("Failed to duplicate post", {
+        description: error.message,
+      });
     },
   });
 
@@ -277,14 +300,39 @@ export const ContentPostCard: React.FC<ContentPostCardProps> = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {post.status !== "published" && (
-                    <DropdownMenuItem
-                      onClick={() => setIsDeleteDialogOpen(true)}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
+                  {/* Edit - only for draft posts */}
+                  {post.status === "draft" && (
+                    <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
+                      <Pencil className="w-4 h-4 mr-2" />
+                      Edit
                     </DropdownMenuItem>
+                  )}
+
+                  {/* Duplicate - available for all posts */}
+                  <DropdownMenuItem
+                    onClick={() => duplicateMutation.mutate()}
+                    disabled={duplicateMutation.isPending}
+                  >
+                    {duplicateMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Copy className="w-4 h-4 mr-2" />
+                    )}
+                    Duplicate
+                  </DropdownMenuItem>
+
+                  {/* Delete - only for non-published posts */}
+                  {post.status !== "published" && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => setIsDeleteDialogOpen(true)}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -325,6 +373,16 @@ export const ContentPostCard: React.FC<ContentPostCardProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Dialog */}
+      {post.status === "draft" && (
+        <ContentEditDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          post={post}
+          onSuccess={onUpdate}
+        />
+      )}
     </>
   );
 };
