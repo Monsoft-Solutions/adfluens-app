@@ -23,6 +23,9 @@ import type {
   MetaBotFlowRow,
 } from "@repo/db";
 import { sendMessage as sendMetaMessage } from "../meta/meta-api.utils";
+import { Logger } from "@repo/logger";
+
+const logger = new Logger({ context: "scheduled-execution" });
 
 // =============================================================================
 // Types
@@ -89,9 +92,10 @@ export async function scheduleFlowExecution(
     throw new Error("Failed to schedule flow execution");
   }
 
-  console.log(
-    `[scheduled-execution] Scheduled execution ${execution.id} for ${scheduledFor.toISOString()}`
-  );
+  logger.info("Scheduled execution created", {
+    executionId: execution.id,
+    scheduledFor: scheduledFor.toISOString(),
+  });
 
   return execution.id;
 }
@@ -115,9 +119,10 @@ export async function cancelPendingExecutions(
     .returning({ id: metaFlowScheduledExecutionTable.id });
 
   if (result.length > 0) {
-    console.warn(
-      `[scheduled-execution] Cancelled ${result.length} pending executions for conversation ${conversationId}`
-    );
+    logger.info("Cancelled pending executions for conversation", {
+      count: result.length,
+      conversationId,
+    });
   }
 
   return result.length;
@@ -142,9 +147,10 @@ export async function cancelPendingExecutionsForFlow(
     .returning({ id: metaFlowScheduledExecutionTable.id });
 
   if (result.length > 0) {
-    console.warn(
-      `[scheduled-execution] Cancelled ${result.length} pending executions for flow ${flowId}`
-    );
+    logger.info("Cancelled pending executions for flow", {
+      count: result.length,
+      flowId,
+    });
   }
 
   return result.length;
@@ -176,18 +182,15 @@ export async function processScheduledExecutions(): Promise<void> {
     return;
   }
 
-  console.warn(
-    `[scheduled-execution] Processing ${dueExecutions.length} due executions`
-  );
+  logger.info("Processing due executions", { count: dueExecutions.length });
 
   for (const execution of dueExecutions) {
     try {
       await processExecution(execution.id);
     } catch (error) {
-      console.error(
-        `[scheduled-execution] Failed to process execution ${execution.id}:`,
-        error
-      );
+      logger.error("Failed to process execution", error, {
+        executionId: execution.id,
+      });
     }
   }
 }
@@ -214,9 +217,7 @@ async function processExecution(executionId: string): Promise<void> {
 
   // If no rows were updated, another worker already claimed this execution
   if (!claimed) {
-    console.warn(
-      `[scheduled-execution] Execution ${executionId} already claimed by another worker or not pending`
-    );
+    logger.debug("Execution already claimed or not pending", { executionId });
     return;
   }
 
@@ -225,7 +226,7 @@ async function processExecution(executionId: string): Promise<void> {
   });
 
   if (!execution) {
-    console.error(`[scheduled-execution] Execution ${executionId} not found`);
+    logger.error("Execution not found", { executionId });
     return;
   }
 
@@ -236,9 +237,9 @@ async function processExecution(executionId: string): Promise<void> {
     });
 
     if (!flow || !flow.isActive) {
-      console.warn(
-        `[scheduled-execution] Flow ${execution.flowId} not found or inactive, marking as cancelled`
-      );
+      logger.warn("Flow not found or inactive, marking as cancelled", {
+        flowId: execution.flowId,
+      });
       await markExecutionStatus(executionId, "cancelled");
       return;
     }
@@ -252,9 +253,9 @@ async function processExecution(executionId: string): Promise<void> {
     });
 
     if (!state) {
-      console.warn(
-        `[scheduled-execution] Conversation state not found for ${execution.conversationId}`
-      );
+      logger.warn("Conversation state not found", {
+        conversationId: execution.conversationId,
+      });
       await markExecutionStatus(
         executionId,
         "failed",
@@ -268,8 +269,13 @@ async function processExecution(executionId: string): Promise<void> {
       state.botMode !== "flow" ||
       state.context.currentFlowId !== execution.flowId
     ) {
-      console.warn(
-        `[scheduled-execution] Conversation is no longer in the expected flow, marking as cancelled`
+      logger.warn(
+        "Conversation no longer in expected flow, marking as cancelled",
+        {
+          executionId,
+          currentFlowId: state.context.currentFlowId,
+          expectedFlowId: execution.flowId,
+        }
       );
       await markExecutionStatus(executionId, "cancelled");
       return;
@@ -278,9 +284,10 @@ async function processExecution(executionId: string): Promise<void> {
     // Find the next node
     const nextNode = flow.nodes.find((n) => n.id === execution.nextNodeId);
     if (!nextNode) {
-      console.warn(
-        `[scheduled-execution] Next node ${execution.nextNodeId} not found in flow`
-      );
+      logger.warn("Next node not found in flow", {
+        nodeId: execution.nextNodeId,
+        flowId: execution.flowId,
+      });
       await markExecutionStatus(executionId, "failed", "Next node not found");
       return;
     }
@@ -311,19 +318,14 @@ async function processExecution(executionId: string): Promise<void> {
     // Mark as completed
     await markExecutionStatus(executionId, "completed");
 
-    console.warn(
-      `[scheduled-execution] Successfully processed execution ${executionId}`
-    );
+    logger.info("Successfully processed execution", { executionId });
 
     // If node produced a response, send it
     if (response) {
       await sendDelayedResponse(execution, response);
     }
   } catch (error) {
-    console.error(
-      `[scheduled-execution] Error processing execution ${executionId}:`,
-      error
-    );
+    logger.error("Error processing execution", error, { executionId });
     await markExecutionStatus(
       executionId,
       "failed",
@@ -470,9 +472,7 @@ async function sendDelayedResponse(
     });
 
     if (!page) {
-      console.error(
-        `[scheduled-execution] Page ${execution.metaPageId} not found`
-      );
+      logger.error("Page not found", { pageId: execution.metaPageId });
       return;
     }
 
@@ -482,9 +482,9 @@ async function sendDelayedResponse(
     });
 
     if (!conversation) {
-      console.error(
-        `[scheduled-execution] Conversation ${execution.conversationId} not found`
-      );
+      logger.error("Conversation not found", {
+        conversationId: execution.conversationId,
+      });
       return;
     }
 
@@ -496,14 +496,11 @@ async function sendDelayedResponse(
       message
     );
 
-    console.warn(
-      `[scheduled-execution] Sent delayed message to conversation ${execution.conversationId}`
-    );
+    logger.info("Sent delayed message to conversation", {
+      conversationId: execution.conversationId,
+    });
   } catch (error) {
-    console.error(
-      `[scheduled-execution] Failed to send delayed message:`,
-      error
-    );
+    logger.error("Failed to send delayed message", error);
   }
 }
 

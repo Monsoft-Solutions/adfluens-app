@@ -8,6 +8,7 @@ import { appRouter } from "./trpc/router";
 import { createContext } from "./trpc/init";
 import { auth } from "@repo/auth";
 import { env } from "@repo/env";
+import { Logger, loggingMiddleware } from "@repo/logger";
 import { mediaStorage } from "@repo/media-storage";
 import { db } from "@repo/db/client";
 import { sql } from "drizzle-orm";
@@ -31,6 +32,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = env.PORT;
 const isDev = env.NODE_ENV !== "production";
+const logger = new Logger({ context: "server" });
 
 // Trust proxy is required when running behind a load balancer (Dokploy/Traefik)
 // This ensures req.protocol matches the external protocol (https)
@@ -41,8 +43,7 @@ app.set("trust proxy", true);
 if (isDev) {
   mediaStorage
     .configureBucketCors()
-    // .then(() => console.log("GCS Bucket CORS configured"))
-    .catch((err) => console.error("Failed to configure GCS CORS:", err));
+    .catch((err) => logger.error("Failed to configure GCS CORS", err));
 }
 
 // CORS Middleware - must be before auth handler
@@ -52,6 +53,9 @@ app.use(
     credentials: true,
   })
 );
+
+// Logging middleware - sets up request context
+app.use(loggingMiddleware());
 
 /**
  * Unified Google OAuth callback
@@ -115,7 +119,7 @@ app.get("/api/auth/google/callback", async (req, res) => {
 
     return res.redirect(`${appUrl}${redirectPath}?${params.toString()}`);
   } catch (err) {
-    console.error("[Google OAuth] Callback error:", err);
+    logger.error("Google OAuth callback failed", err);
     const errorMessage = encodeURIComponent(
       err instanceof Error ? err.message : "Failed to complete OAuth flow"
     );
@@ -165,7 +169,7 @@ app.get("/api/auth/meta/callback", async (req, res) => {
 
     return res.redirect(`${appUrl}${redirectPath}?${params.toString()}`);
   } catch (err) {
-    console.error("[Meta OAuth] Callback error:", err);
+    logger.error("Meta OAuth callback failed", err);
     const errorMessage = encodeURIComponent(
       err instanceof Error ? err.message : "Failed to complete OAuth flow"
     );
@@ -239,8 +243,7 @@ if (!isDev) {
   const distPath = path.join(__dirname, "..", "..", "web", "dist");
   app.use(express.static(distPath));
 
-  // eslint-disable-next-line no-console
-  console.info(`Serving static files from ${distPath}`);
+  logger.info("Serving static files", { distPath });
 
   // Handle client-side routing
   // Note: Express v5 requires named wildcards (*splat) instead of just *
@@ -250,27 +253,25 @@ if (!isDev) {
 }
 
 app.listen(PORT, () => {
-  // eslint-disable-next-line no-console
-  console.log(`Server running on http://localhost:${PORT}`);
-  if (isDev) {
-    // eslint-disable-next-line no-console
-    console.log(`tRPC API available at http://localhost:${PORT}/trpc`);
-    // eslint-disable-next-line no-console
-    console.log(`Auth API available at http://localhost:${PORT}/api/auth`);
-  }
+  logger.info("Server started", {
+    port: PORT,
+    url: `http://localhost:${PORT}`,
+    trpcUrl: `http://localhost:${PORT}/trpc`,
+    authUrl: `http://localhost:${PORT}/api/auth`,
+  });
 });
 
 // Schedule cron job for processing delayed flow executions
 // Runs every minute to check for due scheduled executions
+const cronLogger = new Logger({ context: "cron" });
 cron.schedule("* * * * *", async () => {
   try {
     await processScheduledExecutions();
   } catch (error) {
-    console.error("[cron] Failed to process scheduled executions:", error);
+    cronLogger.error("Failed to process scheduled executions", error);
   }
 });
 
-// eslint-disable-next-line no-console
-console.log(
-  "Scheduled execution processor cron job started (runs every minute)"
-);
+cronLogger.info("Scheduled execution processor started", {
+  schedule: "* * * * *",
+});

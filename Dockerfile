@@ -28,6 +28,7 @@ COPY packages/scraper/package.json ./packages/scraper/
 COPY packages/tailwind-config/package.json ./packages/tailwind-config/
 COPY packages/types/package.json ./packages/types/
 COPY packages/ui/package.json ./packages/ui/
+COPY packages/logger/package.json ./packages/logger/
 
 # Install all dependencies (including devDependencies for build)
 RUN pnpm install --frozen-lockfile
@@ -53,6 +54,7 @@ COPY --from=deps /app/packages/scraper/node_modules ./packages/scraper/node_modu
 COPY --from=deps /app/packages/tailwind-config/node_modules ./packages/tailwind-config/node_modules
 COPY --from=deps /app/packages/types/node_modules ./packages/types/node_modules
 COPY --from=deps /app/packages/ui/node_modules ./packages/ui/node_modules
+COPY --from=deps /app/packages/logger/node_modules ./packages/logger/node_modules
 
 # Copy source code
 COPY . .
@@ -60,8 +62,8 @@ COPY . .
 # Skip env validation during build (env vars not available at build time)
 ENV SKIP_ENV_VALIDATION=true
 
-# Build all packages with Turborepo
-RUN pnpm build
+# Build all packages with Turborepo (excluding marketing which uses Astro)
+RUN pnpm build --filter=!@repo/marketing
 
 # ==========================================
 # Stage 4: Production image
@@ -82,6 +84,7 @@ COPY packages/media-storage/package.json ./packages/media-storage/
 COPY packages/scraper/package.json ./packages/scraper/
 COPY packages/types/package.json ./packages/types/
 COPY packages/ui/package.json ./packages/ui/
+COPY packages/logger/package.json ./packages/logger/
 
 # Copy all node_modules from deps stage (includes tsx needed for TypeScript runtime)
 # Note: We need devDependencies because internal packages export .ts files directly
@@ -95,6 +98,7 @@ COPY --from=deps /app/packages/media-storage/node_modules ./packages/media-stora
 COPY --from=deps /app/packages/scraper/node_modules ./packages/scraper/node_modules
 COPY --from=deps /app/packages/types/node_modules ./packages/types/node_modules
 COPY --from=deps /app/packages/ui/node_modules ./packages/ui/node_modules
+COPY --from=deps /app/packages/logger/node_modules ./packages/logger/node_modules
 
 # Copy API source (runs with tsx)
 COPY --from=builder /app/apps/api/src ./apps/api/src
@@ -114,6 +118,7 @@ COPY --from=builder /app/packages/env/src ./packages/env/src
 COPY --from=builder /app/packages/media-storage/src ./packages/media-storage/src
 COPY --from=builder /app/packages/types/src ./packages/types/src
 COPY --from=builder /app/packages/ui/src ./packages/ui/src
+COPY --from=builder /app/packages/logger/src ./packages/logger/src
 
 # Copy TypeScript configs needed for tsx
 COPY --from=builder /app/tsconfig.base.json ./
@@ -123,6 +128,7 @@ COPY --from=builder /app/packages/env/tsconfig.json ./packages/env/
 COPY --from=builder /app/packages/media-storage/tsconfig.json ./packages/media-storage/
 COPY --from=builder /app/packages/types/tsconfig.json ./packages/types/
 COPY --from=builder /app/packages/ui/tsconfig.json ./packages/ui/
+COPY --from=builder /app/packages/logger/tsconfig.json ./packages/logger/
 
 # Copy Drizzle migrations (needed for db:migrate)
 COPY --from=builder /app/packages/db/drizzle ./packages/db/drizzle
@@ -130,9 +136,10 @@ COPY --from=builder /app/packages/db/drizzle ./packages/db/drizzle
 # Copy entrypoint script
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 
-# Create non-root user for security
+# Create non-root user for security and logs directory
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 appuser && \
+    mkdir -p /app/logs && \
     chmod +x /app/docker-entrypoint.sh && \
     chown -R appuser:nodejs /app
 

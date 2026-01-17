@@ -17,6 +17,9 @@ import {
   getConnection as getMetaConnection,
   getPages as getMetaPages,
 } from "../meta/meta.service";
+import { Logger } from "@repo/logger";
+
+const logger = new Logger({ context: "analytics-dashboard" });
 
 // ============================================================================
 // Types
@@ -137,11 +140,11 @@ export async function getOverviewMetrics(
   // Fetch data from all platforms in parallel with graceful error handling
   const [gaData, gmbData] = await Promise.all([
     getGAOverviewData(organizationId, days).catch((error) => {
-      console.warn("[Dashboard] Failed to fetch GA data:", error);
+      logger.warn("Failed to fetch GA data", { error });
       return null;
     }),
     getGMBOverviewData(organizationId, days).catch((error) => {
-      console.warn("[Dashboard] Failed to fetch GMB data:", error);
+      logger.warn("Failed to fetch GMB data", { error });
       return null;
     }),
   ]);
@@ -190,7 +193,7 @@ async function getGAOverviewData(
       bounceRateTrend,
     };
   } catch (error) {
-    console.warn("[Dashboard] GA data fetch failed:", error);
+    logger.warn("GA data fetch failed", { error });
     return null;
   }
 }
@@ -265,7 +268,7 @@ async function getGMBOverviewData(
       actionsTrend,
     };
   } catch (error) {
-    console.warn("[Dashboard] GMB data fetch failed:", error);
+    logger.warn("GMB data fetch failed", { error });
     return null;
   }
 }

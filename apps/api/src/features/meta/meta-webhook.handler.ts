@@ -17,6 +17,9 @@ import {
 } from "./meta.service";
 import { notifyNewLead } from "./meta-notification.service";
 import { processIncomingMessage } from "../meta-bot/meta-bot.service";
+import { Logger } from "@repo/logger";
+
+const logger = new Logger({ context: "meta-webhook" });
 
 /**
  * Verify webhook signature from Meta
@@ -66,10 +69,10 @@ export function handleVerification(req: Request, res: Response): void {
   const verifyToken = env.META_WEBHOOK_VERIFY_TOKEN;
 
   if (mode === "subscribe" && token === verifyToken) {
-    console.warn("[meta-webhook] Verification successful");
+    logger.info("Verification successful");
     res.status(200).send(challenge);
   } else {
-    console.error("[meta-webhook] Verification failed");
+    logger.error("Verification failed");
     res.sendStatus(403);
   }
 }
@@ -125,7 +128,7 @@ export async function handleWebhook(
         }
       }
     } catch (error) {
-      console.error("[meta-webhook] Error processing webhook:", error);
+      logger.error("Error processing webhook", error);
     }
   });
 }
@@ -160,7 +163,7 @@ async function processMessengerEvent(
   });
 
   if (!page) {
-    console.error(`[meta-webhook] Page not found: ${pageId}`);
+    logger.error(`Page not found: ${pageId}`);
     return;
   }
 
@@ -212,7 +215,7 @@ async function processMessengerEvent(
         );
       }
     } catch (error) {
-      console.error("[meta-webhook] Bot processing failed:", error);
+      logger.error("Bot processing failed", error);
     }
   }
 }
@@ -239,7 +242,7 @@ async function processInstagramEvent(
   });
 
   if (!page) {
-    console.error(`[meta-webhook] Instagram account not found: ${igAccountId}`);
+    logger.error(`Instagram account not found: ${igAccountId}`);
     return;
   }
 
@@ -294,7 +297,7 @@ async function processInstagramEvent(
         );
       }
     } catch (error) {
-      console.error("[meta-webhook] Bot processing failed:", error);
+      logger.error("Bot processing failed", error);
     }
   }
 }
@@ -313,7 +316,7 @@ async function processLeadgenEvent(
     created_time: number;
   }
 ): Promise<void> {
-  console.warn(`[meta-webhook] Processing lead: ${value.leadgen_id}`);
+  logger.info(`Processing lead: ${value.leadgen_id}`);
 
   const lead = await processLeadWebhook(
     value.page_id,

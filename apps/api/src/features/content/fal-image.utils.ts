@@ -8,6 +8,7 @@
 import { fal } from "@fal-ai/client";
 import { env } from "@repo/env";
 import { mediaStorage } from "@repo/media-storage";
+import { Logger } from "@repo/logger";
 
 import {
   getModelSizeConfig,
@@ -15,6 +16,8 @@ import {
   DEFAULT_SIZE,
 } from "./fal-models.config";
 import type { GenerateImageInput, GeneratedImage } from "./fal-image.type";
+
+const logger = new Logger({ context: "fal-image" });
 
 // Re-export for external usage
 export {
@@ -83,7 +86,9 @@ export async function generateImage(
     logs: true,
     onQueueUpdate: (update) => {
       if (update.status === "IN_PROGRESS") {
-        update.logs.map((log) => log.message).forEach(console.log);
+        update.logs
+          .map((log) => log.message)
+          .forEach((msg) => logger.debug(msg));
       }
     },
   })) as unknown as {
@@ -144,7 +149,7 @@ export async function generateMultipleImages(
     output_format: "png",
   };
 
-  console.log("Generating images with input:", falInput);
+  logger.debug("Generating images with input", { falInput });
 
   // Add size parameter based on model's API requirements
   if (modelConfig.sizeParamType === "aspect_ratio") {
@@ -159,7 +164,9 @@ export async function generateMultipleImages(
     logs: true,
     onQueueUpdate: (update) => {
       if (update.status === "IN_PROGRESS") {
-        update.logs.map((log) => log.message).forEach(console.log);
+        update.logs
+          .map((log) => log.message)
+          .forEach((msg) => logger.debug(msg));
       }
     },
   })) as unknown as {
@@ -169,7 +176,7 @@ export async function generateMultipleImages(
     requestId: string;
   };
 
-  console.log("Result:", JSON.stringify(result));
+  logger.debug("Result", { result: JSON.stringify(result) });
 
   if (!result.data?.images || result.data.images.length === 0) {
     throw new Error("No images generated");

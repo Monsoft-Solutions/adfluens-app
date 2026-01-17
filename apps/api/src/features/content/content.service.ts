@@ -45,6 +45,9 @@ import {
 } from "../platform-connection/platform-connection.service";
 import { mediaStorage } from "@repo/media-storage";
 import { validateExternalUrl } from "./url-validation.utils";
+import { Logger } from "@repo/logger";
+
+const logger = new Logger({ context: "content" });
 
 // =============================================================================
 // Helper Functions
@@ -673,10 +676,9 @@ async function publishToFacebook(
       permalink = postDetails.permalink_url;
     } catch (error) {
       // Permalink fetch failed, but post was successful - log for debugging
-      console.warn(
-        `Failed to fetch Facebook permalink for post ${result.id}:`,
-        error instanceof Error ? error.message : error
-      );
+      logger.warn(`Failed to fetch Facebook permalink for post ${result.id}`, {
+        error: error instanceof Error ? error.message : error,
+      });
     }
 
     return {

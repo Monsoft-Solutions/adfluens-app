@@ -50,6 +50,9 @@ import {
   extractMemoryFromConversation,
   buildMemoryPrompt,
 } from "./meta-bot-memory.service";
+import { Logger } from "@repo/logger";
+
+const logger = new Logger({ context: "meta-bot" });
 
 // =============================================================================
 // Constants
@@ -207,9 +210,11 @@ export async function processIncomingMessage(
       },
     });
     state.context.detectedLanguage = userLanguage;
-    console.warn(
-      `[meta-bot] Detected language: ${detected.name} (${detected.code}) with confidence ${detected.confidence}`
-    );
+    logger.debug("Detected language", {
+      name: detected.name,
+      code: detected.code,
+      confidence: detected.confidence,
+    });
   }
 
   // 2.7. Recall and update user memory for personalization
@@ -231,9 +236,9 @@ export async function processIncomingMessage(
             userMemory: recalledMemory,
           },
         });
-        console.warn(
-          `[meta-bot] Recalled memory for returning customer: ${recalledMemory.name || "unnamed"}`
-        );
+        logger.debug("Recalled memory for returning customer", {
+          name: recalledMemory.name,
+        });
       }
     } else {
       memoryContext = buildMemoryPrompt(state.context.userMemory);
@@ -420,7 +425,7 @@ export async function processIncomingMessage(
       updatedContext: aiResult.updatedContext,
     };
   } catch (error) {
-    console.error("[meta-bot] AI response generation failed:", error);
+    logger.error("AI response generation failed", error);
     return { handled: false, reason: "ai_error" };
   }
 }
@@ -707,9 +712,9 @@ async function findTriggeredFlow(
         case "regex": {
           // Validate regex pattern for safety (ReDoS prevention)
           if (!isSafeRegex(trigger.value)) {
-            console.warn(
-              `[meta-bot] Unsafe regex pattern rejected: ${trigger.value.substring(0, 50)}`
-            );
+            logger.warn("Unsafe regex pattern rejected", {
+              pattern: trigger.value.substring(0, 50),
+            });
             break;
           }
           try {
@@ -875,17 +880,18 @@ async function executeNode(
 ): Promise<BotResponse> {
   // Protection against infinite recursion
   if (depth > MAX_EXECUTION_DEPTH) {
-    console.error(
-      `[meta-bot] Max execution depth (${MAX_EXECUTION_DEPTH}) exceeded at node ${node.id}`
-    );
+    logger.error("Max execution depth exceeded", {
+      maxDepth: MAX_EXECUTION_DEPTH,
+      nodeId: node.id,
+    });
     return { handled: false, reason: "max_depth_exceeded" };
   }
 
   // Protection against circular references in goto_node chains
   if (visitedNodes.has(node.id)) {
-    console.warn(
-      `[meta-bot] Circular reference detected at node ${node.id}, stopping execution`
-    );
+    logger.warn("Circular reference detected, stopping execution", {
+      nodeId: node.id,
+    });
     return { handled: false, reason: "circular_reference" };
   }
 
@@ -936,9 +942,7 @@ async function executeNode(
         });
 
         if (!aiResult.success) {
-          console.error(
-            `[meta-bot] AI node operation failed: ${aiResult.error}`
-          );
+          logger.error("AI node operation failed", { error: aiResult.error });
           // Continue execution on error (don't block flow)
           break;
         }
@@ -958,9 +962,9 @@ async function executeNode(
           });
 
           state.context.variables = updatedVariables;
-          console.warn(
-            `[meta-bot] AI node stored result in variable: ${aiConfig.outputVariable}`
-          );
+          logger.debug("AI node stored result in variable", {
+            variableName: aiConfig.outputVariable,
+          });
         }
 
         // Send as message if specified (default true for generate operations)
@@ -995,9 +999,11 @@ async function executeNode(
             conversationContext: state.context,
           });
 
-          console.warn(
-            `[meta-bot] Scheduled delay: ${delayAmount} ${delayUnit} for conversation ${flowContext.conversationId}`
-          );
+          logger.debug("Scheduled delay", {
+            delayAmount,
+            delayUnit,
+            conversationId: flowContext.conversationId,
+          });
         }
 
         // Return with any message that was collected before the delay
@@ -1039,9 +1045,7 @@ async function executeNode(
 
         // Update local state reference for subsequent actions
         state.context.variables[variableName] = resolvedValue;
-        console.warn(
-          `[meta-bot] Set variable: ${variableName} = ${JSON.stringify(resolvedValue)}`
-        );
+        logger.debug("Set variable", { variableName, value: resolvedValue });
         break;
       }
       case "http_request": {
@@ -1066,9 +1070,9 @@ async function executeNode(
 
         // SSRF protection: validate URL before making request
         if (!isAllowedUrl(url)) {
-          console.error(
-            `[meta-bot] Blocked request to disallowed URL: ${url.substring(0, 100)}`
-          );
+          logger.warn("Blocked request to disallowed URL", {
+            url: url.substring(0, 100),
+          });
           if (config.responseVariable) {
             const updatedVariables = {
               ...state.context.variables,
@@ -1137,12 +1141,17 @@ async function executeNode(
             state.context.variables = updatedVariables;
           }
 
-          console.warn(
-            `[meta-bot] HTTP ${config.method} ${url} - ${response.status}`
-          );
+          logger.debug("HTTP request completed", {
+            method: config.method,
+            url,
+            status: response.status,
+          });
         } catch (error) {
           clearTimeout(timeoutId);
-          console.error(`[meta-bot] HTTP request failed:`, error);
+          logger.error("HTTP request failed", error, {
+            url,
+            method: config.method,
+          });
 
           // Store error in variable if specified
           if (config.responseVariable) {
@@ -1180,7 +1189,7 @@ async function executeNode(
             },
           });
 
-          console.warn(`[meta-bot] Goto node: ${config.targetNodeId}`);
+          logger.debug("Goto node", { targetNodeId: config.targetNodeId });
 
           // Execute the target node immediately (with any collected responses)
           // Pass depth+1 and visitedNodes to detect circular references
@@ -1209,9 +1218,9 @@ async function executeNode(
 
           return gotoResult;
         } else {
-          console.warn(
-            `[meta-bot] goto_node: Target node ${config.targetNodeId} not found`
-          );
+          logger.warn("goto_node: Target node not found", {
+            targetNodeId: config.targetNodeId,
+          });
         }
         break;
       }

@@ -7,6 +7,7 @@
  * @module api/features/social-media/social-media.service
  */
 
+import { Logger } from "@repo/logger";
 import {
   db,
   eq,
@@ -34,6 +35,8 @@ import type { SocialMediaAccount } from "@repo/types/social-media/social-media-a
 import type { SocialMediaPlatform } from "@repo/types/social-media/social-media-platform.enum";
 import type { InstagramPost } from "@repo/types/social-media/instagram-post.type";
 import type { TiktokPost } from "@repo/types/social-media/tiktok-post.type";
+
+const logger = new Logger({ context: "social-media" });
 
 /**
  * Get the organization profile ID for an organization
@@ -149,10 +152,9 @@ export async function scrapeAndSaveInstagramProfile(
     const result = await scrapeInstagramProfile(instagramUrl);
 
     if (!result.success || !result.data) {
-      console.error(
-        `[social-media] Failed to scrape Instagram ${instagramUrl}:`,
-        result.error
-      );
+      logger.error("Failed to scrape Instagram", result.error, {
+        instagramUrl,
+      });
       return null;
     }
 
@@ -164,10 +166,7 @@ export async function scrapeAndSaveInstagramProfile(
 
     return account;
   } catch (error) {
-    console.error(
-      `[social-media] Error scraping Instagram ${instagramUrl}:`,
-      error instanceof Error ? error.message : error
-    );
+    logger.error("Error scraping Instagram", error, { instagramUrl });
     return null;
   }
 }
@@ -186,10 +185,7 @@ export async function scrapeAndSaveFacebookProfile(
     const result = await scrapeFacebookPage(facebookUrl);
 
     if (!result.success || !result.data) {
-      console.error(
-        `[social-media] Failed to scrape Facebook ${facebookUrl}:`,
-        result.error
-      );
+      logger.error("Failed to scrape Facebook", result.error, { facebookUrl });
       return null;
     }
 
@@ -201,10 +197,7 @@ export async function scrapeAndSaveFacebookProfile(
 
     return account;
   } catch (error) {
-    console.error(
-      `[social-media] Error scraping Facebook ${facebookUrl}:`,
-      error instanceof Error ? error.message : error
-    );
+    logger.error("Error scraping Facebook", error, { facebookUrl });
     return null;
   }
 }
@@ -223,10 +216,7 @@ export async function scrapeAndSaveTiktokProfile(
     const result = await scrapeTiktokProfile(tiktokUrl);
 
     if (!result.success || !result.data) {
-      console.error(
-        `[social-media] Failed to scrape TikTok ${tiktokUrl}:`,
-        result.error
-      );
+      logger.error("Failed to scrape TikTok", result.error, { tiktokUrl });
       return null;
     }
 
@@ -238,10 +228,7 @@ export async function scrapeAndSaveTiktokProfile(
 
     return account;
   } catch (error) {
-    console.error(
-      `[social-media] Error scraping TikTok ${tiktokUrl}:`,
-      error instanceof Error ? error.message : error
-    );
+    logger.error("Error scraping TikTok", error, { tiktokUrl });
     return null;
   }
 }
@@ -364,10 +351,9 @@ async function processPostMedia(
       processedPost.originalThumbnailUrl = post.thumbnailUrl;
       processedPost.thumbnailUrl = storedUrl;
     } catch (error) {
-      console.warn(
-        `[social-media] Failed to upload thumbnail for post ${post.shortcode}:`,
-        error
-      );
+      logger.warn("Failed to upload thumbnail for Instagram post", error, {
+        shortcode: post.shortcode,
+      });
       // Set to null on failure - we MUST NOT use original URLs
       processedPost.originalThumbnailUrl = post.thumbnailUrl;
       processedPost.thumbnailUrl = null;
@@ -399,10 +385,10 @@ async function processPostMedia(
           originalUrl: media.url,
         });
       } catch (error) {
-        console.warn(
-          `[social-media] Failed to upload media ${i} for post ${post.shortcode}:`,
-          error
-        );
+        logger.warn("Failed to upload media for Instagram post", error, {
+          shortcode: post.shortcode,
+          mediaIndex: i,
+        });
         // Skip media if upload fails - we MUST NOT use original URLs
         // Only store originalUrl for reference, but don't include in processed list
       }
@@ -509,10 +495,9 @@ export async function scrapeAndSaveInstagramPosts(
     const result = await scrapeInstagramPosts(handle, cursor);
 
     if (!result.success || !result.data) {
-      console.error(
-        `[social-media] Failed to scrape Instagram posts for ${handle}:`,
-        result.error
-      );
+      logger.error("Failed to scrape Instagram posts", result.error, {
+        handle,
+      });
       return { posts: [], hasMore: false };
     }
 
@@ -536,10 +521,7 @@ export async function scrapeAndSaveInstagramPosts(
       hasMore: result.hasMore,
     };
   } catch (error) {
-    console.error(
-      `[social-media] Error scraping Instagram posts for ${handle}:`,
-      error instanceof Error ? error.message : error
-    );
+    logger.error("Error scraping Instagram posts", error, { handle });
     return { posts: [], hasMore: false };
   }
 }
@@ -607,8 +589,10 @@ export async function scrapeInstagramProfileAndInitialPosts(
     );
 
     if (!account) {
-      console.error(
-        `[social-media] Failed to scrape Instagram profile ${instagramUrl}, skipping posts scraping`
+      logger.error(
+        "Failed to scrape Instagram profile, skipping posts scraping",
+        undefined,
+        { instagramUrl }
       );
       return;
     }
@@ -617,8 +601,10 @@ export async function scrapeInstagramProfileAndInitialPosts(
     const handle = extractInstagramHandle(instagramUrl);
 
     if (!handle) {
-      console.error(
-        `[social-media] Could not extract handle from ${instagramUrl}, skipping posts scraping`
+      logger.error(
+        "Could not extract handle, skipping posts scraping",
+        undefined,
+        { instagramUrl }
       );
       return;
     }
@@ -643,10 +629,9 @@ export async function scrapeInstagramProfileAndInitialPosts(
       cursor = batch.nextCursor;
     }
   } catch (error) {
-    console.error(
-      `[social-media] Error in scrapeInstagramProfileAndInitialPosts for ${instagramUrl}:`,
-      error instanceof Error ? error.message : error
-    );
+    logger.error("Error in scrapeInstagramProfileAndInitialPosts", error, {
+      instagramUrl,
+    });
   }
 }
 
@@ -699,10 +684,9 @@ async function processTiktokPostMedia(
       processedPost.originalThumbnailUrl = post.thumbnailUrl;
       processedPost.thumbnailUrl = storedUrl;
     } catch (error) {
-      console.warn(
-        `[social-media] Failed to upload thumbnail for TikTok post ${post.shortcode}:`,
-        error
-      );
+      logger.warn("Failed to upload thumbnail for TikTok post", error, {
+        shortcode: post.shortcode,
+      });
       // Set to null on failure - we MUST NOT use original URLs
       processedPost.originalThumbnailUrl = post.thumbnailUrl;
       processedPost.thumbnailUrl = null;
@@ -720,10 +704,9 @@ async function processTiktokPostMedia(
       processedPost.originalVideoUrl = post.videoUrl;
       processedPost.videoUrl = storedUrl;
     } catch (error) {
-      console.warn(
-        `[social-media] Failed to upload video for TikTok post ${post.shortcode}:`,
-        error
-      );
+      logger.warn("Failed to upload video for TikTok post", error, {
+        shortcode: post.shortcode,
+      });
       // Set to null on failure - we MUST NOT use original URLs
       processedPost.originalVideoUrl = post.videoUrl;
       processedPost.videoUrl = null;
@@ -851,10 +834,7 @@ export async function scrapeAndSaveTiktokPosts(
     const result = await scrapeTiktokPosts(handle, cursor);
 
     if (!result.success || !result.data) {
-      console.error(
-        `[social-media] Failed to scrape TikTok posts for ${handle}:`,
-        result.error
-      );
+      logger.error("Failed to scrape TikTok posts", result.error, { handle });
       return { posts: [], hasMore: false };
     }
 
@@ -878,10 +858,7 @@ export async function scrapeAndSaveTiktokPosts(
       hasMore: result.hasMore,
     };
   } catch (error) {
-    console.error(
-      `[social-media] Error scraping TikTok posts for ${handle}:`,
-      error instanceof Error ? error.message : error
-    );
+    logger.error("Error scraping TikTok posts", error, { handle });
     return { posts: [], hasMore: false };
   }
 }
@@ -926,8 +903,10 @@ export async function scrapeTiktokProfileAndInitialPosts(
     );
 
     if (!account) {
-      console.error(
-        `[social-media] Failed to scrape TikTok profile ${tiktokUrl}, skipping posts scraping`
+      logger.error(
+        "Failed to scrape TikTok profile, skipping posts scraping",
+        undefined,
+        { tiktokUrl }
       );
       return;
     }
@@ -936,8 +915,10 @@ export async function scrapeTiktokProfileAndInitialPosts(
     const handle = extractTiktokHandle(tiktokUrl);
 
     if (!handle) {
-      console.error(
-        `[social-media] Could not extract handle from ${tiktokUrl}, skipping posts scraping`
+      logger.error(
+        "Could not extract TikTok handle, skipping posts scraping",
+        undefined,
+        { tiktokUrl }
       );
       return;
     }
@@ -958,10 +939,9 @@ export async function scrapeTiktokProfileAndInitialPosts(
       cursor = batch.nextCursor;
     }
   } catch (error) {
-    console.error(
-      `[social-media] Error in scrapeTiktokProfileAndInitialPosts for ${tiktokUrl}:`,
-      error instanceof Error ? error.message : error
-    );
+    logger.error("Error in scrapeTiktokProfileAndInitialPosts", error, {
+      tiktokUrl,
+    });
   }
 }
 
