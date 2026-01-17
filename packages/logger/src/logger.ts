@@ -1,4 +1,5 @@
 import { createLogger, transports } from "winston";
+import DailyRotateFile from "winston-daily-rotate-file";
 import { env } from "@repo/env";
 import { jsonFormat, prettyFormat } from "./formatters";
 import { getContext } from "./context";
@@ -7,10 +8,31 @@ import type { LoggerOptions, LogLevel } from "./types";
 
 const isDev = env.NODE_ENV !== "production";
 
+const combinedFileTransport = new DailyRotateFile({
+  filename: "logs/%DATE%-app.log",
+  datePattern: "YYYY-MM-DD",
+  maxSize: "20m",
+  maxFiles: "14d",
+  format: jsonFormat,
+});
+
+const errorFileTransport = new DailyRotateFile({
+  filename: "logs/%DATE%-error.log",
+  datePattern: "YYYY-MM-DD",
+  maxSize: "20m",
+  maxFiles: "14d",
+  level: "error",
+  format: jsonFormat,
+});
+
 const winstonLogger = createLogger({
   level: isDev ? "debug" : "info",
   format: isDev ? prettyFormat : jsonFormat,
-  transports: [new transports.Console()],
+  transports: [
+    new transports.Console(),
+    combinedFileTransport,
+    errorFileTransport,
+  ],
 });
 
 function logMessage(
