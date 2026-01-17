@@ -107,9 +107,10 @@ COPY --from=builder /app/apps/api/tsconfig.json ./apps/api/
 # Copy built web assets (Vite output)
 COPY --from=builder /app/apps/web/dist ./apps/web/dist
 
-# Copy packages with build output (tsup)
+# Copy packages with build output (tsup/tsc)
 COPY --from=builder /app/packages/ai/dist ./packages/ai/dist
 COPY --from=builder /app/packages/scraper/dist ./packages/scraper/dist
+COPY --from=builder /app/packages/logger/dist ./packages/logger/dist
 
 # Copy packages that export source files directly
 COPY --from=builder /app/packages/auth/src ./packages/auth/src
@@ -118,7 +119,6 @@ COPY --from=builder /app/packages/env/src ./packages/env/src
 COPY --from=builder /app/packages/media-storage/src ./packages/media-storage/src
 COPY --from=builder /app/packages/types/src ./packages/types/src
 COPY --from=builder /app/packages/ui/src ./packages/ui/src
-COPY --from=builder /app/packages/logger/src ./packages/logger/src
 
 # Copy TypeScript configs needed for tsx
 COPY --from=builder /app/tsconfig.base.json ./
@@ -128,7 +128,6 @@ COPY --from=builder /app/packages/env/tsconfig.json ./packages/env/
 COPY --from=builder /app/packages/media-storage/tsconfig.json ./packages/media-storage/
 COPY --from=builder /app/packages/types/tsconfig.json ./packages/types/
 COPY --from=builder /app/packages/ui/tsconfig.json ./packages/ui/
-COPY --from=builder /app/packages/logger/tsconfig.json ./packages/logger/
 
 # Copy Drizzle migrations (needed for db:migrate)
 COPY --from=builder /app/packages/db/drizzle ./packages/db/drizzle
