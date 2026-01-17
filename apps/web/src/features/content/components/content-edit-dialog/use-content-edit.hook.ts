@@ -1,17 +1,58 @@
 /**
- * Content Create V2 Hook
+ * Content Edit Hook
  *
- * Custom hook managing state for multi-account content creation.
- * Uses platform connection IDs instead of Meta page ID.
+ * Custom hook managing state for editing an existing content post.
+ * Initializes state from the existing post and uses update mutation.
  */
 
-import React, { useState, useMemo, useRef } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import type React from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { trpcClient, useTRPC } from "@/lib/trpc";
 import { useAuth } from "@/lib/auth.provider";
-import type { GeneratedImage } from "./content-create-dialog.types";
+import type { GeneratedImage } from "../content-create-dialog-v2/content-create-dialog.types";
 
-type UseContentCreateV2Props = {
+type ContentPostMedia = {
+  url: string;
+  storedUrl?: string;
+  source: "upload" | "fal_generated" | "url";
+};
+
+type ContentPostAccount = {
+  id: string;
+  status: "draft" | "pending" | "published" | "failed";
+  platformConnection: {
+    id: string;
+    platform: string;
+    accountName: string;
+  };
+};
+
+type ContentPost = {
+  id: string;
+  organizationId: string;
+  platforms: string[];
+  caption: string;
+  hashtags: string[] | null;
+  media: ContentPostMedia[];
+  status: "draft" | "pending" | "published" | "failed";
+  accounts?: ContentPostAccount[];
+  lastError: string | null;
+  createdByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type UploadedFile = {
+  url: string;
+  storedUrl: string;
+  width: number | null;
+  height: number | null;
+  mimeType: string;
+};
+
+type UseContentEditProps = {
+  post: ContentPost;
   onSuccess?: () => void;
   onClose: () => void;
 };
@@ -24,38 +65,36 @@ const platformMaxCaptions: Record<string, number> = {
   twitter: 280,
 };
 
-type UploadedFile = {
-  url: string;
-  storedUrl: string;
-  width: number | null;
-  height: number | null;
-  mimeType: string;
-};
-
-export const useContentCreateV2 = ({
+export const useContentEdit = ({
+  post,
   onSuccess,
   onClose: _onClose,
-}: UseContentCreateV2Props) => {
+}: UseContentEditProps) => {
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const { organization } = useAuth();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Account selection state
-  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
-
-  // Form state
-  const [caption, setCaption] = useState("");
-  const [hashtags, setHashtags] = useState<string[]>([]);
+  // Initialize state from existing post
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>(
+    () => post.accounts?.map((a) => a.platformConnection.id) || []
+  );
+  const [caption, setCaption] = useState(post.caption);
+  const [hashtags, setHashtags] = useState<string[]>(post.hashtags || []);
   const [hashtagInput, setHashtagInput] = useState("");
-  const [mediaUrls, setMediaUrls] = useState<string[]>([]);
+  const [mediaUrls, setMediaUrls] = useState<string[]>(() =>
+    post.media.map((m) => m.storedUrl || m.url)
+  );
   const [mediaUrlInput, setMediaUrlInput] = useState("");
   const [aiTopic, setAiTopic] = useState("");
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
 
-  // AI Image generation state
+  // Media tab state
   const [mediaTab, setMediaTab] = useState<"url" | "upload" | "ai">("upload");
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  // AI Image generation state
   const [ideaInput, setIdeaInput] = useState("");
   const [imagePrompt, setImagePrompt] = useState("");
   const [negativePrompt, setNegativePrompt] = useState("");
@@ -99,7 +138,7 @@ export const useContentCreateV2 = ({
   );
 
   // Reset size when model changes if current size is invalid
-  React.useEffect(() => {
+  useEffect(() => {
     if (
       selectedModelConfig &&
       !selectedModelConfig.sizes.some((s) => s.value === imageSize)
@@ -128,34 +167,29 @@ export const useContentCreateV2 = ({
   const captionLength = caption.length;
   const isCaptionTooLong = captionLength > minMaxCaption;
 
-  // Reset form function
-  const resetForm = () => {
-    setSelectedAccountIds([]);
-    setCaption("");
-    setHashtags([]);
-    setMediaUrls([]);
-    setAiTopic("");
-    setHashtagInput("");
-    setMediaUrlInput("");
-    setIdeaInput("");
-    setImagePrompt("");
-    setNegativePrompt("");
-    setImageCount(2);
-    setGeneratedImages([]);
-    setMediaTab("upload");
-    setIsOptimizing(false);
-    setShowAdvanced(false);
-    setImageStyle(undefined);
-    setImageMood(undefined);
-    setImageComposition(undefined);
-    setIsUploadingFiles(false);
-    setUploadProgress(0);
-  };
+  // Track if changes have been made
+  const hasChanges = useMemo(() => {
+    const originalAccountIds =
+      post.accounts?.map((a) => a.platformConnection.id) || [];
+    const originalMediaUrls = post.media.map((m) => m.storedUrl || m.url);
+    const originalHashtags = post.hashtags || [];
 
-  // Create mutation
-  const createMutation = useMutation({
+    return (
+      caption !== post.caption ||
+      JSON.stringify(hashtags.sort()) !==
+        JSON.stringify([...originalHashtags].sort()) ||
+      JSON.stringify(mediaUrls.sort()) !==
+        JSON.stringify([...originalMediaUrls].sort()) ||
+      JSON.stringify(selectedAccountIds.sort()) !==
+        JSON.stringify([...originalAccountIds].sort())
+    );
+  }, [post, caption, hashtags, mediaUrls, selectedAccountIds]);
+
+  // Update mutation
+  const updateMutation = useMutation({
     mutationFn: () =>
-      trpcClient.content.create.mutate({
+      trpcClient.content.update.mutate({
+        postId: post.id,
         accountIds: selectedAccountIds,
         caption,
         hashtags: hashtags.length > 0 ? hashtags : undefined,
@@ -168,7 +202,7 @@ export const useContentCreateV2 = ({
         })),
       }),
     onSuccess: () => {
-      resetForm();
+      queryClient.invalidateQueries({ queryKey: trpc.content.list.queryKey() });
       onSuccess?.();
     },
   });
@@ -282,7 +316,6 @@ export const useContentCreateV2 = ({
   const uploadFiles = async (files: FileList) => {
     if (!organization?.id || files.length === 0) return;
 
-    // Check total file limit
     const remainingSlots = 10 - mediaUrls.length;
     if (remainingSlots <= 0) {
       throw new Error("Maximum 10 images allowed");
@@ -312,7 +345,6 @@ export const useContentCreateV2 = ({
 
       const result = (await response.json()) as { files: UploadedFile[] };
 
-      // Add uploaded files to media URLs
       result.files.forEach((file) => {
         if (!mediaUrls.includes(file.storedUrl)) {
           setMediaUrls((prev) => [...prev, file.storedUrl]);
@@ -332,7 +364,6 @@ export const useContentCreateV2 = ({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       uploadFiles(e.target.files);
-      // Reset input so same files can be selected again
       e.target.value = "";
     }
   };
@@ -381,8 +412,8 @@ export const useContentCreateV2 = ({
     }
   };
 
-  const handleCreate = () => {
-    createMutation.mutate();
+  const handleUpdate = () => {
+    updateMutation.mutate();
   };
 
   const isValid =
@@ -468,9 +499,10 @@ export const useContentCreateV2 = ({
     suggestHashtagsMutation,
 
     // Form actions
-    handleCreate,
+    handleUpdate,
     isValid,
-    isCreating: createMutation.isPending,
-    error: createMutation.error,
+    hasChanges,
+    isUpdating: updateMutation.isPending,
+    error: updateMutation.error,
   };
 };

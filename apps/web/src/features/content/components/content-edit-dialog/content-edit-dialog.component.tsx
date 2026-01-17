@@ -1,8 +1,8 @@
 /**
- * Content Create Dialog V2
+ * Content Edit Dialog
  *
- * Dialog for creating new content posts with multi-account support.
- * Uses platform connection IDs instead of Meta page ID.
+ * Dialog for editing an existing draft content post.
+ * Reuses components from content-create-dialog-v2.
  */
 
 import React, { useState } from "react";
@@ -25,32 +25,68 @@ import {
   Button,
   cn,
 } from "@repo/ui";
-import { useContentCreateV2 } from "./use-content-create-v2.hook";
-import { AccountSelector } from "./account-selector.component";
-import { MediaSection } from "./media-section.component";
-import { CaptionSection } from "./caption-section.component";
-import { HashtagsSection } from "./hashtags-section.component";
+import { useContentEdit } from "./use-content-edit.hook";
+import { AccountSelector } from "../content-create-dialog-v2/account-selector.component";
+import { MediaSection } from "../content-create-dialog-v2/media-section.component";
+import { CaptionSection } from "../content-create-dialog-v2/caption-section.component";
+import { HashtagsSection } from "../content-create-dialog-v2/hashtags-section.component";
 
-type ContentCreateDialogV2Props = {
+type ContentPostMedia = {
+  url: string;
+  storedUrl?: string;
+  source: "upload" | "fal_generated" | "url";
+};
+
+type ContentPostAccount = {
+  id: string;
+  status: "draft" | "pending" | "published" | "failed";
+  platformConnection: {
+    id: string;
+    platform: string;
+    accountName: string;
+  };
+};
+
+type ContentPost = {
+  id: string;
+  organizationId: string;
+  platforms: string[];
+  caption: string;
+  hashtags: string[] | null;
+  media: ContentPostMedia[];
+  status: "draft" | "pending" | "published" | "failed";
+  accounts?: ContentPostAccount[];
+  lastError: string | null;
+  createdByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type ContentEditDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  post: ContentPost;
   onSuccess?: () => void;
 };
 
-export const ContentCreateDialogV2: React.FC<ContentCreateDialogV2Props> = ({
+export const ContentEditDialog: React.FC<ContentEditDialogProps> = ({
   open,
   onOpenChange,
+  post,
   onSuccess,
 }) => {
-  const content = useContentCreateV2({
-    onSuccess,
+  const content = useContentEdit({
+    post,
+    onSuccess: () => {
+      onSuccess?.();
+      onOpenChange(false);
+    },
     onClose: () => onOpenChange(false),
   });
 
   // Progressive disclosure state
-  const [isContentExpanded, setIsContentExpanded] = useState(false);
+  const [isContentExpanded, setIsContentExpanded] = useState(true);
 
-  // Auto-expand content section when media is added
   const hasMedia = content.mediaUrls.length > 0;
   const hasCaption = content.caption.trim().length > 0;
   const hasAccounts = content.selectedAccountIds.length > 0;
@@ -59,10 +95,10 @@ export const ContentCreateDialogV2: React.FC<ContentCreateDialogV2Props> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl">Create Post</DialogTitle>
+          <DialogTitle className="text-xl">Edit Post</DialogTitle>
           <DialogDescription>
-            Create a new post for your connected social media accounts. Use AI
-            to generate captions, hashtags, and images.
+            Edit your draft post. You can change the caption, media, hashtags,
+            and target accounts.
           </DialogDescription>
         </DialogHeader>
 
@@ -154,7 +190,7 @@ export const ContentCreateDialogV2: React.FC<ContentCreateDialogV2Props> = ({
               className={cn(
                 "w-full flex items-center justify-between p-4",
                 "hover:bg-accent/50 transition-colors",
-                (hasMedia || isContentExpanded) && "border-b"
+                isContentExpanded && "border-b"
               )}
               onClick={() => setIsContentExpanded(!isContentExpanded)}
             >
@@ -168,12 +204,12 @@ export const ContentCreateDialogV2: React.FC<ContentCreateDialogV2Props> = ({
               <ChevronDown
                 className={cn(
                   "w-5 h-5 text-muted-foreground transition-transform",
-                  (isContentExpanded || hasMedia) && "rotate-180"
+                  isContentExpanded && "rotate-180"
                 )}
               />
             </button>
 
-            {(isContentExpanded || hasMedia) && (
+            {isContentExpanded && (
               <div className="p-4 space-y-6">
                 {/* Caption */}
                 <CaptionSection
@@ -217,16 +253,18 @@ export const ContentCreateDialogV2: React.FC<ContentCreateDialogV2Props> = ({
             Cancel
           </Button>
           <Button
-            onClick={content.handleCreate}
-            disabled={!content.isValid || content.isCreating}
+            onClick={content.handleUpdate}
+            disabled={
+              !content.isValid || !content.hasChanges || content.isUpdating
+            }
           >
-            {content.isCreating ? (
+            {content.isUpdating ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Creating...
+                Saving...
               </>
             ) : (
-              "Create Draft"
+              "Save Changes"
             )}
           </Button>
         </DialogFooter>

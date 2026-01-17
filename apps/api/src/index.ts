@@ -25,6 +25,10 @@ import {
 } from "./features/meta/meta-webhook.handler";
 import cron from "node-cron";
 import { processScheduledExecutions } from "./features/meta-bot/scheduled-execution.service";
+import {
+  upload,
+  handleFileUpload,
+} from "./features/content/file-upload.handler";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -204,6 +208,13 @@ app.all("/api/auth/*splat", toNodeHandler(auth));
 
 // JSON parsing middleware - after auth handler
 app.use(express.json());
+
+/**
+ * File Upload endpoint
+ * Handles multipart/form-data uploads with multer
+ * Must be mounted before tRPC to handle file uploads
+ */
+app.post("/api/content/upload", upload.array("files", 10), handleFileUpload);
 
 /**
  * Health check endpoint

@@ -281,12 +281,14 @@ export async function listPosts(
 
 /**
  * Update a draft post
+ *
+ * If accountIds is provided, updates the linked platform connections.
  */
 export async function updatePost(
   postId: string,
   organizationId: string,
-  updates: Partial<ContentPostUpdateInput>
-): Promise<ContentPostRow> {
+  updates: Partial<ContentPostUpdateInput> & { accountIds?: string[] }
+): Promise<ContentPostRow & { accounts?: PlatformConnectionRow[] }> {
   const existingPost = await getPostOrThrow(postId, organizationId);
 
   if (existingPost.status !== "draft") {
@@ -310,6 +312,41 @@ export async function updatePost(
     updateData.media = updates.media as ContentPostMediaJson[];
   }
 
+  // If accountIds provided, validate and update linked accounts
+  let connections: PlatformConnectionRow[] | undefined;
+  if (updates.accountIds !== undefined) {
+    // Validate that all account IDs belong to the organization
+    connections = await db.query.platformConnectionTable.findMany({
+      where: and(
+        inArray(platformConnectionTable.id, updates.accountIds),
+        eq(platformConnectionTable.organizationId, organizationId),
+        eq(platformConnectionTable.status, "active")
+      ),
+    });
+
+    if (connections.length === 0) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "No valid platform connections found",
+      });
+    }
+
+    // Ensure all requested accounts were found
+    if (connections.length !== updates.accountIds.length) {
+      const foundIds = new Set(connections.map((c) => c.id));
+      const missingIds = updates.accountIds.filter((id) => !foundIds.has(id));
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `Some platform connections not found or inactive: ${missingIds.join(", ")}`,
+      });
+    }
+
+    // Recalculate platforms from new connections
+    const platforms = [...new Set(connections.map((c) => c.platform))];
+    updateData.platforms = platforms;
+  }
+
+  // Update the post
   const [updatedPost] = await db
     .update(contentPostTable)
     .set(updateData)
@@ -326,6 +363,27 @@ export async function updatePost(
       code: "INTERNAL_SERVER_ERROR",
       message: "Failed to update post",
     });
+  }
+
+  // If accountIds were updated, update the linked accounts
+  if (updates.accountIds !== undefined && connections) {
+    // Delete existing account links
+    await db
+      .delete(contentPostAccountTable)
+      .where(eq(contentPostAccountTable.contentPostId, postId));
+
+    // Insert new account links
+    const postAccountInserts: ContentPostAccountInsert[] = connections.map(
+      (conn) => ({
+        contentPostId: postId,
+        platformConnectionId: conn.id,
+        status: "pending" as const,
+      })
+    );
+
+    await db.insert(contentPostAccountTable).values(postAccountInserts);
+
+    return { ...updatedPost, accounts: connections };
   }
 
   return updatedPost;
@@ -356,6 +414,86 @@ export async function deletePost(
         eq(contentPostTable.organizationId, organizationId)
       )
     );
+}
+
+/**
+ * Duplicate a post as a new draft
+ *
+ * Creates a copy of the post with "(Copy)" appended to the caption.
+ * Copies all media, hashtags, and platform connections.
+ */
+export async function duplicatePost(
+  postId: string,
+  organizationId: string,
+  userId: string
+): Promise<ContentPostRow & { accounts: PlatformConnectionRow[] }> {
+  // Get original post with accounts
+  const originalPost = await getPostOrThrow(postId, organizationId);
+
+  // Get original platform connections
+  const originalAccounts = await db.query.contentPostAccountTable.findMany({
+    where: eq(contentPostAccountTable.contentPostId, postId),
+    with: {
+      platformConnection: true,
+    },
+  });
+
+  // Get valid platform connections (still active)
+  const validConnections = originalAccounts
+    .filter((a) => a.platformConnection?.status === "active")
+    .map((a) => a.platformConnection!);
+
+  if (validConnections.length === 0) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "No valid platform connections to duplicate",
+    });
+  }
+
+  // Create the duplicated post
+  const duplicatedCaption = `${originalPost.caption} (Copy)`;
+  const platforms = [...new Set(validConnections.map((c) => c.platform))];
+
+  const [newPost] = await db
+    .insert(contentPostTable)
+    .values({
+      organizationId,
+      platforms,
+      caption: duplicatedCaption,
+      hashtags: originalPost.hashtags,
+      media: originalPost.media,
+      status: "draft",
+      createdByUserId: userId,
+    })
+    .returning();
+
+  if (!newPost) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Failed to duplicate post",
+    });
+  }
+
+  // Link the new post to the same platform connections
+  const postAccountInserts: ContentPostAccountInsert[] = validConnections.map(
+    (conn) => ({
+      contentPostId: newPost.id,
+      platformConnectionId: conn.id,
+      status: "pending" as const,
+    })
+  );
+
+  await db.insert(contentPostAccountTable).values(postAccountInserts);
+
+  logger.info("Post duplicated", {
+    originalPostId: postId,
+    newPostId: newPost.id,
+    organizationId,
+    userId,
+    accountCount: validConnections.length,
+  });
+
+  return { ...newPost, accounts: validConnections };
 }
 
 // =============================================================================

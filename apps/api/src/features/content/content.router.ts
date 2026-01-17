@@ -72,6 +72,8 @@ export const contentRouter = router({
 
   /**
    * Update a draft post
+   *
+   * If accountIds is provided, updates the linked platform connections.
    */
   update: organizationProcedure
     .input(
@@ -80,6 +82,7 @@ export const contentRouter = router({
         caption: z.string().min(1).max(63206).optional(),
         hashtags: z.array(z.string().max(100)).max(30).optional(),
         media: z.array(contentPostMediaSchema).min(1).max(10).optional(),
+        accountIds: z.array(z.string().uuid()).min(1).optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -99,6 +102,25 @@ export const contentRouter = router({
     .mutation(async ({ input, ctx }) => {
       await contentService.deletePost(input.postId, ctx.organization.id);
       return { success: true };
+    }),
+
+  /**
+   * Duplicate a post as a new draft
+   *
+   * Creates a copy of the post with "(Copy)" appended to the caption.
+   */
+  duplicate: organizationProcedure
+    .input(
+      z.object({
+        postId: z.string().uuid(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      return contentService.duplicatePost(
+        input.postId,
+        ctx.organization.id,
+        ctx.user.id
+      );
     }),
 
   // ===========================================================================

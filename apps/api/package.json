@@ -33,14 +33,18 @@
     "express": "^5.2.1",
     "google-auth-library": "^10.5.0",
     "googleapis": "^170.0.0",
+    "multer": "^2.0.2",
     "node-cron": "^4.2.1",
+    "sharp": "^0.34.5",
     "zod": "^4.1.13"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/multer": "^2.0.0",
     "@types/node": "^24.10.1",
+    "@types/sharp": "^0.32.0",
     "tsx": "^4.21.0",
     "typescript": "~5.9.3"
   }
